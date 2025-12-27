@@ -44,6 +44,7 @@ export default function AlertModal({ open, onClose, onSave, initialData }: Alert
   const [ageMin, setAgeMin] = useState<number | null>(null);
   const [ageMax, setAgeMax] = useState<number | null>(null);
   const [attemptedSave, setAttemptedSave] = useState(false);
+  const [touchedFields, setTouchedFields] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     if (open) {
@@ -56,8 +57,13 @@ export default function AlertModal({ open, onClose, onSave, initialData }: Alert
       setAgeMin(initialData?.ageMin ?? null);
       setAgeMax(initialData?.ageMax ?? null);
       setAttemptedSave(false);
+      setTouchedFields(new Set());
     }
   }, [open, initialData]);
+
+  const handleFieldBlur = (index: number) => {
+    setTouchedFields(prev => new Set(prev).add(index));
+  };
 
   const addMatchString = () => {
     if (matchStrings.length < MAX_MATCH_STRINGS) {
@@ -152,7 +158,8 @@ export default function AlertModal({ open, onClose, onSave, initialData }: Alert
             </p>
             <div className="space-y-3">
               {matchStrings.map((str, idx) => {
-                const error = getMatchStringError(str, attemptedSave);
+                const showError = attemptedSave || touchedFields.has(idx);
+                const error = getMatchStringError(str, showError);
                 return (
                   <div key={idx} className="space-y-1">
                     <div className="flex gap-2">
@@ -160,6 +167,7 @@ export default function AlertModal({ open, onClose, onSave, initialData }: Alert
                         placeholder="e.g., Pappy Van Winkle"
                         value={str}
                         onChange={(e) => updateMatchString(idx, e.target.value)}
+                        onBlur={() => handleFieldBlur(idx)}
                         className={error ? "border-destructive" : ""}
                         data-testid={`input-match-string-${idx}`}
                       />
