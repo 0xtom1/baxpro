@@ -43,6 +43,8 @@ export default function AlertModal({ open, onClose, onSave, initialData }: Alert
   const [bottledYearMax, setBottledYearMax] = useState<number | null>(null);
   const [ageMin, setAgeMin] = useState<number | null>(null);
   const [ageMax, setAgeMax] = useState<number | null>(null);
+  const [attemptedSave, setAttemptedSave] = useState(false);
+  const [touchedFields, setTouchedFields] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     if (open) {
@@ -54,8 +56,14 @@ export default function AlertModal({ open, onClose, onSave, initialData }: Alert
       setBottledYearMax(initialData?.bottledYearMax ?? null);
       setAgeMin(initialData?.ageMin ?? null);
       setAgeMax(initialData?.ageMax ?? null);
+      setAttemptedSave(false);
+      setTouchedFields(new Set());
     }
   }, [open, initialData]);
+
+  const handleFieldBlur = (index: number) => {
+    setTouchedFields(prev => new Set(prev).add(index));
+  };
 
   const addMatchString = () => {
     if (matchStrings.length < MAX_MATCH_STRINGS) {
@@ -73,11 +81,22 @@ export default function AlertModal({ open, onClose, onSave, initialData }: Alert
     setMatchStrings(updated);
   };
 
-  const getMatchStringError = (str: string): string | null => {
+  const isValidMatchString = (str: string): boolean => {
+    const trimmed = str.trim();
+    if (trimmed.length === 0) return true;
+    const hasNumber = /\d/.test(trimmed);
+    const hasMinLength = trimmed.length >= 2;
+    return hasNumber || hasMinLength;
+  };
+
+  const getMatchStringError = (str: string, showMinLengthError: boolean): string | null => {
     const trimmed = str.trim();
     if (trimmed.length === 0) return null;
     if (trimmed.length > MAX_MATCH_STRING_LENGTH) {
       return `Maximum ${MAX_MATCH_STRING_LENGTH} characters`;
+    }
+    if (showMinLengthError && !isValidMatchString(trimmed)) {
+      return "Must be at least 2 characters or contain a number";
     }
     return null;
   };
@@ -85,10 +104,13 @@ export default function AlertModal({ open, onClose, onSave, initialData }: Alert
   const hasValidationErrors = (): boolean => {
     const nonEmptyStrings = matchStrings.filter(s => s.trim() !== "");
     if (nonEmptyStrings.length === 0) return true;
-    return nonEmptyStrings.some(s => s.trim().length > MAX_MATCH_STRING_LENGTH);
+    return nonEmptyStrings.some(s => 
+      s.trim().length > MAX_MATCH_STRING_LENGTH || !isValidMatchString(s)
+    );
   };
 
   const handleSave = () => {
+    setAttemptedSave(true);
     if (hasValidationErrors()) return;
     
     const filteredStrings = matchStrings.filter(s => s.trim() !== "");
@@ -116,10 +138,13 @@ export default function AlertModal({ open, onClose, onSave, initialData }: Alert
 
         <div className="space-y-6 py-4">
           <div className="space-y-2">
-            <Label htmlFor="alert-name">Alert Name</Label>
+            <Label htmlFor="alert-name">Alert Name<span className="text-destructive ml-1">*</span></Label>
+            <p className="text-xs text-muted-foreground">
+              A friendly name to identify this alert - not used for matching
+            </p>
             <Input
               id="alert-name"
-              placeholder="e.g., Pappy Van Winkle"
+              placeholder="e.g., Pappy Alert"
               value={name}
               onChange={(e) => setName(e.target.value)}
               data-testid="input-alert-name"
@@ -127,20 +152,22 @@ export default function AlertModal({ open, onClose, onSave, initialData }: Alert
           </div>
 
           <div className="space-y-2">
-            <Label>Match Strings</Label>
-            <p className="text-sm text-muted-foreground">
-              Add up to 5 search terms to match to the bottle name
+            <Label>Search Terms<span className="text-destructive ml-1">*</span></Label>
+            <p className="text-xs text-muted-foreground">
+              Enter terms to match against bottle names on Baxus
             </p>
             <div className="space-y-3">
               {matchStrings.map((str, idx) => {
-                const error = getMatchStringError(str);
+                const showError = attemptedSave || touchedFields.has(idx);
+                const error = getMatchStringError(str, showError);
                 return (
                   <div key={idx} className="space-y-1">
                     <div className="flex gap-2">
                       <Input
-                        placeholder="e.g., Pappy, Van Winkle"
+                        placeholder="e.g., Pappy Van Winkle"
                         value={str}
                         onChange={(e) => updateMatchString(idx, e.target.value)}
+                        onBlur={() => handleFieldBlur(idx)}
                         className={error ? "border-destructive" : ""}
                         data-testid={`input-match-string-${idx}`}
                       />
@@ -171,13 +198,13 @@ export default function AlertModal({ open, onClose, onSave, initialData }: Alert
                 data-testid="button-add-match-string"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Add Match String ({matchStrings.length}/{MAX_MATCH_STRINGS})
+                Add Search Term ({matchStrings.length}/{MAX_MATCH_STRINGS})
               </Button>
             </div>
 
             <div className="pt-3 border-t">
               <Label className="text-sm font-medium">Match Logic</Label>
-              <p className="text-sm text-muted-foreground mb-3">
+              <p className="text-xs text-muted-foreground mb-3">
                 How should the search terms match the bottle name?
               </p>
               <RadioGroup
@@ -202,7 +229,10 @@ export default function AlertModal({ open, onClose, onSave, initialData }: Alert
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="max-price">Maximum Price ($)</Label>
+            <Label htmlFor="max-price">Maximum Price ($)<span className="text-destructive ml-1">*</span></Label>
+            <p className="text-xs text-muted-foreground">
+              Alert triggers when a listing is at or below this price
+            </p>
             <Input
               id="max-price"
               type="number"
@@ -213,72 +243,75 @@ export default function AlertModal({ open, onClose, onSave, initialData }: Alert
             />
           </div>
 
-          <div className="space-y-2">
-            <Label>Bottled Year Range (Optional)</Label>
-            <p className="text-sm text-muted-foreground">
-              Filter by the year the bourbon was bottled
-            </p>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="bottled-year-min" className="text-xs text-muted-foreground">
-                  From Year
-                </Label>
-                <Input
-                  id="bottled-year-min"
-                  type="number"
-                  placeholder="2015"
-                  value={bottledYearMin ?? ""}
-                  onChange={(e) => setBottledYearMin(e.target.value ? Number(e.target.value) : null)}
-                  data-testid="input-bottled-year-min"
-                />
-              </div>
-              <div>
-                <Label htmlFor="bottled-year-max" className="text-xs text-muted-foreground">
-                  To Year
-                </Label>
-                <Input
-                  id="bottled-year-max"
-                  type="number"
-                  placeholder="2020"
-                  value={bottledYearMax ?? ""}
-                  onChange={(e) => setBottledYearMax(e.target.value ? Number(e.target.value) : null)}
-                  data-testid="input-bottled-year-max"
-                />
+          <div className="space-y-4">
+            <div>
+              <Label className="text-sm font-medium">Metadata Filters (Optional)</Label>
+              <p className="text-xs text-muted-foreground">
+                These filters depend on bottle metadata - not all bottles have this info
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Bottled Year Range</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="bottled-year-min" className="text-xs text-muted-foreground">
+                    From Year
+                  </Label>
+                  <Input
+                    id="bottled-year-min"
+                    type="number"
+                    placeholder="2015"
+                    value={bottledYearMin ?? ""}
+                    onChange={(e) => setBottledYearMin(e.target.value ? Number(e.target.value) : null)}
+                    data-testid="input-bottled-year-min"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="bottled-year-max" className="text-xs text-muted-foreground">
+                    To Year
+                  </Label>
+                  <Input
+                    id="bottled-year-max"
+                    type="number"
+                    placeholder="2020"
+                    value={bottledYearMax ?? ""}
+                    onChange={(e) => setBottledYearMax(e.target.value ? Number(e.target.value) : null)}
+                    data-testid="input-bottled-year-max"
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label>Age Range (Optional)</Label>
-            <p className="text-sm text-muted-foreground">
-              Filter by how old the bourbon is in years
-            </p>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="age-min" className="text-xs text-muted-foreground">
-                  Min Age
-                </Label>
-                <Input
-                  id="age-min"
-                  type="number"
-                  placeholder="10"
-                  value={ageMin ?? ""}
-                  onChange={(e) => setAgeMin(e.target.value ? Number(e.target.value) : null)}
-                  data-testid="input-age-min"
-                />
-              </div>
-              <div>
-                <Label htmlFor="age-max" className="text-xs text-muted-foreground">
-                  Max Age
-                </Label>
-                <Input
-                  id="age-max"
-                  type="number"
-                  placeholder="15"
-                  value={ageMax ?? ""}
-                  onChange={(e) => setAgeMax(e.target.value ? Number(e.target.value) : null)}
-                  data-testid="input-age-max"
-                />
+            <div className="space-y-2">
+              <Label>Age Range</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="age-min" className="text-xs text-muted-foreground">
+                    Min Age
+                  </Label>
+                  <Input
+                    id="age-min"
+                    type="number"
+                    placeholder="10"
+                    value={ageMin ?? ""}
+                    onChange={(e) => setAgeMin(e.target.value ? Number(e.target.value) : null)}
+                    data-testid="input-age-min"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="age-max" className="text-xs text-muted-foreground">
+                    Max Age
+                  </Label>
+                  <Input
+                    id="age-max"
+                    type="number"
+                    placeholder="15"
+                    value={ageMax ?? ""}
+                    onChange={(e) => setAgeMax(e.target.value ? Number(e.target.value) : null)}
+                    data-testid="input-age-max"
+                  />
+                </div>
               </div>
             </div>
           </div>
