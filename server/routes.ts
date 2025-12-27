@@ -90,6 +90,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  app.get("/read-me", (req, res) => {
+    res.redirect("https://github.com/0xtom1/baxpro#readme");
+  });
+
   // Google OAuth routes
   app.get("/api/auth/google", (req, res) => {
     const returnTo = req.query.returnTo as string | undefined;

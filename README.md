@@ -165,6 +165,7 @@ All services connect to Cloud SQL for reads/writes.
 |--------|----------|-------------|------|
 | GET | `/api/health` | Health check | None |
 | GET | `/api/system/version` | Get version info | None |
+| GET | `/read-me` | Redirect to GitHub README | None |
 
 ## Multi-Environment Deployment
 
