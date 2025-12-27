@@ -33,13 +33,13 @@ class HeliusClient:
         """
 
     def get_parsed_transactions(self, pub_key: str = None):
-        """Get token accounts for wallet
+        """Get parsed transactions for a Solana wallet address.
 
-        Raises:
-            Exception: _description_
+        Fetches and prints the most recent transactions for the configured
+        Baxus public key.
 
-        Returns:
-            list: _description_
+        Args:
+            pub_key: The public key to query. Uses default Baxus key if not provided.
         """
         transactions = self.Helius.get_parsed_transactions(
             address=self.pub_key, limit=10, before='3wXGMBHHxgsGckKF7H8HCywb7vb6o38bYz46v6nUZvPohhSrLhBYyKS7K9aabEYA8YXTt5Rtrh3ektpeQbrmiPr7')
@@ -49,13 +49,13 @@ class HeliusClient:
             print('-----------------')
 
     def get_transactions(self, pub_key: str = None):
-        """Get token accounts for wallet
+        """Get raw transactions for a Solana wallet address.
 
-        Raises:
-            Exception: _description_
+        Fetches successful transactions for the Baxus public key using
+        the Helius RPC endpoint.
 
-        Returns:
-            list: _description_
+        Args:
+            pub_key: The public key to query. Uses default Baxus key if not provided.
         """
         params = {
             "transactionDetails": 'full',
@@ -96,15 +96,17 @@ class HeliusClient:
             print('-----------------')
 
     def _send_request(self, url, headers=None, params=None, postdict=None, verb=None):
-        """Send request to endpoint
+        """Send an HTTP request to the specified endpoint.
 
         Args:
-            params (str, optional): Query string for request. Defaults to None.
-            variable_values (dict, optional): variables to populate query with. Defaults to None.
-            max_retries (int, optional): Number of retry attempts. Defaults to 3.
+            url: The URL endpoint to send the request to.
+            headers: Optional HTTP headers dict. Defaults to JSON content type.
+            params: Optional query parameters for GET requests.
+            postdict: Optional JSON body for POST requests.
+            verb: HTTP method (GET or POST). Auto-detected if not provided.
 
         Returns:
-            dict[str, any]: API response
+            dict[str, any]: The JSON-parsed API response.
         """
         if not verb:
             verb = "POST" if postdict else "GET"

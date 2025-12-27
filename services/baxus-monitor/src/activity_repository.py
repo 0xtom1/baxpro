@@ -20,7 +20,14 @@ class ActivityRepository:
         self.conn = conn
 
     def get_activity_type_idx(self, activity_type_code: str) -> int:
-        """Fetch a listing by its external Baxus ID."""
+        """Get the activity type index for a given activity code.
+
+        Args:
+            activity_type_code: The activity type code (e.g., "NEW_LISTING").
+
+        Returns:
+            int: The activity_type_idx for the matching record.
+        """
         record = self.session.query(ActivityTypes).filter(
             ActivityTypes.activity_type_code == activity_type_code,
         ).first()
@@ -43,9 +50,16 @@ class ActivityRepository:
         return max_idx
 
     def record_exists(self, asset_idx: int, price: float, listed_date: datetime, activity_type_idx: int) -> bool:
-        """
-        Insert or update a listing. 
-        Returns (listing, is_new) tuple where is_new indicates if this was a new listing.
+        """Check if an activity record exists with exact matching criteria.
+
+        Args:
+            asset_idx: The asset index to check.
+            price: The price to match.
+            listed_date: The exact activity date to match.
+            activity_type_idx: The activity type to match.
+
+        Returns:
+            bool: True if a matching record exists.
         """
         record = self.session.query(ActivityFeed).filter(
             ActivityFeed.activity_date >= listed_date,
@@ -60,9 +74,17 @@ class ActivityRepository:
             return False
 
     def record_exists_with_threshold(self, asset_idx: int, price: float, listed_date: datetime, activity_type_idx: int, threshold_secs: int) -> bool:
-        """
-            Check if a matching activity record exists where activity_date is within 1 minute of listed_date.
-            Returns True if such a record exists, False otherwise.
+        """Check if an activity record exists within a time threshold.
+
+        Args:
+            asset_idx: The asset index to check.
+            price: The price to match.
+            listed_date: The reference activity date.
+            activity_type_idx: The activity type to match.
+            threshold_secs: Time window in seconds around listed_date.
+
+        Returns:
+            bool: True if a matching record exists within the threshold.
         """
         delta = timedelta(seconds=threshold_secs)
         
@@ -77,9 +99,16 @@ class ActivityRepository:
         return record is not None
         
     def insert(self, activity_type_idx: int, asset_idx: int, price: float, activity_date: datetime) -> int:
-        """
-        Insert or update a listing.
-        Returns is_new bool where is_new indicates if this was a new asset.
+        """Insert a new activity feed record.
+
+        Args:
+            activity_type_idx: The type of activity being recorded.
+            asset_idx: The asset this activity relates to.
+            price: The price at the time of activity.
+            activity_date: When the activity occurred.
+
+        Returns:
+            int: The activity_idx of the newly inserted record.
         """
 
         record = ActivityFeed(

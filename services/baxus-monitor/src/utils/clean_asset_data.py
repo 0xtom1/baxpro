@@ -7,7 +7,14 @@ logger = get_logger()
 
 
 def camel_to_snake(name: str) -> str:
-    # Insert underscore before capital letters (but not at start), then lowercase
+    """Convert a camelCase or PascalCase string to snake_case.
+
+    Args:
+        name: The string to convert.
+
+    Returns:
+        str: The converted snake_case string.
+    """
     name = name.replace(" ", "_")
     name = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
     name = re.sub('([a-z0-9])([A-Z])', r'\1_\2',
@@ -16,7 +23,17 @@ def camel_to_snake(name: str) -> str:
 
 
 def update_if_changed(instance, new_instance, ignore_keys=None, check_only_keys=None) -> bool:
-    """Update instance only if values differ. Returns True if anything changed."""
+    """Update a SQLAlchemy instance with new values if they differ.
+
+    Args:
+        instance: The existing SQLAlchemy model instance to update.
+        new_instance: The new instance containing updated values.
+        ignore_keys: Set of attribute names to skip during comparison.
+        check_only_keys: If provided, only compare these specific keys.
+
+    Returns:
+        bool: True if any values were updated, False otherwise.
+    """
     if ignore_keys is None:
         ignore_keys = set()
 
@@ -44,15 +61,15 @@ def update_if_changed(instance, new_instance, ignore_keys=None, check_only_keys=
 
 
 def _parse_int(is_attribute: bool = False, key_name: str = None, asset_data: dict = None) -> int:
-    """_summary_
+    """Parse an integer value from asset data.
 
     Args:
-        key_name (str): _description_
-        asset_data (dict): _description_
-        is_attribute (bool, optional): _description_. Defaults to False.
+        is_attribute: If True, look for value in bottle_release sub-dict.
+        key_name: The key to extract from the asset data.
+        asset_data: The asset data dictionary.
 
     Returns:
-        int: _description_
+        int: The parsed integer value, or None if parsing fails.
     """
     if is_attribute:
         value_raw = (
@@ -77,15 +94,15 @@ def _parse_int(is_attribute: bool = False, key_name: str = None, asset_data: dic
 
 
 def _parse_str(is_attribute: bool = False, key_name: str = None, asset_data: dict = None) -> str:
-    """_summary_
+    """Parse a string value from asset data.
 
     Args:
-        key_name (str): _description_
-        asset_data (dict): _description_
-        is_attribute (bool, optional): _description_. Defaults to False.
+        is_attribute: If True, look for value in bottle_release sub-dict.
+        key_name: The key to extract from the asset data.
+        asset_data: The asset data dictionary.
 
     Returns:
-        int: _description_
+        str: The parsed string value, or None if empty or missing.
     """
     if is_attribute:
         value_raw = (
@@ -109,49 +126,17 @@ def _parse_str(is_attribute: bool = False, key_name: str = None, asset_data: dic
     return value
 
 
-def _parse_int(is_attribute: bool = False, key_name: str = None, asset_data: dict = None) -> int:
-    """_summary_
+def _parse_float(is_attribute: bool = False, key_name: str = None, asset_data: dict = None, return_none_if_zero: bool = False) -> float:
+    """Parse a float value from asset data.
 
     Args:
-        key_name (str): _description_
-        asset_data (dict): _description_
-        is_attribute (bool, optional): _description_. Defaults to False.
+        is_attribute: If True, look for value in bottle_release sub-dict.
+        key_name: The key to extract from the asset data.
+        asset_data: The asset data dictionary.
+        return_none_if_zero: If True, return None when value is 0.
 
     Returns:
-        int: _description_
-    """
-    if is_attribute:
-        value_raw = (
-            asset_data.get("bottle_release", {})
-            .get(key_name)
-        )
-    else:
-        value_raw = (
-            asset_data.get(key_name)
-        )
-
-    if value_raw == "" or value_raw is None:
-        value = None
-    else:
-        try:
-            value = int(value_raw)
-        except (ValueError, TypeError):
-            logger.warning(
-                f"Invalid {key_name} value: {value_raw!r} treating as None")
-            value = None
-    return value
-
-
-def _parse_float(is_attribute: bool = False, key_name: str = None, asset_data: dict = None, return_none_if_zero: bool = False) -> int:
-    """_summary_
-
-    Args:
-        key_name (str): _description_
-        asset_data (dict): _description_
-        is_attribute (bool, optional): _description_. Defaults to False.
-
-    Returns:
-        int: _description_
+        float: The parsed float value, or None if parsing fails or value is zero.
     """
     if is_attribute:
         value_raw = (
@@ -178,15 +163,15 @@ def _parse_float(is_attribute: bool = False, key_name: str = None, asset_data: d
 
 
 def _parse_bool(is_attribute: bool = False, key_name: str = None, asset_data: dict = None) -> bool:
-    """_summary_
+    """Parse a boolean value from asset data.
 
     Args:
-        key_name (str): _description_
-        asset_data (dict): _description_
-        is_attribute (bool, optional): _description_. Defaults to False.
+        is_attribute: If True, look for value in bottle_release sub-dict.
+        key_name: The key to extract from the asset data.
+        asset_data: The asset data dictionary.
 
     Returns:
-        int: _description_
+        bool: The parsed boolean value.
     """
     if is_attribute:
         value_raw = (
@@ -204,15 +189,17 @@ def _parse_bool(is_attribute: bool = False, key_name: str = None, asset_data: di
 
 
 def _parse_datetime(is_attribute: bool = False, key_name: str = None, asset_data: dict = None) -> datetime:
-    """_summary_
+    """Parse a datetime value from asset data.
+
+    Handles ISO format strings with optional 'Z' timezone suffix.
 
     Args:
-        key_name (str): _description_
-        asset_data (dict): _description_
-        is_attribute (bool, optional): _description_. Defaults to False.
+        is_attribute: If True, look for value in bottle_release sub-dict.
+        key_name: The key to extract from the asset data.
+        asset_data: The asset data dictionary.
 
     Returns:
-        int: _description_
+        datetime: The parsed datetime value, or None if parsing fails.
     """
     if is_attribute:
         value_raw = (
@@ -238,6 +225,11 @@ def _parse_datetime(is_attribute: bool = False, key_name: str = None, asset_data
 
 
 def get_spirit_types():
+    """Get a list of all supported spirit type categories.
+
+    Returns:
+        list[str]: List of spirit type names used for filtering assets.
+    """
     return ["Whisky",
             "Whiskey",
             "Scotch",

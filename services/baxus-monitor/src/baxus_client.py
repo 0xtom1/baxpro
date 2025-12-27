@@ -44,9 +44,20 @@ class BaxusClient:
     def fetch_assets(
         self, from_index: int = 0, size: int = 50, spirit_type: str = None, payload: dict = None, listed: bool = None
     ) -> dict:
-        """
-        Fetch a page of assets from Baxus API.
+        """Fetch a page of assets from the Baxus API.
 
+        Args:
+            from_index: Pagination offset for results. Defaults to 0.
+            size: Number of assets to retrieve per page. Defaults to 50.
+            spirit_type: Filter by spirit type category (e.g., "Whisky").
+            payload: Optional JSON body for POST requests.
+            listed: If True, filter to only listed assets.
+
+        Returns:
+            dict: JSON response containing asset data.
+
+        Raises:
+            requests.exceptions.RequestException: If the API request fails.
         """
         url = f"{self.base_url}/search/assets"
         params = {
@@ -84,19 +95,18 @@ class BaxusClient:
             logger.error(f"Error fetching assets: {e}")
             raise
 
-    def get_new_listings(self, size: int = 24, from_index: int = 0) -> list[dict]:
-        """
-        Iterate through all listing pages.
+    def get_new_listings(self, size: int = 24, from_index: int = 0) -> dict:
+        """Fetch recently listed assets sorted by listing date.
 
-        Yields individual listing dictionaries.
+        Args:
+            size: Number of listings to retrieve. Defaults to 24.
+            from_index: Pagination offset. Defaults to 0.
 
-        url = f"{self.base_url}/"
-        params = {
-            "sortBy": "listed_date:desc",
-            "from": 0,
-            "size": size,
-            "_data": "routes/index"
-        }
+        Returns:
+            dict: JSON response containing listing data with assets array.
+
+        Raises:
+            requests.exceptions.RequestException: If the API request fails.
         """
         url = f"{self.base_url}/search/assets"
         params = {"from": from_index, "size": size,
@@ -119,18 +129,15 @@ class BaxusClient:
             raise
 
     def get_asset_metadata(self, baxus_idx: int = None) -> dict:
-        """
-        Iterate through all listing pages.
+        """Fetch Solana NFT metadata for a specific asset.
 
-        Yields individual listing dictionaries.
+        Retrieves the metadata JSON from the Baxus assets CDN.
 
-        url = f"{self.base_url}/"
-        params = {
-            "sortBy": "listedDate:desc",
-            "from": 0,
-            "size": size,
-            "_data": "routes/index"
-        }
+        Args:
+            baxus_idx: The Baxus asset index to fetch metadata for.
+
+        Returns:
+            dict: The asset's NFT metadata, or None if fetch fails.
         """
         url = f"https://assets.baxus.co/{baxus_idx}/solana-nft-metadata.json"
 
