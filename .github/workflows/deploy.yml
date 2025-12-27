@@ -30,8 +30,9 @@ jobs:
       id-token: write
 
     env:
-      # Set environment based on trigger type
-      ENVIRONMENT: ${{ github.event_name == 'push' && 'production' || github.event.inputs.environment }}
+      # Set environment based on branch (push) or manual input (workflow_dispatch)
+      # Push to main = production, push to dev = dev, manual = user choice
+      ENVIRONMENT: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' && 'production' || 'dev') || github.event.inputs.environment }}
 
     steps:
       - name: Checkout code
