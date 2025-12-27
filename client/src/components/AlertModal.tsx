@@ -230,6 +230,9 @@ export default function AlertModal({ open, onClose, onSave, initialData }: Alert
 
           <div className="space-y-2">
             <Label htmlFor="max-price">Maximum Price ($)</Label>
+            <p className="text-sm text-muted-foreground">
+              Alert triggers when a listing is at or below this price
+            </p>
             <Input
               id="max-price"
               type="number"
