@@ -203,12 +203,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Demo auth routes - DISABLED IN PRODUCTION for security
+  // Demo auth routes - DISABLED ON ALL DEPLOYMENTS for security
   // This endpoint allows login without OAuth verification
+  // Only works in local Replit development environment
   app.post("/api/auth/demo-login", async (req, res) => {
-    // Only allow in development environment
-    if (process.env.NODE_ENV === "production") {
-      return res.status(403).json({ error: "Demo login is disabled in production" });
+    // Only allow in local Replit development (not deployed anywhere - dev or prod)
+    if (process.env.REPLIT_DEPLOYMENT) {
+      return res.status(403).json({ error: "Demo login is only available in local development" });
     }
 
     try {
