@@ -115,7 +115,7 @@ export default function VipTools() {
                 Link producers to their brands and brands to their sub-brands for 
                 better organization and discovery.
               </p>
-              <Link href="/product-hierarchy-editor">
+              <Link href="/product-hierarchy-editor" className="block mt-2">
                 <Button 
                   variant="outline"
                   className="w-full"
@@ -185,6 +185,7 @@ export default function VipTools() {
                 href="https://github.com/0xtom1/baxpro" 
                 target="_blank" 
                 rel="noopener noreferrer"
+                className="block mt-2"
               >
                 <Button 
                   variant="outline"
