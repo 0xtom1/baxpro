@@ -43,6 +43,7 @@ export default function AlertModal({ open, onClose, onSave, initialData }: Alert
   const [bottledYearMax, setBottledYearMax] = useState<number | null>(null);
   const [ageMin, setAgeMin] = useState<number | null>(null);
   const [ageMax, setAgeMax] = useState<number | null>(null);
+  const [attemptedSave, setAttemptedSave] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -54,6 +55,7 @@ export default function AlertModal({ open, onClose, onSave, initialData }: Alert
       setBottledYearMax(initialData?.bottledYearMax ?? null);
       setAgeMin(initialData?.ageMin ?? null);
       setAgeMax(initialData?.ageMax ?? null);
+      setAttemptedSave(false);
     }
   }, [open, initialData]);
 
@@ -73,11 +75,22 @@ export default function AlertModal({ open, onClose, onSave, initialData }: Alert
     setMatchStrings(updated);
   };
 
-  const getMatchStringError = (str: string): string | null => {
+  const isValidMatchString = (str: string): boolean => {
+    const trimmed = str.trim();
+    if (trimmed.length === 0) return true;
+    const hasNumber = /\d/.test(trimmed);
+    const hasMinLength = trimmed.length >= 2;
+    return hasNumber || hasMinLength;
+  };
+
+  const getMatchStringError = (str: string, showMinLengthError: boolean): string | null => {
     const trimmed = str.trim();
     if (trimmed.length === 0) return null;
     if (trimmed.length > MAX_MATCH_STRING_LENGTH) {
       return `Maximum ${MAX_MATCH_STRING_LENGTH} characters`;
+    }
+    if (showMinLengthError && !isValidMatchString(trimmed)) {
+      return "Must be at least 2 characters or contain a number";
     }
     return null;
   };
@@ -85,10 +98,13 @@ export default function AlertModal({ open, onClose, onSave, initialData }: Alert
   const hasValidationErrors = (): boolean => {
     const nonEmptyStrings = matchStrings.filter(s => s.trim() !== "");
     if (nonEmptyStrings.length === 0) return true;
-    return nonEmptyStrings.some(s => s.trim().length > MAX_MATCH_STRING_LENGTH);
+    return nonEmptyStrings.some(s => 
+      s.trim().length > MAX_MATCH_STRING_LENGTH || !isValidMatchString(s)
+    );
   };
 
   const handleSave = () => {
+    setAttemptedSave(true);
     if (hasValidationErrors()) return;
     
     const filteredStrings = matchStrings.filter(s => s.trim() !== "");
@@ -133,7 +149,7 @@ export default function AlertModal({ open, onClose, onSave, initialData }: Alert
             </p>
             <div className="space-y-3">
               {matchStrings.map((str, idx) => {
-                const error = getMatchStringError(str);
+                const error = getMatchStringError(str, attemptedSave);
                 return (
                   <div key={idx} className="space-y-1">
                     <div className="flex gap-2">
