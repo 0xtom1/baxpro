@@ -10,6 +10,7 @@ import { OAuth2Client } from "google-auth-library";
 import { PubSub } from "@google-cloud/pubsub";
 import { generateDisplayName } from "./data/nameGenerator";
 import crypto from "crypto";
+import csurf from "csurf";
 
 declare module "express-session" {
   interface SessionData {
@@ -60,6 +61,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     })
   );
   console.log("Using PostgreSQL session store");
+
+  // CSRF protection middleware
+  const csrfProtection = csurf({ cookie: false });
+
+  app.use((req, res, next) => {
+    // Allow safe methods without CSRF token
+    const method = req.method.toUpperCase();
+    if (method === "GET" || method === "HEAD" || method === "OPTIONS") {
+      return next();
+    }
+
+    // Exempt specific public endpoints that must be callable without a CSRF token
+    if (req.path === "/api/unsubscribe") {
+      return next();
+    }
+
+    // In development, allow demo-login without CSRF to keep behavior unchanged
+    if (req.path === "/api/auth/demo-login" && process.env.NODE_ENV !== "production") {
+      return next();
+    }
+
+    csrfProtection(req, res, (err: any) => {
+      if (err) {
+        // CSRF error
+        return res.status(403).json({ error: "Invalid CSRF token" });
+      }
+
+      try {
+        const token = (req as any).csrfToken();
+        // Expose CSRF token to client in a cookie; frontend should send it back
+        res.cookie("XSRF-TOKEN", token, {
+          httpOnly: false,
+          sameSite: "lax",
+          secure: isProduction,
+        });
+      } catch {
+        // If token generation fails, respond with forbidden
+        return res.status(403).json({ error: "Unable to generate CSRF token" });
+      }
+
+      next();
+    });
+  });
 
   // Auth middleware
   const requireAuth = (req: any, res: any, next: any) => {
