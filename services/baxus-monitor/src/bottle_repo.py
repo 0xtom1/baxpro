@@ -81,10 +81,12 @@ class BottleRepository:
         return headers
 
     def should_process_all_assets(self) -> bool:
-        """Returns True if listings_feed is empty
+        """Determine if all bottles should be processed.
+
+        Returns True if the bottles table is empty or has 1800 or fewer records.
 
         Returns:
-            bool: True if no records
+            bool: True if processing should proceed, False if more than 1800 records exist.
         """
         record = self.db_session.query(Bottle).count()
         if not record:
@@ -96,9 +98,13 @@ class BottleRepository:
             return True
 
     def get_by_key(self, record: Bottle) -> Bottle:
-        """
-        Insert or update a listing. 
-        Returns (listing, is_new) tuple where is_new indicates if this was a new listing.
+        """Find an existing bottle by its unique key combination.
+
+        Args:
+            record: A Bottle instance with bottle_name, producer, and bottler set.
+
+        Returns:
+            Bottle: The matching record, or None if not found.
         """
 
         record = self.db_session.query(Bottle).filter(
@@ -109,6 +115,17 @@ class BottleRepository:
         return record
 
     def process_bottle(self, metadata_json: dict) -> int:
+        """Process bottle metadata and insert/update the bottles table.
+
+        Extracts bottle information from NFT metadata, queries Gemini AI
+        for brand classification, and stores the result.
+
+        Args:
+            metadata_json: The NFT metadata dictionary containing bottle info.
+
+        Returns:
+            int: The bottle_idx of the processed bottle record.
+        """
         asset_dict = dict()
         asset_dict['name'] = metadata_json.get("name", None)
         asset_dict['description'] = metadata_json.get("description", None)
@@ -149,13 +166,17 @@ class BottleRepository:
             return bottle.bottle_idx
 
     def query_gemini(self, attributes: dict, image_url) -> dict:
-        """_summary_
+        """Query Gemini AI to extract brand and sub-brand from bottle data.
+
+        Uses the bottle image and attributes to identify the brand family
+        and specific expression/variant.
 
         Args:
-            attributes_dict (dict): _description_
-            name (str): _description_
-            producer (str): _description_
-            image_url (_type_): _description_
+            attributes: Dictionary of bottle attributes from NFT metadata.
+            image_url: URL of the bottle image for visual analysis.
+
+        Returns:
+            dict: Contains 'brand' and 'sub_brand' keys, or None on error.
         """
         # Remove None values so the prompt stays clean
         attributes_dict = {k: v for k,

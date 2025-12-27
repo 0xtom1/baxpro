@@ -11,14 +11,38 @@ logger = get_logger()
 
 
 def _fmt_dt(dt):
+    """Format a datetime object for display.
+
+    Args:
+        dt: The datetime object to format.
+
+    Returns:
+        str: Formatted date string or em-dash if None.
+    """
     return dt.strftime('%Y-%m-%d %H:%M') if dt else "—"
 
 
 def _fmt_price(p):
+    """Format a price value for display with currency symbol.
+
+    Args:
+        p: The price value to format.
+
+    Returns:
+        str: Formatted price string or em-dash if None.
+    """
     return f"${p:,.0f}" if p is not None else "—"
 
 
 def _fmt_int(i):
+    """Format an integer value for display.
+
+    Args:
+        i: The integer value to format.
+
+    Returns:
+        str: String representation or em-dash if None.
+    """
     return str(i) if i is not None else "—"
 
 
@@ -111,15 +135,14 @@ class AlertMatch:
 
 
 def _parse_int(key_name: str, value_raw=None) -> int:
-    """_summary_
+    """Parse a raw value to an integer.
 
     Args:
-        key_name (str): _description_
-        asset_data (dict): _description_
-        is_attribute (bool, optional): _description_. Defaults to False.
+        key_name: The name of the field being parsed (used for logging).
+        value_raw: The raw value to parse.
 
     Returns:
-        int: _description_
+        int: The parsed integer value, or None if parsing fails.
     """
     if value_raw == "" or value_raw is None:
         value = None
@@ -134,15 +157,14 @@ def _parse_int(key_name: str, value_raw=None) -> int:
 
 
 def _parse_float(key_name: str = None, value_raw=None) -> float:
-    """_summary_
+    """Parse a raw value to a float.
 
     Args:
-        key_name (str): _description_
-        asset_data (dict): _description_
-        is_attribute (bool, optional): _description_. Defaults to False.
+        key_name: The name of the field being parsed (used for logging).
+        value_raw: The raw value to parse.
 
     Returns:
-        int: _description_
+        float: The parsed float value, or None if parsing fails or value is zero.
     """
     if value_raw == "" or value_raw is None:
         value = None
@@ -159,15 +181,14 @@ def _parse_float(key_name: str = None, value_raw=None) -> float:
 
 
 def _parse_bool(key_name: str = None, value_raw=None) -> bool:
-    """_summary_
+    """Parse a raw value to a boolean.
 
     Args:
-        key_name (str): _description_
-        asset_data (dict): _description_
-        is_attribute (bool, optional): _description_. Defaults to False.
+        key_name: The name of the field being parsed (used for logging).
+        value_raw: The raw value to parse.
 
     Returns:
-        int: _description_
+        bool: The parsed boolean value.
     """
 
     value = bool(value_raw) and value_raw is not False
@@ -175,16 +196,17 @@ def _parse_bool(key_name: str = None, value_raw=None) -> bool:
     return value
 
 
-def _parse_datetime(key_name: str = None, value_raw=None) -> bool:
-    """_summary_
+def _parse_datetime(key_name: str = None, value_raw=None) -> datetime:
+    """Parse a raw value to a datetime object.
+
+    Handles ISO format strings with optional 'Z' timezone suffix.
 
     Args:
-        key_name (str): _description_
-        asset_data (dict): _description_
-        is_attribute (bool, optional): _description_. Defaults to False.
+        key_name: The name of the field being parsed (used for logging).
+        value_raw: The raw ISO format datetime string to parse.
 
     Returns:
-        int: _description_
+        datetime: The parsed datetime value, or None if parsing fails.
     """
     value = None
     if value_raw:
@@ -200,9 +222,21 @@ def _parse_datetime(key_name: str = None, value_raw=None) -> bool:
 
 
 def get_asset(asset_idx, name, price, bottled_year, age, activity_idx: int) -> Asset:
-    """
-    Insert or update a listing. 
-    Returns is_new bool where is_new indicates if this was a new asset.
+    """Create an Asset object from provided listing data.
+
+    Parses and validates input values, generating appropriate URL based
+    on the current environment.
+
+    Args:
+        asset_idx: The unique asset index identifier.
+        name: The asset/product name.
+        price: The listing price.
+        bottled_year: The year the spirit was bottled.
+        age: The age of the spirit in years.
+        activity_idx: The associated activity feed index.
+
+    Returns:
+        Asset: A fully populated Asset dataclass instance.
     """
     # Safely extract values → None if missing or empty string
     asset_idx = int(asset_idx)

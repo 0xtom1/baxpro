@@ -31,6 +31,7 @@ class ListingProcessor:
         self.ignore_metadata_baxus_ids = list()
 
     def set_activity_type_idx(self):
+        """Fetch and store the activity type index for NEW_LISTING events."""
         session = self.db.get_session()
         activity_repo = ActivityRepository(session=session)
         self.listing_activity_idx = activity_repo.get_activity_type_idx(
@@ -38,13 +39,16 @@ class ListingProcessor:
         session.close()
 
     def populate_assets_on_start(self, response_size: int = 50) -> dict:
-        """_summary_
+        """Populate the assets table with all available assets on service startup.
+
+        Iterates through all spirit types and fetches assets in batches,
+        skipping execution in development environment.
 
         Args:
-            response_size (int, optional): _description_. Defaults to 50.
+            response_size: Number of assets to fetch per API request. Defaults to 50.
 
         Returns:
-            dict: _description_
+            dict: Statistics about the processing run (not currently returned).
         """
 
         filter_types = get_spirit_types()
@@ -142,10 +146,15 @@ class ListingProcessor:
         return stats
 
     def process_import(self) -> dict:
-        """_summary_
+        """Process imported activity feed records and sync assets.
+
+        Fetches unprocessed import records from the database, retrieves
+        corresponding asset data from Baxus API, and creates activity
+        feed entries.
 
         Returns:
-            dict: _description_
+            dict: Statistics containing total_processed, new_assets,
+                updated_assets, activity_inserted, and errors counts.
         """
         stats = {
             "total_processed": 0,
@@ -340,7 +349,10 @@ class ListingProcessor:
         return stats
 
     def get_all_attributes(self):
-        """_summary_
+        """Retrieve and aggregate all unique attributes from stored assets.
+
+        Returns:
+            dict: Dictionary mapping attribute names to their counts and example values.
         """
         conn = self.db.get_connection()
         try:
@@ -365,7 +377,10 @@ class ListingProcessor:
         return attributes_count
 
     def get_all_json_keys(self):
-        """_summary_
+        """Retrieve and aggregate all unique JSON keys from stored asset data.
+
+        Returns:
+            dict: Dictionary mapping JSON keys to their counts and example values.
         """
         conn = self.db.get_connection()
         try:
