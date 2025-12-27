@@ -1,0 +1,39 @@
+# Example Terraform variables file
+# Copy this file to terraform.tfvars and update with your values
+
+# Required: Your GCP project ID
+project_id = "your-gcp-project-id"
+
+# Optional: Override defaults below
+
+# GCP region (default: us-central1)
+# region = "us-central1"
+
+# Environment name (default: production)
+# environment = "production"
+
+# Docker image tag to deploy (default: latest)
+# image_tag = "latest"
+
+# Database tier (default: db-f1-micro for free tier)
+# Upgrade to db-custom-1-3840 or higher for production workloads
+# db_tier = "db-f1-micro"
+
+# Database disk size in GB (default: 10)
+# db_disk_size = 10
+
+# Cloud Run CPU allocation (default: 1)
+# cloud_run_cpu = "1"
+
+# Cloud Run memory allocation (default: 512Mi)
+# cloud_run_memory = "512Mi"
+
+# Minimum instances (default: 0 for scale-to-zero)
+# min_instances = 0
+
+# Maximum instances (default: 10)
+# max_instances = 10
+
+# Custom domain for your site
+# Set this to your domain name after verifying ownership in Google Cloud
+# custom_domain = "baxpro.xyz"

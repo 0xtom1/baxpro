@@ -1,0 +1,92 @@
+{
+  "name": "BaxPro Dev Container",
+  "dockerComposeFile": ["docker-compose.yml"],
+  "service": "baxpro",
+  "workspaceFolder": "/workspace",
+
+  "remoteUser": "appuser",
+
+  "containerEnv": {
+    "GCLOUD_PROJECT": ""
+  },
+
+  "postStartCommand": ["/home/appuser/auth-gcloud.sh"],
+
+  "forwardPorts": [5000, 8080],
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.black-formatter",
+        "ms-python.flake8",
+        "ms-python.isort",
+        "hashicorp.terraform",
+        "github.copilot",
+        "njpwerner.autodocstring",
+        "ms-vscode.vscode-typescript-next",
+        "esbenp.prettier-vscode"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.formatting.provider": "black",
+        "python.formatting.blackArgs": ["--line-length=119"],
+        "python.linting.enabled": true,
+        "python.linting.flake8Enabled": true,
+        "python.linting.flake8Args": ["--max-line-length=119"],
+        "python.linting.mypyEnabled": true,
+        "python.linting.mypyArgs": [
+          "--ignore-missing-imports",
+          "--follow-imports=silent",
+          "--show-column-numbers"
+        ],
+        "isort.args": ["--profile=black", "--line-length=119"],
+
+        "editor.formatOnSave": true,
+        "editor.formatOnPaste": false,
+        "editor.codeActionsOnSave": {
+          "source.organizeImports": "explicit"
+        },
+
+        // Global default: null to avoid conflicts
+        "editor.defaultFormatter": null,
+
+        "[python]": {
+          "editor.defaultFormatter": "ms-python.black-formatter",
+          "editor.codeActionsOnSave": {
+            "source.organizeImports": "always"
+          }
+        },
+
+        "[typescript]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode",
+          "editor.formatOnSave": true,
+          "editor.codeActionsOnSave": {
+            "source.organizeImports": "always"
+          }
+        },
+
+        "typescript.updateImportsOnFileMove.enabled": "always",
+        "javascript.updateImportsOnFileMove.enabled": "always",
+
+        "terraform.languageServer.enable": true,
+        "terraform.experimentalFeatures.validateOnSave": false,
+
+        "files.associations": {
+          "*.tf": "terraform",
+          "*.tfvars": "terraform"
+        },
+
+        "terminal.integrated.shellIntegration.enabled": true,
+
+        "files.exclude": {
+          "**/.git": true,
+          "**/.DS_Store": true,
+          "**/__pycache__": true,
+          "**/.pytest_cache": true
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,305 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - production
+
+env:
+  REGION: us-central1
+  ARTIFACT_REGISTRY: us-central1-docker.pkg.dev
+
+jobs:
+  deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      id-token: write
+
+    env:
+      # Set environment based on trigger type
+      ENVIRONMENT: ${{ github.event_name == 'push' && 'production' || github.event.inputs.environment }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set environment-specific variables
+        id: vars
+        run: |
+          if [ "${{ env.ENVIRONMENT }}" == "production" ]; then
+            echo "project_id=${{ secrets.GCP_PROJECT_ID }}" >> $GITHUB_OUTPUT
+            echo "workload_identity_provider=${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}" >> $GITHUB_OUTPUT
+            echo "service_account=${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}" >> $GITHUB_OUTPUT
+            echo "custom_domain=${{ secrets.CUSTOM_DOMAIN }}" >> $GITHUB_OUTPUT
+            echo "google_client_id=${{ secrets.GOOGLE_CLIENT_ID }}" >> $GITHUB_OUTPUT
+            echo "google_client_secret=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> $GITHUB_OUTPUT
+            echo "sendgrid_api_key=${{ secrets.SENDGRID_API_KEY }}" >> $GITHUB_OUTPUT
+            echo "gemini_api_key=${{ secrets.GEMINI_API_KEY }}" >> $GITHUB_OUTPUT
+            echo "service_name=baxpro-production" >> $GITHUB_OUTPUT
+            echo "terraform_workspace=production" >> $GITHUB_OUTPUT
+            echo "image_prefix=production" >> $GITHUB_OUTPUT
+          else
+            echo "project_id=${{ secrets.GCP_PROJECT_ID_DEV }}" >> $GITHUB_OUTPUT
+            echo "workload_identity_provider=${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER_DEV }}" >> $GITHUB_OUTPUT
+            echo "service_account=${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL_DEV }}" >> $GITHUB_OUTPUT
+            echo "custom_domain=${{ secrets.CUSTOM_DOMAIN_DEV }}" >> $GITHUB_OUTPUT
+            echo "google_client_id=${{ secrets.GOOGLE_CLIENT_ID_DEV }}" >> $GITHUB_OUTPUT
+            echo "google_client_secret=${{ secrets.GOOGLE_CLIENT_SECRET_DEV }}" >> $GITHUB_OUTPUT
+            echo "sendgrid_api_key=${{ secrets.SENDGRID_API_KEY_DEV }}" >> $GITHUB_OUTPUT
+            echo "gemini_api_key=${{ secrets.GEMINI_API_KEY_DEV }}" >> $GITHUB_OUTPUT
+            echo "authorized_home_ip=${{ secrets.DAN_HOME_IP }}" >> $GITHUB_OUTPUT
+            echo "service_name=baxpro-dev" >> $GITHUB_OUTPUT
+            echo "terraform_workspace=dev" >> $GITHUB_OUTPUT
+            echo "image_prefix=dev" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ steps.vars.outputs.workload_identity_provider }}
+          service_account: ${{ steps.vars.outputs.service_account }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+
+      - name: Ensure Artifact Registry exists
+        run: |
+          gcloud artifacts repositories describe baxpro \
+            --location=${{ env.REGION }} \
+            --project=${{ steps.vars.outputs.project_id }} 2>/dev/null || \
+          gcloud artifacts repositories create baxpro \
+            --repository-format=docker \
+            --location=${{ env.REGION }} \
+            --project=${{ steps.vars.outputs.project_id }} \
+            --description="BaxPro container images"
+
+      - name: Generate image tag
+        id: image
+        run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          IMAGE_TAG="${{ steps.vars.outputs.image_prefix }}-${SHORT_SHA}"
+          IMAGE_NAME="${{ env.REGION }}-docker.pkg.dev/${{ steps.vars.outputs.project_id }}/baxpro/baxpro:${IMAGE_TAG}"
+          MONITOR_IMAGE_NAME="${{ env.REGION }}-docker.pkg.dev/${{ steps.vars.outputs.project_id }}/baxpro/baxus-monitor:${IMAGE_TAG}"
+          
+          # Calculate hash of baxus-monitor source to force redeployment on code changes
+          MONITOR_HASH=$(find services/baxus-monitor -type f \( -name "*.py" -o -name "Dockerfile" -o -name "requirements.txt" \) -exec sha256sum {} \; | sort | sha256sum | cut -c1-12)
+          
+          # Calculate hash of alert-processor source (Cloud Function - no Dockerfile)
+          ALERT_PROCESSOR_HASH=$(find services/alert-processor -type f \( -name "*.py" -o -name "requirements.txt" \) -exec sha256sum {} \; | sort | sha256sum | cut -c1-12)
+
+          # Calculate hash of alert-sender source (Cloud Function - no Dockerfile)
+          ALERT_SENDER_HASH=$(find services/alert-sender -type f \( -name "*.py" -o -name "requirements.txt" \) -exec sha256sum {} \; | sort | sha256sum | cut -c1-12)
+
+          echo "tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
+          echo "name=${IMAGE_NAME}" >> $GITHUB_OUTPUT
+          echo "monitor_name=${MONITOR_IMAGE_NAME}" >> $GITHUB_OUTPUT
+          echo "monitor_hash=${MONITOR_HASH}" >> $GITHUB_OUTPUT
+          echo "alert_processor_hash=${ALERT_PROCESSOR_HASH}" >> $GITHUB_OUTPUT
+          echo "alert_sender_hash=${ALERT_SENDER_HASH}" >> $GITHUB_OUTPUT
+          echo "Main App Image: ${IMAGE_NAME}"
+          echo "Monitor Image: ${MONITOR_IMAGE_NAME}"
+          echo "Monitor Source Hash: ${MONITOR_HASH}"
+          echo "Alert Processor Source Hash: ${ALERT_PROCESSOR_HASH}"
+          echo "Alert Sender Source Hash: ${ALERT_SENDER_HASH}"
+
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ steps.image.outputs.name }} .
+          docker tag ${{ steps.image.outputs.name }} \
+            ${{ env.REGION }}-docker.pkg.dev/${{ steps.vars.outputs.project_id }}/baxpro/baxpro:${{ steps.vars.outputs.image_prefix }}-latest
+
+      - name: Build Baxus Monitor image
+        run: |
+          docker build -t ${{ steps.image.outputs.monitor_name }} ./services/baxus-monitor
+          docker tag ${{ steps.image.outputs.monitor_name }} \
+            ${{ env.REGION }}-docker.pkg.dev/${{ steps.vars.outputs.project_id }}/baxpro/baxus-monitor:${{ steps.vars.outputs.image_prefix }}-latest
+
+      - name: Package Alert Processor Cloud Function
+        run: |
+          cd services/alert-processor
+          zip -r ../../alert-processor-${{ steps.image.outputs.alert_processor_hash }}.zip main.py requirements.txt src/
+          echo "Created alert-processor-${{ steps.image.outputs.alert_processor_hash }}.zip"
+
+      - name: Package Alert Sender Cloud Function
+        run: |
+          cd services/alert-sender
+          zip -r ../../alert-sender-${{ steps.image.outputs.alert_sender_hash }}.zip main.py requirements.txt src/
+          echo "Created alert-sender-${{ steps.image.outputs.alert_sender_hash }}.zip"
+
+      - name: Push Docker image
+        run: |
+          docker push ${{ steps.image.outputs.name }}
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ steps.vars.outputs.project_id }}/baxpro/baxpro:${{ steps.vars.outputs.image_prefix }}-latest
+
+      - name: Push Baxus Monitor image
+        run: |
+          docker push ${{ steps.image.outputs.monitor_name }}
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ steps.vars.outputs.project_id }}/baxpro/baxus-monitor:${{ steps.vars.outputs.image_prefix }}-latest
+
+      - name: Ensure Functions Source Bucket exists
+        run: |
+          gsutil ls -b gs://${{ steps.vars.outputs.project_id }}-functions-source 2>/dev/null || \
+          gsutil mb -p ${{ steps.vars.outputs.project_id }} -l ${{ env.REGION }} gs://${{ steps.vars.outputs.project_id }}-functions-source
+
+      - name: Upload Alert Processor source to GCS
+        run: |
+          gsutil cp alert-processor-${{ steps.image.outputs.alert_processor_hash }}.zip \
+            gs://${{ steps.vars.outputs.project_id }}-functions-source/alert-processor-${{ steps.image.outputs.alert_processor_hash }}.zip
+          echo "Uploaded to gs://${{ steps.vars.outputs.project_id }}-functions-source/alert-processor-${{ steps.image.outputs.alert_processor_hash }}.zip"
+
+      - name: Upload Alert Sender source to GCS
+        run: |
+          gsutil cp alert-sender-${{ steps.image.outputs.alert_sender_hash }}.zip \
+            gs://${{ steps.vars.outputs.project_id }}-functions-source/alert-sender-${{ steps.image.outputs.alert_sender_hash }}.zip
+          echo "Uploaded to gs://${{ steps.vars.outputs.project_id }}-functions-source/alert-sender-${{ steps.image.outputs.alert_sender_hash }}.zip"
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+
+      - name: Ensure Terraform state bucket exists
+        run: |
+          gsutil ls -b gs://${{ steps.vars.outputs.project_id }}-terraform-state 2>/dev/null || \
+          gsutil mb -p ${{ steps.vars.outputs.project_id }} -l ${{ env.REGION }} gs://${{ steps.vars.outputs.project_id }}-terraform-state
+          gsutil versioning set on gs://${{ steps.vars.outputs.project_id }}-terraform-state 2>/dev/null || true
+
+      - name: Terraform Init
+        working-directory: ./terraform
+        run: |
+          terraform init -backend-config="bucket=${{ steps.vars.outputs.project_id }}-terraform-state"
+          terraform workspace select ${{ steps.vars.outputs.terraform_workspace }} || terraform workspace new ${{ steps.vars.outputs.terraform_workspace }}
+
+      - name: Stop baxus-monitor before deployment
+        run: |
+          echo "Stopping baxus-monitor before deployment (migrations may have breaking changes)..."
+          gcloud run services update baxus-monitor-${{ env.ENVIRONMENT }} \
+            --region=${{ env.REGION }} \
+            --project=${{ steps.vars.outputs.project_id }} \
+            --min-instances=0 --max-instances=0 2>/dev/null || echo "baxus-monitor not found or already stopped"
+          echo "baxus-monitor stopped"
+
+      - name: Terraform Plan
+        working-directory: ./terraform
+        env:
+          TF_VAR_project_id: ${{ steps.vars.outputs.project_id }}
+          TF_VAR_environment: ${{ env.ENVIRONMENT }}
+          TF_VAR_image_tag: ${{ steps.image.outputs.tag }}
+          TF_VAR_custom_domain: ${{ steps.vars.outputs.custom_domain }}
+          TF_VAR_google_client_id: ${{ steps.vars.outputs.google_client_id }}
+          TF_VAR_google_client_secret: ${{ steps.vars.outputs.google_client_secret }}
+          TF_VAR_sendgrid_api_key: ${{ steps.vars.outputs.sendgrid_api_key }}
+          TF_VAR_gemini_api_key: ${{ steps.vars.outputs.gemini_api_key }}
+          TF_VAR_enable_baxus_monitor: "true"
+          TF_VAR_baxus_monitor_image_tag: ${{ steps.image.outputs.tag }}
+          TF_VAR_baxus_monitor_source_hash: ${{ steps.image.outputs.monitor_hash }}
+          TF_VAR_enable_alert_processor: "true"
+          TF_VAR_alert_processor_source_hash: ${{ steps.image.outputs.alert_processor_hash }}
+          TF_VAR_enable_alert_sender: "true"
+          TF_VAR_alert_sender_source_hash: ${{ steps.image.outputs.alert_sender_hash }}
+          TF_VAR_authorized_home_ip: ${{ steps.vars.outputs.authorized_home_ip }}
+        run: terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        working-directory: ./terraform
+        env:
+          TF_VAR_project_id: ${{ steps.vars.outputs.project_id }}
+          TF_VAR_environment: ${{ env.ENVIRONMENT }}
+          TF_VAR_image_tag: ${{ steps.image.outputs.tag }}
+          TF_VAR_custom_domain: ${{ steps.vars.outputs.custom_domain }}
+          TF_VAR_google_client_id: ${{ steps.vars.outputs.google_client_id }}
+          TF_VAR_google_client_secret: ${{ steps.vars.outputs.google_client_secret }}
+          TF_VAR_sendgrid_api_key: ${{ steps.vars.outputs.sendgrid_api_key }}
+          TF_VAR_gemini_api_key: ${{ steps.vars.outputs.gemini_api_key }}
+          TF_VAR_enable_baxus_monitor: "true"
+          TF_VAR_baxus_monitor_image_tag: ${{ steps.image.outputs.tag }}
+          TF_VAR_baxus_monitor_source_hash: ${{ steps.image.outputs.monitor_hash }}
+          TF_VAR_enable_alert_processor: "true"
+          TF_VAR_alert_processor_source_hash: ${{ steps.image.outputs.alert_processor_hash }}
+          TF_VAR_enable_alert_sender: "true"
+          TF_VAR_alert_sender_source_hash: ${{ steps.image.outputs.alert_sender_hash }}
+          TF_VAR_authorized_home_ip: ${{ steps.vars.outputs.authorized_home_ip }}
+        run: terraform apply -auto-approve tfplan
+
+      - name: Verify DB Password Sync and Restart baxus-monitor
+        run: |
+          echo "Verifying database password sync..."
+          
+          DB_PASS_FROM_SECRET=$(gcloud secrets versions access latest \
+            --secret="baxpro-db-pass-${{ env.ENVIRONMENT }}" \
+            --project=${{ steps.vars.outputs.project_id }})
+          
+          DB_USER=$(gcloud secrets versions access latest \
+            --secret="baxpro-db-user-${{ env.ENVIRONMENT }}" \
+            --project=${{ steps.vars.outputs.project_id }})
+          
+          echo "Forcing main Cloud Run service to use latest secret versions..."
+          gcloud run services update ${{ steps.vars.outputs.service_name }} \
+            --region=${{ env.REGION }} \
+            --project=${{ steps.vars.outputs.project_id }} \
+            --update-secrets=DB_USER=baxpro-db-user-${{ env.ENVIRONMENT }}:latest,DB_PASS=baxpro-db-pass-${{ env.ENVIRONMENT }}:latest,DB_NAME=baxpro-db-name-${{ env.ENVIRONMENT }}:latest,INSTANCE_UNIX_SOCKET=baxpro-instance-unix-socket-${{ env.ENVIRONMENT }}:latest,DATABASE_URL=baxpro-database-url-${{ env.ENVIRONMENT }}:latest,SESSION_SECRET=baxpro-session-secret-${{ env.ENVIRONMENT }}:latest,GOOGLE_CLIENT_ID=baxpro-google-client-id-${{ env.ENVIRONMENT }}:latest,GOOGLE_CLIENT_SECRET=baxpro-google-client-secret-${{ env.ENVIRONMENT }}:latest
+          
+          echo "Main Cloud Run service updated with latest secret versions"
+          
+          echo "Restarting baxus-monitor with min=1 and latest secrets..."
+          gcloud run services update baxus-monitor-${{ env.ENVIRONMENT }} \
+            --region=${{ env.REGION }} \
+            --project=${{ steps.vars.outputs.project_id }} \
+            --min-instances=1 \
+            --max-instances=1 \
+            --update-secrets=DB_USER=baxpro-db-user-${{ env.ENVIRONMENT }}:latest,DB_PASS=baxpro-db-pass-${{ env.ENVIRONMENT }}:latest,DB_NAME=baxpro-db-name-${{ env.ENVIRONMENT }}:latest,INSTANCE_UNIX_SOCKET=baxpro-instance-unix-socket-${{ env.ENVIRONMENT }}:latest
+          
+          echo "baxus-monitor restarted with min=1, max=1 instances"
+          echo "All services synced with latest secrets"
+
+      - name: Get deployment URL
+        working-directory: ./terraform
+        run: |
+          echo "Deployment complete! Environment: ${{ env.ENVIRONMENT }}"
+          echo ""
+          echo "Load Balancer IP: $(terraform output -raw load_balancer_ip)"
+          if [ -n "${{ steps.vars.outputs.custom_domain }}" ]; then
+            echo ""
+            echo "Custom Domain: https://${{ steps.vars.outputs.custom_domain }}"
+            echo ""
+            echo "DNS Configuration Required:"
+            echo "Point your DNS A record to: $(terraform output -raw load_balancer_ip)"
+            echo ""
+            echo "SSL Certificate will be auto-provisioned after DNS propagates (10-60 minutes)"
+          fi
+
+      - name: Comment on PR (if applicable)
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const output = `#### Deployment Status: Success
+            
+            **Environment:** \`${{ env.ENVIRONMENT }}\`
+            **Image Tag:** \`${{ steps.image.outputs.tag }}\`
+            **Commit:** \`${{ github.sha }}\`
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })

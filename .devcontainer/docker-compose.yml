@@ -1,0 +1,23 @@
+services:
+  baxpro:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    volumes:
+      # Normal bind-mount – no :cached on Windows/WSL
+      - ..:/workspace
+    command: sleep infinity
+    user: appuser               # non-root
+    init: true                  # proper signal handling
+    cap_drop:
+      - ALL
+    cap_add:
+      - DAC_OVERRIDE           # needed for some file ops
+    security_opt:
+      - no-new-privileges:true
+    # # Enable host → container display forwarding (for browser popup)
+    # environment:
+    #   - DISPLAY=${DISPLAY}
+    #   - XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR}
+    # extra_hosts:
+    #   - "host.docker.internal:host-gateway"

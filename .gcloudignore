@@ -1,0 +1,47 @@
+# This file specifies files that are *not* uploaded to Google Cloud
+# using gcloud. It follows the same syntax as .gitignore.
+
+.gcloudignore
+.git
+.gitignore
+
+# Node
+node_modules/
+npm-debug.log
+package-lock.json
+
+# Development
+.env
+.env.*
+*.local
+
+# Build artifacts (will be in Docker image)
+dist/
+.vite/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Terraform
+terraform/
+*.tfstate
+*.tfstate.*
+.terraform/
+*.tfvars
+
+# Documentation
+*.md
+
+# Tests
+*.test.*
+*.spec.*
+__tests__/
+coverage/
+
+# Replit specific
+.replit
+.replit.*
+replit.nix

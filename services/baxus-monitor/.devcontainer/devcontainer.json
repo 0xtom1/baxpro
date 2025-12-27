@@ -1,0 +1,43 @@
+{
+  "name": "Baxus Monitor",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "baxus-monitor",
+  "workspaceFolder": "/workspaces/baxus-monitor",
+  "remoteUser": "vscode",
+
+  "remoteEnv": {
+    "DB_USER": "${localEnv:DB_USER}",
+    "DB_PASS": "${localEnv:DB_PASS}",
+    "DB_NAME": "${localEnv:DB_NAME}",
+    "GCP_PROJECT_ID": "${localEnv:GCP_PROJECT_ID}",
+    "PUBSUB_TOPIC": "${localEnv:PUBSUB_TOPIC}",
+    "POLL_INTERVAL_SEC": "${localEnv:POLL_INTERVAL_SEC:60}",
+    "BAXUS_API_BASE": "${localEnv:BAXUS_API_BASE:https://api.baxus.co}",
+    "BAXUS_API_KEY": "${localEnv:BAXUS_API_KEY}",
+    "ENVIRONMENT": "${localEnv:ENVIRONMENT:dev}"
+  },
+
+  "forwardPorts": [5432],
+
+  "postCreateCommand": "echo 'Dev container ready. Run: just-auth-gcloud  → to authenticate once'",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.black-formatter",
+        "charliermarsh.ruff",
+        "njpwerner.autodocstring",
+        "redhat.vscode-yaml"
+      ],
+      "settings": {
+        "terminal.integrated.shellIntegration.enabled": true,
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.formatting.provider": "black",
+        "python.formatting.blackArgs": ["--line-length=119"],
+        "editor.formatOnSave": true
+      }
+    }
+  }
+}

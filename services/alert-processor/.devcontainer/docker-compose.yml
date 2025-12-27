@@ -1,0 +1,13 @@
+services:
+  alert-processor:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    volumes:
+      - ..:/workspaces/alert-processor:cached
+    command: sleep infinity
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_add:
+      - DAC_OVERRIDE
