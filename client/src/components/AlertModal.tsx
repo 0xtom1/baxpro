@@ -232,72 +232,75 @@ export default function AlertModal({ open, onClose, onSave, initialData }: Alert
             />
           </div>
 
-          <div className="space-y-2">
-            <Label>Bottled Year Range (Optional)</Label>
-            <p className="text-sm text-muted-foreground">
-              Filter by the year the bourbon was bottled
-            </p>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="bottled-year-min" className="text-xs text-muted-foreground">
-                  From Year
-                </Label>
-                <Input
-                  id="bottled-year-min"
-                  type="number"
-                  placeholder="2015"
-                  value={bottledYearMin ?? ""}
-                  onChange={(e) => setBottledYearMin(e.target.value ? Number(e.target.value) : null)}
-                  data-testid="input-bottled-year-min"
-                />
-              </div>
-              <div>
-                <Label htmlFor="bottled-year-max" className="text-xs text-muted-foreground">
-                  To Year
-                </Label>
-                <Input
-                  id="bottled-year-max"
-                  type="number"
-                  placeholder="2020"
-                  value={bottledYearMax ?? ""}
-                  onChange={(e) => setBottledYearMax(e.target.value ? Number(e.target.value) : null)}
-                  data-testid="input-bottled-year-max"
-                />
+          <div className="space-y-4">
+            <div>
+              <Label className="text-sm font-medium">Metadata Filters (Optional)</Label>
+              <p className="text-xs text-muted-foreground">
+                These filters depend on bottle metadata - not all bottles have this info
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Bottled Year Range</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="bottled-year-min" className="text-xs text-muted-foreground">
+                    From Year
+                  </Label>
+                  <Input
+                    id="bottled-year-min"
+                    type="number"
+                    placeholder="2015"
+                    value={bottledYearMin ?? ""}
+                    onChange={(e) => setBottledYearMin(e.target.value ? Number(e.target.value) : null)}
+                    data-testid="input-bottled-year-min"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="bottled-year-max" className="text-xs text-muted-foreground">
+                    To Year
+                  </Label>
+                  <Input
+                    id="bottled-year-max"
+                    type="number"
+                    placeholder="2020"
+                    value={bottledYearMax ?? ""}
+                    onChange={(e) => setBottledYearMax(e.target.value ? Number(e.target.value) : null)}
+                    data-testid="input-bottled-year-max"
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label>Age Range (Optional)</Label>
-            <p className="text-sm text-muted-foreground">
-              Filter by how old the bourbon is in years
-            </p>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="age-min" className="text-xs text-muted-foreground">
-                  Min Age
-                </Label>
-                <Input
-                  id="age-min"
-                  type="number"
-                  placeholder="10"
-                  value={ageMin ?? ""}
-                  onChange={(e) => setAgeMin(e.target.value ? Number(e.target.value) : null)}
-                  data-testid="input-age-min"
-                />
-              </div>
-              <div>
-                <Label htmlFor="age-max" className="text-xs text-muted-foreground">
-                  Max Age
-                </Label>
-                <Input
-                  id="age-max"
-                  type="number"
-                  placeholder="15"
-                  value={ageMax ?? ""}
-                  onChange={(e) => setAgeMax(e.target.value ? Number(e.target.value) : null)}
-                  data-testid="input-age-max"
-                />
+            <div className="space-y-2">
+              <Label>Age Range</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="age-min" className="text-xs text-muted-foreground">
+                    Min Age
+                  </Label>
+                  <Input
+                    id="age-min"
+                    type="number"
+                    placeholder="10"
+                    value={ageMin ?? ""}
+                    onChange={(e) => setAgeMin(e.target.value ? Number(e.target.value) : null)}
+                    data-testid="input-age-min"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="age-max" className="text-xs text-muted-foreground">
+                    Max Age
+                  </Label>
+                  <Input
+                    id="age-max"
+                    type="number"
+                    placeholder="15"
+                    value={ageMax ?? ""}
+                    onChange={(e) => setAgeMax(e.target.value ? Number(e.target.value) : null)}
+                    data-testid="input-age-max"
+                  />
+                </div>
               </div>
             </div>
           </div>
