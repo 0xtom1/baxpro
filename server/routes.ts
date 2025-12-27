@@ -332,6 +332,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/user/account", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      
+      const deleted = await storage.deleteUser(userId);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      req.session.destroy((err) => {
+        if (err) {
+          console.error("Session destroy error:", err);
+        }
+        res.clearCookie("connect.sid");
+        res.json({ success: true });
+      });
+    } catch (error) {
+      console.error("Delete account error:", error);
+      res.status(500).json({ error: "Failed to delete account" });
+    }
+  });
+
   // Unsubscribe route (no auth required - called from email links)
   // UUID user IDs are random and unguessable, providing sufficient security
   app.post("/api/unsubscribe", async (req, res) => {
