@@ -119,8 +119,8 @@ export default function ProductHierarchy() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setLocation("/dashboard")}
-            data-testid="button-back-dashboard"
+            onClick={() => setLocation("/vip-tools")}
+            data-testid="button-back-vip-tools"
           >
             <ChevronLeft className="w-5 h-5" />
           </Button>

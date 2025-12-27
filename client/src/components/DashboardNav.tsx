@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Moon, Sun, LogOut, Bell, User, Activity, Layers, Crown } from "lucide-react";
+import { Plus, Moon, Sun, LogOut, Bell, User, Activity, Crown } from "lucide-react";
 import GlencairnLogo from "./GlencairnLogo";
 import {
   DropdownMenu,
@@ -124,9 +124,9 @@ export default function DashboardNav({ onNewAlert, alertCount = 0 }: DashboardNa
                 Activity Feed
               </DropdownMenuItem>
               {user?.isVip && (
-                <DropdownMenuItem onClick={() => setLocation("/product-hierarchy-editor")} data-testid="button-product-hierarchy">
-                  <Layers className="w-4 h-4 mr-2" />
-                  Product Hierarchy Editor
+                <DropdownMenuItem onClick={() => setLocation("/vip-tools")} data-testid="button-vip-tools">
+                  <Crown className="w-4 h-4 mr-2 text-amber-500" />
+                  VIP Tools
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem onClick={() => setLocation("/account-settings")} data-testid="button-account-settings">

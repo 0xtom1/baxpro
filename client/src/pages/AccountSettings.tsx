@@ -8,7 +8,18 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, User, Wallet, Crown, RefreshCw } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { ArrowLeft, User, Wallet, Trash2 } from "lucide-react";
 import GlencairnLogo from "@/components/GlencairnLogo";
 
 export default function AccountSettings() {
@@ -20,7 +31,7 @@ export default function AccountSettings() {
   const [displayName, setDisplayName] = useState("");
   const [baxusWallet, setBaxusWallet] = useState("");
   const [saving, setSaving] = useState(false);
-  const [refreshingMatches, setRefreshingMatches] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     refreshUser();
@@ -90,32 +101,31 @@ export default function AccountSettings() {
     }
   };
 
-  const handleRefreshMatches = async () => {
-    setRefreshingMatches(true);
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
     try {
-      const response = await fetch("/api/alerts/refresh-all-matches", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch("/api/user/account", {
+        method: "DELETE",
       });
 
       if (!response.ok) {
-        throw new Error("Failed to refresh matches");
+        throw new Error("Failed to delete account");
       }
 
-      const result = await response.json();
-
       toast({
-        title: "Refresh started",
-        description: result.message,
+        title: "Account deleted",
+        description: "Your account has been permanently deleted",
       });
+
+      setLocation("/");
     } catch (error) {
       toast({
-        title: "Failed to refresh",
+        title: "Failed to delete account",
         description: "Please try again",
         variant: "destructive",
       });
     } finally {
-      setRefreshingMatches(false);
+      setDeleting(false);
     }
   };
 
@@ -254,49 +264,44 @@ export default function AccountSettings() {
             {saving ? "Saving..." : "Save Settings"}
           </Button>
 
-          {user.isVip && (
-            <Card className="border-amber-500/30 bg-amber-500/5">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Crown className="w-5 h-5 text-amber-500" />
-                  VIP Tools
-                  <Badge variant="outline" className="text-amber-500 border-amber-500/50">
-                    VIP
-                  </Badge>
-                </CardTitle>
-                <CardDescription>
-                  Exclusive tools available only to VIP members
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">
-                    Re-run the matching logic on all alerts across all users to find historical matches 
-                    from the activity feed. This will update the match count for every alert in the system.
-                  </p>
-                  <Button 
-                    onClick={handleRefreshMatches} 
-                    disabled={refreshingMatches}
-                    variant="outline"
-                    className="w-full"
-                    data-testid="button-refresh-matches"
+          <div className="pt-8 border-t border-border">
+            <h3 className="text-lg font-semibold text-destructive mb-2">Danger Zone</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Once you delete your account, there is no going back. All your alerts and data will be permanently removed.
+            </p>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="destructive" 
+                  className="w-full"
+                  data-testid="button-delete-account"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Account
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete your account
+                    and remove all your data from our servers, including all your alerts.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={handleDeleteAccount}
+                    disabled={deleting}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    data-testid="button-confirm-delete"
                   >
-                    {refreshingMatches ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                        Refreshing...
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="w-4 h-4 mr-2" />
-                        Refresh All Alert Matches
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                    {deleting ? "Deleting..." : "Delete Account"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
 
           <p className="text-xs text-muted-foreground text-center">
             BaxPro is not affiliated with, endorsed by, or connected to baxus.co
