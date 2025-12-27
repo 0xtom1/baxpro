@@ -90,6 +90,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  app.get("/read-me", (req, res) => {
+    res.redirect("https://github.com/0xtom1/baxpro#readme");
+  });
+
   // Google OAuth routes
   app.get("/api/auth/google", (req, res) => {
     const returnTo = req.query.returnTo as string | undefined;
@@ -199,12 +203,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Demo auth routes - DISABLED IN PRODUCTION for security
+  // Demo auth routes - DISABLED ON ALL DEPLOYMENTS for security
   // This endpoint allows login without OAuth verification
+  // Only works in local Replit development environment
   app.post("/api/auth/demo-login", async (req, res) => {
-    // Only allow in development environment
-    if (process.env.NODE_ENV === "production") {
-      return res.status(403).json({ error: "Demo login is disabled in production" });
+    // Only allow in local Replit development (not deployed anywhere - dev or prod)
+    if (process.env.REPLIT_DEPLOYMENT) {
+      return res.status(403).json({ error: "Demo login is only available in local development" });
     }
 
     try {
@@ -329,6 +334,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       console.error("Update account error:", error);
       res.status(500).json({ error: "Failed to update account settings" });
+    }
+  });
+
+  app.delete("/api/user/account", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      
+      const deleted = await storage.deleteUser(userId);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      req.session.destroy((err) => {
+        if (err) {
+          console.error("Session destroy error:", err);
+          return res.status(500).json({ error: "Account deleted but failed to end session. Please clear your cookies." });
+        }
+        res.clearCookie("connect.sid");
+        res.json({ success: true });
+      });
+    } catch (error) {
+      console.error("Delete account error:", error);
+      res.status(500).json({ error: "Failed to delete account" });
     }
   });
 
