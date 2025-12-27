@@ -139,7 +139,7 @@ export default function AlertModal({ open, onClose, onSave, initialData }: Alert
         <div className="space-y-6 py-4">
           <div className="space-y-2">
             <Label htmlFor="alert-name">Alert Name</Label>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               A friendly name to identify this alert - not used for matching
             </p>
             <Input
@@ -153,7 +153,7 @@ export default function AlertModal({ open, onClose, onSave, initialData }: Alert
 
           <div className="space-y-2">
             <Label>Search Terms</Label>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               Enter terms to match against bottle names on Baxus
             </p>
             <div className="space-y-3">
@@ -204,7 +204,7 @@ export default function AlertModal({ open, onClose, onSave, initialData }: Alert
 
             <div className="pt-3 border-t">
               <Label className="text-sm font-medium">Match Logic</Label>
-              <p className="text-sm text-muted-foreground mb-3">
+              <p className="text-xs text-muted-foreground mb-3">
                 How should the search terms match the bottle name?
               </p>
               <RadioGroup
@@ -230,7 +230,7 @@ export default function AlertModal({ open, onClose, onSave, initialData }: Alert
 
           <div className="space-y-2">
             <Label htmlFor="max-price">Maximum Price ($)</Label>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               Alert triggers when a listing is at or below this price
             </p>
             <Input
