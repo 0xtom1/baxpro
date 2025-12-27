@@ -157,7 +157,7 @@ export default function AlertModal({ open, onClose, onSave, initialData }: Alert
                   <div key={idx} className="space-y-1">
                     <div className="flex gap-2">
                       <Input
-                        placeholder="e.g., Pappy, Van Winkle"
+                        placeholder="e.g., Pappy Van Winkle"
                         value={str}
                         onChange={(e) => updateMatchString(idx, e.target.value)}
                         className={error ? "border-destructive" : ""}
