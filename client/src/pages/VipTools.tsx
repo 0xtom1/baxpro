@@ -176,7 +176,7 @@ export default function VipTools() {
                 View and contribute to BaxPro on GitHub
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               <p className="text-sm text-muted-foreground">
                 BaxPro is open source. Check out the repository to see how it works, 
                 report issues, or contribute to the project.
