@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, User, Wallet, Crown, RefreshCw } from "lucide-react";
+import { ArrowLeft, User, Wallet } from "lucide-react";
 import GlencairnLogo from "@/components/GlencairnLogo";
 
 export default function AccountSettings() {
@@ -20,7 +20,6 @@ export default function AccountSettings() {
   const [displayName, setDisplayName] = useState("");
   const [baxusWallet, setBaxusWallet] = useState("");
   const [saving, setSaving] = useState(false);
-  const [refreshingMatches, setRefreshingMatches] = useState(false);
 
   useEffect(() => {
     refreshUser();
@@ -87,35 +86,6 @@ export default function AccountSettings() {
       });
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleRefreshMatches = async () => {
-    setRefreshingMatches(true);
-    try {
-      const response = await fetch("/api/alerts/refresh-all-matches", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to refresh matches");
-      }
-
-      const result = await response.json();
-
-      toast({
-        title: "Refresh started",
-        description: result.message,
-      });
-    } catch (error) {
-      toast({
-        title: "Failed to refresh",
-        description: "Please try again",
-        variant: "destructive",
-      });
-    } finally {
-      setRefreshingMatches(false);
     }
   };
 
@@ -253,50 +223,6 @@ export default function AccountSettings() {
           >
             {saving ? "Saving..." : "Save Settings"}
           </Button>
-
-          {user.isVip && (
-            <Card className="border-amber-500/30 bg-amber-500/5">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Crown className="w-5 h-5 text-amber-500" />
-                  VIP Tools
-                  <Badge variant="outline" className="text-amber-500 border-amber-500/50">
-                    VIP
-                  </Badge>
-                </CardTitle>
-                <CardDescription>
-                  Exclusive tools available only to VIP members
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">
-                    Re-run the matching logic on all alerts across all users to find historical matches 
-                    from the activity feed. This will update the match count for every alert in the system.
-                  </p>
-                  <Button 
-                    onClick={handleRefreshMatches} 
-                    disabled={refreshingMatches}
-                    variant="outline"
-                    className="w-full"
-                    data-testid="button-refresh-matches"
-                  >
-                    {refreshingMatches ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                        Refreshing...
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="w-4 h-4 mr-2" />
-                        Refresh All Alert Matches
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
 
           <p className="text-xs text-muted-foreground text-center">
             BaxPro is not affiliated with, endorsed by, or connected to baxus.co

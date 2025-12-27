@@ -28,6 +28,7 @@ import AssetDetail from "@/pages/AssetDetail";
 import AssetDetailByIdx from "@/pages/AssetDetailByIdx";
 import Activity from "@/pages/Activity";
 import ProductHierarchy from "@/pages/ProductHierarchy";
+import VipTools from "@/pages/VipTools";
 import BrandSubBrands from "@/pages/BrandSubBrands";
 import SubBrandAssets from "@/pages/SubBrandAssets";
 import Unsubscribe from "@/pages/Unsubscribe";
@@ -49,6 +50,7 @@ function Router() {
       <Route path="/b/:assetId" component={AssetDetail} />
       <Route path="/asset/:assetIdx" component={AssetDetailByIdx} />
       <Route path="/activity" component={Activity} />
+      <Route path="/vip-tools" component={VipTools} />
       <Route path="/product-hierarchy-editor" component={ProductHierarchy} />
       <Route path="/product-hierarchy-editor/brand/:brandIdx" component={BrandSubBrands} />
       <Route path="/product-hierarchy-editor/sub-brand/:subBrandIdx/assets" component={SubBrandAssets} />
