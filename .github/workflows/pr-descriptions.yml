@@ -1,0 +1,34 @@
+name: Auto-update PR Description
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  update-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Generate commit list
+        id: commits
+        run: |
+          COMMITS=$(git log --pretty=format:"- %s" origin/${{ github.base_ref }}..HEAD)
+          echo "list<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMITS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      
+      - name: Update PR description
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const commits = `${{ steps.commits.outputs.list }}`;
+            const body = `## Commits\n\n${commits}`;
+            await github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              body: body
+            });
