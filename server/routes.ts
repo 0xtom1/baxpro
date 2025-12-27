@@ -9,10 +9,12 @@ import { z } from "zod";
 import { OAuth2Client } from "google-auth-library";
 import { PubSub } from "@google-cloud/pubsub";
 import { generateDisplayName } from "./data/nameGenerator";
+import crypto from "crypto";
 
 declare module "express-session" {
   interface SessionData {
     userId?: string;
+    oauthCsrfToken?: string;
   }
 }
 
@@ -91,7 +93,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Google OAuth routes
   app.get("/api/auth/google", (req, res) => {
     const returnTo = req.query.returnTo as string | undefined;
-    const state = returnTo ? Buffer.from(JSON.stringify({ returnTo })).toString('base64') : undefined;
+    
+    // Generate a cryptographically secure CSRF token and store in session
+    const csrfToken = crypto.randomBytes(32).toString('hex');
+    req.session.oauthCsrfToken = csrfToken;
+    
+    // Include CSRF token and optional returnTo in state parameter
+    const statePayload = { csrfToken, returnTo };
+    const state = Buffer.from(JSON.stringify(statePayload)).toString('base64');
     
     const authUrl = googleClient.generateAuthUrl({
       access_type: "offline",
@@ -112,16 +121,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.redirect("/?error=no_code");
       }
 
-      // Parse the state to get returnTo URL
+      // Parse and validate the state parameter for CSRF protection
       let returnTo: string | undefined;
-      if (state && typeof state === "string") {
-        try {
-          const decoded = JSON.parse(Buffer.from(state, 'base64').toString());
-          returnTo = decoded.returnTo;
-        } catch {
-          // Invalid state, ignore
-        }
+      if (!state || typeof state !== "string") {
+        console.error("OAuth callback: missing state parameter");
+        return res.redirect("/?error=invalid_state");
       }
+      
+      let statePayload: { csrfToken?: string; returnTo?: string };
+      try {
+        statePayload = JSON.parse(Buffer.from(state, 'base64').toString());
+      } catch {
+        console.error("OAuth callback: malformed state parameter");
+        return res.redirect("/?error=invalid_state");
+      }
+      
+      // Validate CSRF token matches session
+      const storedToken = req.session.oauthCsrfToken;
+      if (!storedToken || !statePayload.csrfToken || storedToken !== statePayload.csrfToken) {
+        console.error("OAuth callback: CSRF token mismatch");
+        return res.redirect("/?error=csrf_validation_failed");
+      }
+      
+      // Clear the used CSRF token
+      delete req.session.oauthCsrfToken;
+      
+      returnTo = statePayload.returnTo;
 
       // Exchange code for tokens
       const { tokens } = await googleClient.getToken(code);
