@@ -133,9 +133,12 @@ export default function AlertModal({ open, onClose, onSave, initialData }: Alert
         <div className="space-y-6 py-4">
           <div className="space-y-2">
             <Label htmlFor="alert-name">Alert Name</Label>
+            <p className="text-sm text-muted-foreground">
+              A friendly name to identify this alert - not used for matching
+            </p>
             <Input
               id="alert-name"
-              placeholder="e.g., Pappy Van Winkle"
+              placeholder="e.g., Pappy Alert"
               value={name}
               onChange={(e) => setName(e.target.value)}
               data-testid="input-alert-name"
@@ -143,9 +146,9 @@ export default function AlertModal({ open, onClose, onSave, initialData }: Alert
           </div>
 
           <div className="space-y-2">
-            <Label>Match Strings</Label>
+            <Label>Search Terms</Label>
             <p className="text-sm text-muted-foreground">
-              Add up to 5 search terms to match to the bottle name
+              Enter terms to match against bottle names on Baxus
             </p>
             <div className="space-y-3">
               {matchStrings.map((str, idx) => {
