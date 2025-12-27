@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Crown, RefreshCw, Layers, ExternalLink } from "lucide-react";
+import { ArrowLeft, Crown, RefreshCw, Layers, ExternalLink, Github } from "lucide-react";
 import GlencairnLogo from "@/components/GlencairnLogo";
 
 export default function VipTools() {
@@ -102,6 +102,36 @@ export default function VipTools() {
           <Card className="border-amber-500/30 bg-amber-500/5">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
+                <Layers className="w-5 h-5 text-amber-500" />
+                Product Hierarchy Editor
+              </CardTitle>
+              <CardDescription>
+                Manage producers, brands, and sub-brands
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Organize and edit the product hierarchy for the Baxus catalog. 
+                Link producers to their brands and brands to their sub-brands for 
+                better organization and discovery.
+              </p>
+              <Link href="/product-hierarchy-editor">
+                <Button 
+                  variant="outline"
+                  className="w-full"
+                  data-testid="button-product-hierarchy-link"
+                >
+                  <Layers className="w-4 h-4 mr-2" />
+                  Open Product Hierarchy Editor
+                  <ExternalLink className="w-4 h-4 ml-2" />
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card className="border-amber-500/30 bg-amber-500/5">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
                 <RefreshCw className="w-5 h-5 text-amber-500" />
                 Refresh All Alert Matches
               </CardTitle>
@@ -136,37 +166,40 @@ export default function VipTools() {
             </CardContent>
           </Card>
 
-          <Card className="border-amber-500/30 bg-amber-500/5">
+          <Card className="border-border/50 bg-muted/30">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Layers className="w-5 h-5 text-amber-500" />
-                Product Hierarchy Editor
+                <Github className="w-5 h-5" />
+                Source Code
               </CardTitle>
               <CardDescription>
-                Manage producers, brands, and sub-brands
+                View and contribute to BaxPro on GitHub
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                Organize and edit the product hierarchy for the Baxus catalog. 
-                Link producers to their brands and brands to their sub-brands for 
-                better organization and discovery.
+                BaxPro is open source. Check out the repository to see how it works, 
+                report issues, or contribute to the project.
               </p>
-              <Link href="/product-hierarchy-editor">
+              <a 
+                href="https://github.com/0xtom1/baxpro" 
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
                 <Button 
                   variant="outline"
                   className="w-full"
-                  data-testid="button-product-hierarchy-link"
+                  data-testid="button-github-link"
                 >
-                  <Layers className="w-4 h-4 mr-2" />
-                  Open Product Hierarchy Editor
+                  <Github className="w-4 h-4 mr-2" />
+                  View on GitHub
                   <ExternalLink className="w-4 h-4 ml-2" />
                 </Button>
-              </Link>
+              </a>
             </CardContent>
           </Card>
 
-          <p className="text-xs text-muted-foreground text-center">
+          <p className="text-xs text-muted-foreground text-center pt-4">
             BaxPro is not affiliated with, endorsed by, or connected to baxus.co
           </p>
         </div>
