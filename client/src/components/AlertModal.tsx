@@ -138,7 +138,7 @@ export default function AlertModal({ open, onClose, onSave, initialData }: Alert
 
         <div className="space-y-6 py-4">
           <div className="space-y-2">
-            <Label htmlFor="alert-name">Alert Name</Label>
+            <Label htmlFor="alert-name">Alert Name<span className="text-destructive ml-1">*</span></Label>
             <p className="text-xs text-muted-foreground">
               A friendly name to identify this alert - not used for matching
             </p>
@@ -152,7 +152,7 @@ export default function AlertModal({ open, onClose, onSave, initialData }: Alert
           </div>
 
           <div className="space-y-2">
-            <Label>Search Terms</Label>
+            <Label>Search Terms<span className="text-destructive ml-1">*</span></Label>
             <p className="text-xs text-muted-foreground">
               Enter terms to match against bottle names on Baxus
             </p>
@@ -229,7 +229,7 @@ export default function AlertModal({ open, onClose, onSave, initialData }: Alert
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="max-price">Maximum Price ($)</Label>
+            <Label htmlFor="max-price">Maximum Price ($)<span className="text-destructive ml-1">*</span></Label>
             <p className="text-xs text-muted-foreground">
               Alert triggers when a listing is at or below this price
             </p>
