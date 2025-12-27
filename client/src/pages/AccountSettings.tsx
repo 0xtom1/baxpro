@@ -272,8 +272,7 @@ export default function AccountSettings() {
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">
                     Re-run the matching logic on all alerts across all users to find historical matches 
-                    from the activity feed. This will update the match count for every alert in the system 
-                    based on the current matching criteria.
+                    from the activity feed. This will update the match count for every alert in the system.
                   </p>
                   <Button 
                     onClick={handleRefreshMatches} 
