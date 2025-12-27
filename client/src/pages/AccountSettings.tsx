@@ -8,7 +8,18 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, User, Wallet } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { ArrowLeft, User, Wallet, Trash2 } from "lucide-react";
 import GlencairnLogo from "@/components/GlencairnLogo";
 
 export default function AccountSettings() {
@@ -20,6 +31,7 @@ export default function AccountSettings() {
   const [displayName, setDisplayName] = useState("");
   const [baxusWallet, setBaxusWallet] = useState("");
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     refreshUser();
@@ -86,6 +98,34 @@ export default function AccountSettings() {
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      const response = await fetch("/api/user/account", {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete account");
+      }
+
+      toast({
+        title: "Account deleted",
+        description: "Your account has been permanently deleted",
+      });
+
+      setLocation("/");
+    } catch (error) {
+      toast({
+        title: "Failed to delete account",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -223,6 +263,45 @@ export default function AccountSettings() {
           >
             {saving ? "Saving..." : "Save Settings"}
           </Button>
+
+          <div className="pt-8 border-t border-border">
+            <h3 className="text-lg font-semibold text-destructive mb-2">Danger Zone</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Once you delete your account, there is no going back. All your alerts and data will be permanently removed.
+            </p>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="destructive" 
+                  className="w-full"
+                  data-testid="button-delete-account"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Account
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete your account
+                    and remove all your data from our servers, including all your alerts.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={handleDeleteAccount}
+                    disabled={deleting}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    data-testid="button-confirm-delete"
+                  >
+                    {deleting ? "Deleting..." : "Delete Account"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
 
           <p className="text-xs text-muted-foreground text-center">
             BaxPro is not affiliated with, endorsed by, or connected to baxus.co

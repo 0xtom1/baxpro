@@ -345,6 +345,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       req.session.destroy((err) => {
         if (err) {
           console.error("Session destroy error:", err);
+          return res.status(500).json({ error: "Account deleted but failed to end session. Please clear your cookies." });
         }
         res.clearCookie("connect.sid");
         res.json({ success: true });
