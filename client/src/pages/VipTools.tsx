@@ -109,7 +109,7 @@ export default function VipTools() {
                 Manage producers, brands, and sub-brands
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               <p className="text-sm text-muted-foreground">
                 Organize and edit the product hierarchy for the Baxus catalog. 
                 Link producers to their brands and brands to their sub-brands for 
@@ -139,7 +139,7 @@ export default function VipTools() {
                 Re-run matching logic across the entire system
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               <p className="text-sm text-muted-foreground">
                 Re-run the matching logic on all alerts across all users to find historical matches 
                 from the activity feed. This will update the match count for every alert in the system.
