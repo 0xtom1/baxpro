@@ -26,10 +26,10 @@ class AssetRepository:
         self.conn = conn
 
     def is_table_empty(self) -> bool:
-        """Returns True if listings_feed is empty
+        """Check if the asset_details table contains any records.
 
         Returns:
-            bool: True if no records
+            bool: True if the table is empty, False otherwise.
         """
         record = self.session.query(AssetDetails).first()
         if not record:
@@ -37,10 +37,13 @@ class AssetRepository:
         return record is None
 
     def should_process_all_assets(self) -> bool:
-        """Returns True if listings_feed is empty
+        """Determine if a full asset import should be performed.
+
+        Returns True if the table has 10 or fewer records, indicating
+        that a complete re-import is needed.
 
         Returns:
-            bool: True if no records
+            bool: True if full import should be performed.
         """
         record = self.session.query(AssetDetails).count()
         if not record:
@@ -51,7 +54,14 @@ class AssetRepository:
             return True
 
     def get_by_key(self, record: AssetDetails) -> Optional[AssetDetails]:
-        """Fetch a listing by its external Baxus ID."""
+        """Fetch an existing asset by its unique asset_id.
+
+        Args:
+            record: An AssetDetails instance containing the asset_id to look up.
+
+        Returns:
+            Optional[AssetDetails]: The matching record, or None if not found.
+        """
         return (
             self.session.query(AssetDetails)
             .filter(
@@ -61,7 +71,14 @@ class AssetRepository:
         )
 
     def is_nullish(self, value):
-        """True for None, "null", "NULL", empty string, etc."""
+        """Check if a value represents a null or empty state.
+
+        Args:
+            value: The value to check.
+
+        Returns:
+            bool: True for None, "null", "NULL", empty string, etc.
+        """
         if value is None:
             print('here')
             return True
@@ -71,10 +88,19 @@ class AssetRepository:
         return False
 
     def upsert(self, asset_data: dict) -> tuple[AssetDetails, bool, bool]:
-        """
-        Insert or update a listing.
-        Returns (AssetDetails, is_new, is_updated) bools where is_new indicates if this was a new asset.
-            and is_updated bool where the record has been updated
+        """Insert a new asset or update an existing one.
+
+        Parses the asset data, checks for existing records, and either
+        inserts a new record or updates the existing one if changed.
+
+        Args:
+            asset_data: Dictionary containing asset data from the Baxus API.
+
+        Returns:
+            tuple[AssetDetails, bool, bool]: A tuple containing:
+                - The AssetDetails record (new or existing)
+                - is_new: True if a new record was inserted
+                - is_updated: True if any changes were made
         """
 
         # Safely extract values → None if missing or empty string
@@ -142,8 +168,10 @@ class AssetRepository:
             return existing, False, False
 
     def insert_asset_json(self, asset_json: AssetJsonFeed):
-        """
-        Insert AssetJsonFeed
+        """Insert an AssetJsonFeed record and update the related asset.
+
+        Args:
+            asset_json: The AssetJsonFeed instance containing metadata to insert.
         """
         self.session.add(asset_json)
         self.session.commit()
@@ -153,7 +181,11 @@ class AssetRepository:
         self.session.commit()
 
     def get_all_attributes(self):
-        """Fetch a listing by its external Baxus ID."""
+        """Fetch all attributes JSON from stored assets.
+
+        Returns:
+            list: List of tuples containing attributes JSON for each asset.
+        """
         result = self.conn.execute(
             text(
                 """
@@ -170,7 +202,11 @@ class AssetRepository:
         return rows
 
     def get_all_json_data(self):
-        """Fetch a listing by its external Baxus ID."""
+        """Fetch all asset JSON data from the database.
+
+        Returns:
+            list: List of tuples containing full asset_json for each asset.
+        """
         result = self.conn.execute(
             text(
                 """

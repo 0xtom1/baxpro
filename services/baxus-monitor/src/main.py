@@ -14,16 +14,28 @@ logger = get_logger()
 
 
 class HealthHandler(BaseHTTPRequestHandler):
+    """HTTP request handler for health check endpoints."""
+
     def do_GET(self):
+        """Handle GET requests by returning a 200 OK status."""
         self.send_response(200)
         self.end_headers()
         self.wfile.write(b"OK")
 
     def log_message(self, format, *args):
+        """Suppress default HTTP request logging."""
         pass
 
 
 def monitor_listings():
+    """Monitor Baxus listings by polling the API and processing new/updated assets.
+
+    This function runs an infinite loop that:
+    1. Performs an initial import of all assets
+    2. Continuously polls for new listings
+    3. Processes and persists discovered assets
+    4. Publishes notifications for new listings
+    """
     logger.info("Starting Baxus Monitor service...")
     logger.info(config)
 
@@ -96,6 +108,10 @@ def monitor_listings():
 
 
 def monitor_blockchain():
+    """Monitor the Solana blockchain for Baxus-related transactions.
+
+    Initializes the blockchain processor and runs transaction monitoring.
+    """
     logger.info("Starting Baxus Monitor service...")
     logger.info(config)
     B = BlockchainProcessor(config=config)
@@ -103,6 +119,11 @@ def monitor_blockchain():
 
 
 def run():
+    """Main entry point for the Baxus Monitor service.
+
+    Starts the health check HTTP server and runs the appropriate
+    monitor based on the configured instance type (listings or blockchain).
+    """
     port = int(os.environ.get("PORT", "8080"))
     logger.info(f"Starting health server on port {port}")
 
