@@ -190,8 +190,7 @@ export default function NotificationSettings() {
                   <p className="font-medium text-foreground mb-1">Heads up about spam filters</p>
                   <p className="text-muted-foreground mb-3">
                     Emails from <span className="font-mono text-xs">alerts@baxpro.xyz</span> may land in your spam folder. 
-                    To make sure you never miss an alert, we can send you a test email now. Find it in your spam, 
-                    mark it as "Not Spam," and you're all set!
+                    Send a test email, then mark it as "Not Spam" or star it - and you're all set!
                   </p>
                   <Button
                     type="button"
