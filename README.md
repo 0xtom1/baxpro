@@ -99,69 +99,72 @@ All services connect to Cloud SQL for reads/writes.
 
 ### Authentication
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/auth/google` | Initiate Google OAuth flow |
-| GET | `/api/auth/google/callback` | Handle OAuth callback |
-| POST | `/api/auth/demo-login` | Demo login (dev only) |
-| POST | `/api/auth/logout` | Destroy session |
-| GET | `/api/auth/me` | Get current user |
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/api/auth/google` | Initiate Google OAuth flow | None |
+| GET | `/api/auth/google/callback` | Handle OAuth callback | None |
+| POST | `/api/auth/demo-login` | Demo login (dev only) | None |
+| POST | `/api/auth/logout` | Destroy session | Session |
+| GET | `/api/auth/me` | Get current user | Session |
 
 ### User Settings
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/user/complete-notification-setup` | Mark notification setup seen |
-| PATCH | `/api/user/notifications` | Update email preferences |
-| PATCH | `/api/user/account` | Update display name / wallet |
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | `/api/user/complete-notification-setup` | Mark notification setup seen | Session |
+| PATCH | `/api/user/notifications` | Update email preferences | Session |
+| PATCH | `/api/user/account` | Update display name / wallet | Session |
+| DELETE | `/api/user/account` | Delete user account | Session |
 
 ### Alerts
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/alerts` | Get user's alerts |
-| POST | `/api/alerts` | Create new alert |
-| PATCH | `/api/alerts/:id` | Update alert |
-| DELETE | `/api/alerts/:id` | Delete alert |
-| POST | `/api/alerts/refresh-all-matches` | Refresh all matches (VIP) |
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/api/alerts` | Get user's alerts | Session |
+| POST | `/api/alerts` | Create new alert | Session |
+| PATCH | `/api/alerts/:id` | Update alert | Session |
+| DELETE | `/api/alerts/:id` | Delete alert | Session |
+| POST | `/api/alerts/refresh-all-matches` | Refresh all matches | VIP |
 
 ### Activity & Assets
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/activity-types` | Get activity type list |
-| GET | `/api/activity` | Get activity feed (paginated) |
-| GET | `/api/assets/idx/:assetIdx` | Get asset by index |
-| GET | `/api/assets/:assetId` | Get asset by ID |
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/api/activity-types` | Get activity type list | Session |
+| GET | `/api/activity` | Get activity feed (paginated) | Session |
+| GET | `/api/assets/idx/:assetIdx` | Get asset by index | Session |
+| GET | `/api/assets/:assetId` | Get asset by ID | Session |
 
-### Product Hierarchy (VIP)
+### Product Hierarchy
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/producers` | List producers |
-| GET | `/api/brands/:producerIdx` | Get brands for producer |
-| GET | `/api/sub-brands/:brandIdx` | Get sub-brands for brand |
-| GET | `/api/brand-hierarchy` | Get hierarchy with filters |
-| PATCH | `/api/brands/:brandIdx` | Update brand name |
-| PATCH | `/api/sub-brands/:subBrandIdx` | Update sub-brand name |
-| PATCH | `/api/brands/:brandIdx/review` | Update brand review status |
-| GET | `/api/brand-details/:brandIdx` | Get brand details |
-| POST | `/api/move-bottles` | Move bottles between sub-brands |
-| GET | `/api/sub-brand-assets/:subBrandIdx` | Get assets for sub-brand |
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/api/producers` | List producers | VIP |
+| GET | `/api/brands/:producerIdx` | Get brands for producer | VIP |
+| GET | `/api/sub-brands/:brandIdx` | Get sub-brands for brand | VIP |
+| GET | `/api/brand-hierarchy` | Get hierarchy with filters | VIP |
+| PATCH | `/api/brands/:brandIdx` | Update brand name | VIP |
+| PATCH | `/api/sub-brands/:subBrandIdx` | Update sub-brand name | VIP |
+| PATCH | `/api/brands/:brandIdx/review` | Update brand review status | VIP |
+| GET | `/api/brand-details/:brandIdx` | Get brand details | VIP |
+| POST | `/api/move-bottles` | Move bottles between sub-brands | VIP |
+| GET | `/api/sub-brand-assets/:subBrandIdx` | Get assets for sub-brand | VIP |
 
 ### Notifications
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/unsubscribe` | Unsubscribe from emails |
-| POST | `/api/notifications/test-email` | Send test email |
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | `/api/unsubscribe` | Unsubscribe from emails | None* |
+| POST | `/api/notifications/test-email` | Send test email | Session |
+
+*Uses UUID in request body for security
 
 ### System
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/health` | Health check |
-| GET | `/api/system/version` | Get version info |
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/api/health` | Health check | None |
+| GET | `/api/system/version` | Get version info | None |
 
 ## Multi-Environment Deployment
 
