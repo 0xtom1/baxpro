@@ -190,7 +190,7 @@ export default function AlertModal({ open, onClose, onSave, initialData }: Alert
                 data-testid="button-add-match-string"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Add Match String ({matchStrings.length}/{MAX_MATCH_STRINGS})
+                Add Search Term ({matchStrings.length}/{MAX_MATCH_STRINGS})
               </Button>
             </div>
 
