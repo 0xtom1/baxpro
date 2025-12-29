@@ -1,0 +1,41 @@
+import rateLimit from "express-rate-limit";
+import type { Request } from "express";
+
+declare module "express-session" {
+  interface SessionData {
+    userId?: string;
+  }
+}
+
+export const authLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req: Request) => req.ip || "unknown",
+  message: { error: "Too many requests, please try again later" },
+});
+
+export const apiLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req: Request) => {
+    const session = req.session as { userId?: string } | undefined;
+    return session?.userId || req.ip || "unknown";
+  },
+  message: { error: "Too many requests, please try again later" },
+});
+
+export const emailLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req: Request) => {
+    const session = req.session as { userId?: string } | undefined;
+    return session?.userId || req.ip || "unknown";
+  },
+  message: { error: "Too many test emails sent. Please try again in an hour" },
+});
