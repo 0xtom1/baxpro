@@ -10,12 +10,24 @@ import { OAuth2Client } from "google-auth-library";
 import { PubSub } from "@google-cloud/pubsub";
 import { generateDisplayName } from "./data/nameGenerator";
 import crypto from "crypto";
+import { authLimiter, apiLimiter, emailLimiter } from "./rateLimit";
 
 declare module "express-session" {
   interface SessionData {
     userId?: string;
     oauthCsrfToken?: string;
   }
+}
+
+function isSafeReturnPath(path: unknown): path is string {
+  if (typeof path !== "string") return false;
+  // Must be app-relative, not protocol-relative or absolute URL
+  if (!path.startsWith("/") || path.startsWith("//")) return false;
+  // Block any attempt to include a protocol
+  if (/^\/[^/]*:/.test(path)) return false;
+  // Allow common URL characters but block dangerous patterns
+  if (!/^\/[\w\-.~/%]+(?:\?[\w\-.~=&%]*)?(?:#[\w\-.~]*)?$/.test(path)) return false;
+  return true;
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -95,7 +107,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Google OAuth routes
-  app.get("/api/auth/google", (req, res) => {
+  app.get("/api/auth/google", authLimiter, (req, res) => {
     const returnTo = req.query.returnTo as string | undefined;
     
     // Generate a cryptographically secure CSRF token and store in session
@@ -117,7 +129,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ url: authUrl });
   });
 
-  app.get("/api/auth/google/callback", async (req, res) => {
+  app.get("/api/auth/google/callback", authLimiter, async (req, res) => {
     try {
       const { code, state } = req.query;
       
@@ -189,8 +201,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Redirect to original page, dashboard, or notification setup
       if (!user.seenNotificationSetup) {
         res.redirect("/notification-setup");
-      } else if (returnTo && returnTo.startsWith('/') && !returnTo.startsWith('//')) {
-        // Validate returnTo is a safe relative path
+      } else if (isSafeReturnPath(returnTo)) {    
+        // Validate returnTo is a safe, app-relative path
         res.redirect(returnTo);
       } else {
         res.redirect("/dashboard");
@@ -206,7 +218,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Demo auth routes - DISABLED ON ALL DEPLOYMENTS for security
   // This endpoint allows login without OAuth verification
   // Only works in local Replit development environment
-  app.post("/api/auth/demo-login", async (req, res) => {
+  app.post("/api/auth/demo-login", authLimiter, async (req, res) => {
     // Only allow in local Replit development (not deployed anywhere - dev or prod)
     if (process.env.REPLIT_DEPLOYMENT) {
       return res.status(403).json({ error: "Demo login is only available in local development" });
@@ -244,7 +256,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/auth/logout", (req, res) => {
+  app.post("/api/auth/logout", authLimiter, (req, res) => {
     req.session.destroy((err) => {
       if (err) {
         return res.status(500).json({ error: "Logout failed" });
@@ -253,7 +265,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  app.get("/api/auth/me", async (req, res) => {
+  app.get("/api/auth/me", authLimiter, async (req, res) => {
     if (!req.session.userId) {
       return res.status(401).json({ error: "Not authenticated" });
     }
@@ -270,7 +282,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User routes
   
   // Complete notification setup (mark as seen)
-  app.post("/api/user/complete-notification-setup", requireAuth, async (req, res) => {
+  app.post("/api/user/complete-notification-setup", requireAuth, apiLimiter, async (req, res) => {
     try {
       const user = await storage.updateUser(req.session.userId!, { 
         seenNotificationSetup: true 
@@ -287,7 +299,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/user/notifications", requireAuth, async (req, res) => {
+  app.patch("/api/user/notifications", requireAuth, apiLimiter, async (req, res) => {
     try {
       const notificationSchema = z.object({
         emailConsent: z.boolean().optional(),
@@ -311,7 +323,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/user/account", requireAuth, async (req, res) => {
+  app.patch("/api/user/account", requireAuth, apiLimiter, async (req, res) => {
     try {
       const base58Regex = /^[1-9A-HJ-NP-Za-km-z]+$/;
       const accountSchema = z.object({
@@ -337,7 +349,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/user/account", requireAuth, async (req, res) => {
+  app.delete("/api/user/account", requireAuth, apiLimiter, async (req, res) => {
     try {
       const userId = req.session.userId!;
       
@@ -389,7 +401,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Send test email - publishes to Pub/Sub for alert-sender to process
-  app.post("/api/notifications/test-email", requireAuth, async (req, res) => {
+  app.post("/api/notifications/test-email", requireAuth, emailLimiter, async (req, res) => {
     try {
       const user = await storage.getUser(req.session.userId!);
       if (!user) {
@@ -438,7 +450,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Alert routes
-  app.get("/api/alerts", requireAuth, async (req, res) => {
+  app.get("/api/alerts", requireAuth, apiLimiter, async (req, res) => {
     try {
       const alerts = await storage.getAlertsByUserId(req.session.userId!);
       res.json(alerts);
@@ -448,7 +460,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/alerts", requireAuth, async (req, res) => {
+  app.post("/api/alerts", requireAuth, apiLimiter, async (req, res) => {
     try {
       const validatedData = insertAlertSchema.parse({
         ...req.body,
@@ -472,7 +484,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/alerts/:id", requireAuth, async (req, res) => {
+  app.patch("/api/alerts/:id", requireAuth, apiLimiter, async (req, res) => {
     try {
       const { id } = req.params;
       
@@ -500,7 +512,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/alerts/:id", requireAuth, async (req, res) => {
+  app.delete("/api/alerts/:id", requireAuth, apiLimiter, async (req, res) => {
     try {
       const { id } = req.params;
       
@@ -519,7 +531,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Refresh all alert matches for all users (VIP only)
-  app.post("/api/alerts/refresh-all-matches", requireVip, async (req, res) => {
+  app.post("/api/alerts/refresh-all-matches", requireVip, apiLimiter, async (req, res) => {
     try {
       const allAlerts = await storage.getAllAlerts();
       
@@ -542,7 +554,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Activity types endpoint (for filter dropdown)
-  app.get("/api/activity-types", requireAuth, async (req, res) => {
+  app.get("/api/activity-types", requireAuth, apiLimiter, async (req, res) => {
     try {
       const types = await storage.getActivityTypes();
       res.json(types);
@@ -553,7 +565,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Activity feed route (requires authentication)
-  app.get("/api/activity", requireAuth, async (req, res) => {
+  app.get("/api/activity", requireAuth, apiLimiter, async (req, res) => {
     try {
       const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 50;
       const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
@@ -581,7 +593,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Asset details by index route (requires authentication) - must come before :assetId route
-  app.get("/api/assets/idx/:assetIdx", requireAuth, async (req, res) => {
+  app.get("/api/assets/idx/:assetIdx", requireAuth, apiLimiter, async (req, res) => {
     try {
       const assetIdx = parseInt(req.params.assetIdx, 10);
       if (isNaN(assetIdx)) {
@@ -601,7 +613,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Asset details route (requires authentication)
-  app.get("/api/assets/:assetId", requireAuth, async (req, res) => {
+  app.get("/api/assets/:assetId", requireAuth, apiLimiter, async (req, res) => {
     try {
       const { assetId } = req.params;
       const asset = await storage.getAssetByAssetId(assetId);
@@ -618,7 +630,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Product hierarchy endpoints (VIP only)
-  app.get("/api/producers", requireVip, async (req, res) => {
+  app.get("/api/producers", requireVip, apiLimiter, async (req, res) => {
     try {
       const producers = await storage.getProducers();
       res.json(producers);
@@ -628,7 +640,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/brands/:producerIdx", requireVip, async (req, res) => {
+  app.get("/api/brands/:producerIdx", requireVip, apiLimiter, async (req, res) => {
     try {
       const producerIdx = parseInt(req.params.producerIdx, 10);
       if (isNaN(producerIdx)) {
@@ -642,7 +654,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/sub-brands/:brandIdx", requireVip, async (req, res) => {
+  app.get("/api/sub-brands/:brandIdx", requireVip, apiLimiter, async (req, res) => {
     try {
       const brandIdx = parseInt(req.params.brandIdx, 10);
       if (isNaN(brandIdx)) {
@@ -656,7 +668,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/brand-hierarchy", requireVip, async (req, res) => {
+  app.get("/api/brand-hierarchy", requireVip, apiLimiter, async (req, res) => {
     try {
       const producerIdx = req.query.producerIdx ? parseInt(req.query.producerIdx as string, 10) : undefined;
       const brandIdx = req.query.brandIdx ? parseInt(req.query.brandIdx as string, 10) : undefined;
@@ -670,7 +682,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/brands/:brandIdx", requireVip, async (req, res) => {
+  app.patch("/api/brands/:brandIdx", requireVip, apiLimiter, async (req, res) => {
     try {
       const brandIdx = parseInt(req.params.brandIdx, 10);
       if (isNaN(brandIdx)) {
@@ -691,7 +703,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/sub-brands/:subBrandIdx", requireVip, async (req, res) => {
+  app.patch("/api/sub-brands/:subBrandIdx", requireVip, apiLimiter, async (req, res) => {
     try {
       const subBrandIdx = parseInt(req.params.subBrandIdx, 10);
       if (isNaN(subBrandIdx)) {
@@ -709,7 +721,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/brands/:brandIdx/review", requireVip, async (req, res) => {
+  app.patch("/api/brands/:brandIdx/review", requireVip, apiLimiter, async (req, res) => {
     try {
       const brandIdx = parseInt(req.params.brandIdx, 10);
       if (isNaN(brandIdx)) {
@@ -724,7 +736,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/brand-details/:brandIdx", requireVip, async (req, res) => {
+  app.get("/api/brand-details/:brandIdx", requireVip, apiLimiter, async (req, res) => {
     try {
       const brandIdx = parseInt(req.params.brandIdx, 10);
       if (isNaN(brandIdx)) {
@@ -741,7 +753,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/move-bottles", requireVip, async (req, res) => {
+  app.post("/api/move-bottles", requireVip, apiLimiter, async (req, res) => {
     try {
       const { fromSubBrandIdx, toSubBrandIdx } = req.body;
       if (!fromSubBrandIdx || !toSubBrandIdx) {
@@ -761,7 +773,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/sub-brand-assets/:subBrandIdx", requireVip, async (req, res) => {
+  app.get("/api/sub-brand-assets/:subBrandIdx", requireVip, apiLimiter, async (req, res) => {
     try {
       const subBrandIdx = parseInt(req.params.subBrandIdx, 10);
       if (isNaN(subBrandIdx)) {
