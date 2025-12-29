@@ -270,10 +270,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(401).json({ error: "Not authenticated" });
     }
 
-    const user = await storage.getUser(req.session.userId);
+    let user = await storage.getUser(req.session.userId);
     if (!user) {
       req.session.destroy(() => {});
       return res.status(401).json({ error: "User not found" });
+    }
+
+    // Update lastLoginAt if more than 5 minutes since last update
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    if (!user.lastLoginAt || user.lastLoginAt < fiveMinutesAgo) {
+      user = await storage.updateUser(user.id, { lastLoginAt: new Date() }) || user;
     }
 
     res.json({ user });
