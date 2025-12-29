@@ -21,10 +21,12 @@ declare module "express-session" {
 
 function isSafeReturnPath(path: unknown): path is string {
   if (typeof path !== "string") return false;
-  // Must be an app-relative path, not protocol-relative.
+  // Must be app-relative, not protocol-relative or absolute URL
   if (!path.startsWith("/") || path.startsWith("//")) return false;
-  // Only allow simple path characters; disallow query strings, fragments, and traversal.
-  if (!/^\/[A-Za-z0-9/_\-]*$/.test(path)) return false;
+  // Block any attempt to include a protocol
+  if (/^\/[^/]*:/.test(path)) return false;
+  // Allow common URL characters but block dangerous patterns
+  if (!/^\/[\w\-.~/%]+(?:\?[\w\-.~=&%]*)?(?:#[\w\-.~]*)?$/.test(path)) return false;
   return true;
 }
 
