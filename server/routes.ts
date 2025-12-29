@@ -19,6 +19,15 @@ declare module "express-session" {
   }
 }
 
+function isSafeReturnPath(path: unknown): path is string {
+  if (typeof path !== "string") return false;
+  // Must be an app-relative path, not protocol-relative.
+  if (!path.startsWith("/") || path.startsWith("//")) return false;
+  // Only allow simple path characters; disallow query strings, fragments, and traversal.
+  if (!/^\/[A-Za-z0-9/_\-]*$/.test(path)) return false;
+  return true;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize Google OAuth client
   // Use CUSTOM_DOMAIN env var to support both production (baxpro.xyz) and dev (dev.baxpro.xyz)
@@ -190,8 +199,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Redirect to original page, dashboard, or notification setup
       if (!user.seenNotificationSetup) {
         res.redirect("/notification-setup");
-      } else if (returnTo && returnTo.startsWith('/') && !returnTo.startsWith('//')) {
-        // Validate returnTo is a safe relative path
+      } else if (isSafeReturnPath(returnTo)) {    
+        // Validate returnTo is a safe, app-relative path
         res.redirect(returnTo);
       } else {
         res.redirect("/dashboard");
