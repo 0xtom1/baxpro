@@ -12,8 +12,8 @@ export const authLimiter = rateLimit({
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req: Request) => req.ip || "unknown",
   message: { error: "Too many requests, please try again later" },
+  validate: { xForwardedForHeader: false },
 });
 
 export const apiLimiter = rateLimit({
@@ -23,9 +23,10 @@ export const apiLimiter = rateLimit({
   legacyHeaders: false,
   keyGenerator: (req: Request) => {
     const session = req.session as { userId?: string } | undefined;
-    return session?.userId || req.ip || "unknown";
+    return session?.userId || "anonymous";
   },
   message: { error: "Too many requests, please try again later" },
+  validate: { xForwardedForHeader: false },
 });
 
 export const emailLimiter = rateLimit({
@@ -35,7 +36,8 @@ export const emailLimiter = rateLimit({
   legacyHeaders: false,
   keyGenerator: (req: Request) => {
     const session = req.session as { userId?: string } | undefined;
-    return session?.userId || req.ip || "unknown";
+    return session?.userId || "anonymous";
   },
   message: { error: "Too many test emails sent. Please try again in an hour" },
+  validate: { xForwardedForHeader: false },
 });
