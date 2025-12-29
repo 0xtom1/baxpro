@@ -72,11 +72,6 @@ jobs:
         run: |
           echo "::add-mask::${{ steps.vars.outputs.project_id }}"
 
-      - name: Get and mask project number
-        run: |
-          PROJECT_NUMBER=$(gcloud projects describe ${{ steps.vars.outputs.project_id }} --format='value(projectNumber)')
-          echo "::add-mask::$PROJECT_NUMBER"
-
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
@@ -85,6 +80,11 @@ jobs:
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
+
+      - name: Get and mask project number
+        run: |
+          PROJECT_NUMBER=$(gcloud projects describe ${{ steps.vars.outputs.project_id }} --format='value(projectNumber)')
+          echo "::add-mask::$PROJECT_NUMBER"
 
       - name: Configure Docker for Artifact Registry
         run: |
