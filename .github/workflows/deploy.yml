@@ -68,6 +68,10 @@ jobs:
             echo "image_prefix=dev" >> $GITHUB_OUTPUT
           fi
 
+      - name: Mask project ID in logs
+        run: |
+          echo "::add-mask::${{ steps.vars.outputs.project_id }}"
+
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
