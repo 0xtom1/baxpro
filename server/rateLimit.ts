@@ -8,8 +8,8 @@ declare module "express-session" {
 }
 
 export const authLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 10,
+  windowMs: 60 * 1000,         // 1 minute
+  max: 10,                     // Max 10 requests per window
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "Too many requests, please try again later" },
@@ -17,8 +17,8 @@ export const authLimiter = rateLimit({
 });
 
 export const apiLimiter = rateLimit({
-  windowMs: 5 * 60 * 1000,
-  max: 100,
+  windowMs: 5 * 60 * 1000,     // 5 minutes
+  max: 100,                    // Max 100 requests per window
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req: Request) => {
@@ -30,8 +30,8 @@ export const apiLimiter = rateLimit({
 });
 
 export const emailLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
-  max: 3,
+  windowMs: 60 * 60 * 1000,    // 1 hour
+  max: 3,                      // Max 3 requests per window
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req: Request) => {
