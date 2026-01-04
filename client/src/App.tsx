@@ -32,6 +32,7 @@ import VipTools from "@/pages/VipTools";
 import BrandSubBrands from "@/pages/BrandSubBrands";
 import SubBrandAssets from "@/pages/SubBrandAssets";
 import Unsubscribe from "@/pages/Unsubscribe";
+import Brand from "@/pages/Brand";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -55,6 +56,7 @@ function Router() {
       <Route path="/product-hierarchy-editor/brand/:brandIdx" component={BrandSubBrands} />
       <Route path="/product-hierarchy-editor/sub-brand/:subBrandIdx/assets" component={SubBrandAssets} />
       <Route path="/unsubscribe" component={Unsubscribe} />
+      <Route path="/brand" component={Brand} />
       <Route component={NotFound} />
     </Switch>
   );

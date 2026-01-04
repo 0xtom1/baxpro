@@ -5,6 +5,38 @@ import { eq, and, sql } from "drizzle-orm";
 
 export type UpdateUser = Partial<InsertUser> & { lastLoginAt?: Date };
 
+export type BrandAsset = {
+  assetIdx: number;
+  assetId: string;
+  name: string;
+  brandName: string | null;
+  isListed: boolean | null;
+  listedDate: Date | null;
+  price: number | null;
+  age: number | null;
+  bottledYear: number | null;
+  marketPrice: number | null;
+  producer: string | null;
+  imageUrl: string | null;
+};
+
+export type BrandStats = {
+  totalBottles: number;
+  listedCount: number;
+  floorPrice: number | null;
+  avgMarketPrice: number | null;
+};
+
+export type TraitValue = {
+  value: string;
+  count: number;
+};
+
+export type BrandTrait = {
+  traitType: string;
+  values: TraitValue[];
+};
+
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
@@ -26,6 +58,12 @@ export interface IStorage {
   getActivityFeedCount(): Promise<number>;
   
   matchAlertToAssets(alertId: string): Promise<{ matched: number; matchingAssetsString: string }>;
+
+  getBrandNames(): Promise<string[]>;
+  getBrandAssets(brandName: string, traitFilters?: Record<string, string[]>): Promise<BrandAsset[]>;
+  getBrandStats(brandName: string): Promise<BrandStats>;
+  getBrandTraits(brandName: string): Promise<BrandTrait[]>;
+  getBrandActivity(brandName: string, limit?: number): Promise<ActivityFeedWithDetails[]>;
 }
 
 export class DbStorage implements IStorage {
@@ -541,6 +579,179 @@ export class DbStorage implements IStorage {
     } catch (error) {
       await client.query('ROLLBACK');
       throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async getBrandNames(): Promise<string[]> {
+    const result = await db.execute<{ brand_name: string }>(
+      `SELECT DISTINCT brand_name 
+       FROM baxus.v_asset_summary 
+       WHERE brand_name IS NOT NULL 
+       ORDER BY brand_name`
+    );
+    return result.rows.map((r: any) => r.brand_name);
+  }
+
+  async getBrandAssets(brandName: string, traitFilters?: Record<string, string[]>): Promise<BrandAsset[]> {
+    const client = await pool.connect();
+    try {
+      let query = `
+        SELECT 
+          v.asset_idx, v.asset_id, v.name, v.brand_name,
+          v.is_listed, v.listed_date, v.price, v.age, v.bottled_year,
+          v.market_price, v.producer,
+          a.asset_json -> 'bottle_release' ->> 'image_url' as image_url,
+          a.metadata_json
+        FROM baxus.v_asset_summary v
+        JOIN baxus.assets a ON v.asset_idx = a.asset_idx
+        WHERE v.brand_name = $1 AND v.is_listed = true
+      `;
+      const params: any[] = [brandName];
+      let paramIndex = 2;
+
+      if (traitFilters && Object.keys(traitFilters).length > 0) {
+        for (const [traitType, values] of Object.entries(traitFilters)) {
+          if (values.length > 0) {
+            const valuePlaceholders = values.map((_, i) => `$${paramIndex + i}`).join(', ');
+            query += ` AND EXISTS (
+              SELECT 1 FROM jsonb_array_elements(a.metadata_json -> 'attributes') AS attr
+              WHERE attr ->> 'trait_type' = $${paramIndex - 1 + values.length + 1}
+                AND attr ->> 'value' IN (${valuePlaceholders})
+            )`;
+            params.push(...values, traitType);
+            paramIndex += values.length + 1;
+          }
+        }
+      }
+
+      query += ` ORDER BY v.price ASC NULLS LAST`;
+
+      const result = await client.query(query, params);
+      return result.rows.map((r: any) => ({
+        assetIdx: r.asset_idx,
+        assetId: r.asset_id?.trim(),
+        name: r.name,
+        brandName: r.brand_name,
+        isListed: r.is_listed,
+        listedDate: r.listed_date,
+        price: r.price,
+        age: r.age,
+        bottledYear: r.bottled_year,
+        marketPrice: r.market_price,
+        producer: r.producer,
+        imageUrl: r.image_url,
+      }));
+    } finally {
+      client.release();
+    }
+  }
+
+  async getBrandStats(brandName: string): Promise<BrandStats> {
+    const client = await pool.connect();
+    try {
+      const result = await client.query(`
+        SELECT 
+          COUNT(*) as total_bottles,
+          COUNT(*) FILTER (WHERE is_listed = true) as listed_count,
+          MIN(price) FILTER (WHERE is_listed = true) as floor_price,
+          AVG(market_price) as avg_market_price
+        FROM baxus.v_asset_summary
+        WHERE brand_name = $1
+      `, [brandName]);
+      
+      const row = result.rows[0];
+      return {
+        totalBottles: parseInt(row.total_bottles, 10),
+        listedCount: parseInt(row.listed_count, 10),
+        floorPrice: row.floor_price ? parseFloat(row.floor_price) : null,
+        avgMarketPrice: row.avg_market_price ? parseFloat(row.avg_market_price) : null,
+      };
+    } finally {
+      client.release();
+    }
+  }
+
+  async getBrandTraits(brandName: string): Promise<BrandTrait[]> {
+    const client = await pool.connect();
+    try {
+      const result = await client.query(`
+        SELECT 
+          attr ->> 'trait_type' as trait_type,
+          attr ->> 'value' as value,
+          COUNT(*) as count
+        FROM baxus.v_asset_summary v
+        JOIN baxus.assets a ON v.asset_idx = a.asset_idx,
+        LATERAL jsonb_array_elements(a.metadata_json -> 'attributes') AS attr
+        WHERE v.brand_name = $1 
+          AND v.is_listed = true
+          AND attr ->> 'trait_type' NOT IN ('Blurhash', 'PackageShot', 'Baxus Class ID', 'Baxus Class Name', 'Serial Number', 'Name')
+        GROUP BY attr ->> 'trait_type', attr ->> 'value'
+        ORDER BY attr ->> 'trait_type', count DESC
+      `, [brandName]);
+
+      const traitsMap = new Map<string, TraitValue[]>();
+      for (const row of result.rows) {
+        const traitType = row.trait_type;
+        const value = row.value;
+        const count = parseInt(row.count, 10);
+        
+        if (!traitsMap.has(traitType)) {
+          traitsMap.set(traitType, []);
+        }
+        traitsMap.get(traitType)!.push({ value, count });
+      }
+
+      return Array.from(traitsMap.entries()).map(([traitType, values]) => ({
+        traitType,
+        values,
+      }));
+    } finally {
+      client.release();
+    }
+  }
+
+  async getBrandActivity(brandName: string, limit: number = 50): Promise<ActivityFeedWithDetails[]> {
+    const client = await pool.connect();
+    try {
+      const result = await client.query(`
+        SELECT 
+          af.activity_idx,
+          af.activity_type_idx,
+          af.asset_idx,
+          af.price,
+          af.activity_date,
+          af.signature,
+          dat.activity_type_code,
+          dat.activity_type_name,
+          a.asset_id,
+          a.name AS asset_name,
+          v.producer,
+          a.is_listed
+        FROM baxus.activity_feed af
+        INNER JOIN baxus.dim_activity_types dat ON af.activity_type_idx = dat.activity_type_idx
+        INNER JOIN baxus.assets a ON af.asset_idx = a.asset_idx
+        INNER JOIN baxus.v_asset_summary v ON v.asset_idx = a.asset_idx
+        WHERE v.brand_name = $1
+        ORDER BY af.activity_date DESC
+        LIMIT $2
+      `, [brandName, limit]);
+
+      return result.rows.map((r: any) => ({
+        activityIdx: r.activity_idx,
+        activityTypeIdx: r.activity_type_idx,
+        assetIdx: r.asset_idx,
+        price: r.price,
+        activityDate: r.activity_date,
+        signature: r.signature,
+        activityTypeCode: r.activity_type_code,
+        activityTypeName: r.activity_type_name,
+        assetId: r.asset_id?.trim() ?? '',
+        assetName: r.asset_name ?? 'Unknown',
+        producer: r.producer,
+        isListed: r.is_listed,
+      }));
     } finally {
       client.release();
     }
