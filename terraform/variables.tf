@@ -149,6 +149,13 @@ variable "gemini_api_key" {
   default     = ""
 }
 
+variable "helius_api_key" {
+  description = "Helius API key for Solana blockchain activity tracking in Baxus Monitor"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 variable "authorized_home_ip" {
   description = "Authorized home IP address for dev database access (CIDR format, e.g., 1.2.3.4/32)"
   type        = string

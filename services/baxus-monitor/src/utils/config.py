@@ -34,7 +34,6 @@ class Config:
     environment: Literal["dev", "staging", "production"] = os.environ.get(  # type: ignore
         "ENVIRONMENT", "dev"
     )
-    instance_type: str | None = os.environ.get("INSTANCE_TYPE")
 
     gemini_api_key: str | None = os.environ.get("GEMINI_API_KEY")
 
@@ -75,7 +74,7 @@ class Config:
 missing = []
 
 # Always required
-for var in ("GCP_PROJECT_ID", "PUBSUB_TOPIC", "GEMINI_API_KEY"):
+for var in ("GCP_PROJECT_ID", "PUBSUB_TOPIC", "GEMINI_API_KEY", "HELIUS_API_KEY"):
     if var not in os.environ or not os.environ[var].strip():
         missing.append(var)
 
