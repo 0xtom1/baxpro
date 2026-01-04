@@ -46,6 +46,26 @@ Services use SQLAlchemy for database access and share common patterns in their `
 Baxus API → baxus-monitor → Pub/Sub → alert-processor → Pub/Sub → alert-sender → Email
 ```
 
+### Brand Page
+
+The Brand page (`/brand?name=<brand_name>`) displays detailed information about a specific brand:
+
+**API Endpoints**:
+- `GET /api/brand-names` - Lists distinct brand names from v_asset_summary view
+- `GET /api/brand?name=X&trait_*=Y` - Returns assets, stats, traits, and activity for a brand
+
+**Features**:
+- **Items Tab**: Grid of listed bottles with images and prices, filtered by selected traits
+- **Loans Tab**: Placeholder for future loan features
+- **Charts Tab**: Scatter plot showing price vs market_price
+- **Activity Tab**: Activity feed for brand bottles with strikethrough for delisted items
+- **Traits Sidebar**: Collapsible sections with checkbox filters extracted from metadata_json.attributes
+
+**Implementation Notes**:
+- Uses query parameters instead of path params to handle special characters in brand names
+- Trait filters normalized from ParsedQs objects to plain strings to prevent SQL injection
+- Mobile-responsive with slide-out filters drawer
+
 ### VIP Features
 
 Users with `isVip: true` can access:
