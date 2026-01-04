@@ -74,7 +74,7 @@ class Config:
 missing = []
 
 # Always required
-for var in ("GCP_PROJECT_ID", "PUBSUB_TOPIC", "GEMINI_API_KEY"):
+for var in ("GCP_PROJECT_ID", "PUBSUB_TOPIC", "GEMINI_API_KEY", "HELIUS_API_KEY"):
     if var not in os.environ or not os.environ[var].strip():
         missing.append(var)
 
