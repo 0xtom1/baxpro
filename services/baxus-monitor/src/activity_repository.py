@@ -182,7 +182,7 @@ class ActivityRepository:
             )
         )
         rows = result.fetchone()
-        return rows
+        return rows[0]
 
     def update_latest_processed_signature(self) -> None:
         """Update the MAX_SIGNATURE metadata value to the signature from the latest activity_date (where signature is not null)."""
