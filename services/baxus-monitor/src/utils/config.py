@@ -34,7 +34,6 @@ class Config:
     environment: Literal["dev", "staging", "production"] = os.environ.get(  # type: ignore
         "ENVIRONMENT", "dev"
     )
-    instance_type: str | None = os.environ.get("INSTANCE_TYPE")
 
     gemini_api_key: str | None = os.environ.get("GEMINI_API_KEY")
 

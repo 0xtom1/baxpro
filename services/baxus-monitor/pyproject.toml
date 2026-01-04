@@ -1,0 +1,33 @@
+[tool.black]
+line-length = 119
+target-version = ["py311"]
+
+[tool.ruff]
+# Global options that are NOT deprecated stay here
+line-length = 119
+target-version = "py311"
+exclude = [
+  ".git",
+  "__pycache__",
+  "build",
+  "dist",
+  "migrations",
+  "venv"
+]
+
+[tool.ruff.lint]
+# All linter-specific options now go under this subsection
+select = [
+  "E",   # pycodestyle errors
+  "W",   # pycodestyle warnings
+  "F",   # pyflakes
+  "I",   # isort
+  "N",   # pep8-naming
+  "B",   # flake8-bugbear
+  "C4",  # flake8-comprehensions
+  "UP",  # pyupgrade
+]
+ignore = [
+  "E501",  # line too long (handled by Black)
+  "E203",  # whitespace before ':' (Black style conflict)
+]

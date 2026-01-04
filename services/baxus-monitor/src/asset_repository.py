@@ -1,6 +1,6 @@
 """Repository for managing baxus_listings in the database."""
 
-from typing import Optional
+from datetime import datetime
 
 from sqlalchemy import null, text
 from sqlalchemy.engine import Connection
@@ -53,7 +53,7 @@ class AssetRepository:
         else:
             return True
 
-    def get_by_key(self, record: AssetDetails) -> Optional[AssetDetails]:
+    def get_by_key(self, record: AssetDetails = None) -> AssetDetails | None:
         """Fetch an existing asset by its unique asset_id.
 
         Args:
@@ -70,6 +70,33 @@ class AssetRepository:
             .first()
         )
 
+    def get_asset_idx_by_key_and_last_updated(self, asset_id: str, last_updated: datetime) -> int | None:
+        """Fetch the asset_idx of a record matching asset_id and last_updated.
+
+        Looks for an asset where:
+        - asset_id exactly matches
+        - last_updated is greater than or equal to the provided timestamp
+        (useful for detecting changes since a certain point)
+
+        Args:
+            asset_id: The unique asset identifier to search for.
+            last_updated: Minimum last_updated timestamp to match.
+
+        Returns:
+            int: The asset_idx if a matching record is found.
+            None: If no matching record exists.
+        """
+        record = (
+            self.session.query(AssetDetails.asset_idx)
+            .filter(AssetDetails.asset_id == asset_id, AssetDetails.last_updated >= last_updated)
+            .first()
+        )
+
+        if record:
+            return record.asset_idx
+        else:
+            return None
+
     def is_nullish(self, value):
         """Check if a value represents a null or empty state.
 
@@ -80,7 +107,6 @@ class AssetRepository:
             bool: True for None, "null", "NULL", empty string, etc.
         """
         if value is None:
-            print('here')
             return True
         if isinstance(value, str):
             print(value.strip().lower())
@@ -104,19 +130,15 @@ class AssetRepository:
         """
 
         # Safely extract values → None if missing or empty string
-        bottled_date = _parse_datetime(
-            is_attribute=True, key_name="bottled_on", asset_data=asset_data
-        )
+        bottled_date = _parse_datetime(is_attribute=True, key_name="bottled_on", asset_data=asset_data)
         if bottled_date:
             bottled_year = bottled_date.year
         else:
             bottled_year = None
 
-        age = _parse_int(is_attribute=True, key_name="age",
-                         asset_data=asset_data)
+        age = _parse_int(is_attribute=True, key_name="age", asset_data=asset_data)
 
-        baxus_idx = _parse_int(is_attribute=False, key_name="id",
-                               asset_data=asset_data)
+        baxus_idx = _parse_int(is_attribute=False, key_name="id", asset_data=asset_data)
 
         price = _parse_float(
             is_attribute=False,
@@ -125,9 +147,7 @@ class AssetRepository:
             return_none_if_zero=True,
         )
 
-        listed_date = _parse_datetime(
-            is_attribute=False, key_name="listed_price_updated_at", asset_data=asset_data
-        )
+        listed_date = _parse_datetime(is_attribute=False, key_name="listed_price_updated_at", asset_data=asset_data)
         if price and listed_date:
             is_listed = True
         else:
@@ -135,9 +155,10 @@ class AssetRepository:
 
         asset_name = asset_data.get("name")
 
-        if asset_name is None or asset_name == '':
-            # Fall back to bottle release name
-            asset_name = asset_data.get("bottle_release", {}).get("name")
+        if asset_name is None or asset_name == "":
+            # Fall back to bottle release name or ''
+            bottle_release = asset_data.get("bottle_release") or {}
+            asset_name = bottle_release.get("name", "")
 
         record = AssetDetails(
             asset_id=asset_data.get("token_asset_address"),
@@ -149,19 +170,21 @@ class AssetRepository:
             asset_json=asset_data,
             metadata_json=null(),
             is_listed=is_listed,
-            listed_date=listed_date
+            listed_date=listed_date,
         )
         existing = self.get_by_key(record=record)
         if not existing:
             # Insert new
             self.session.add(record)
             self.session.commit()
-            logger.info("Inserting new {f}".format(f=record))
+            logger.info(f"Inserting new {record}")
             return record, True, True
-        elif update_if_changed(instance=existing, new_instance=record, ignore_keys={'added_date', 'asset_id', 'metadata_json'}):
+        elif update_if_changed(
+            instance=existing, new_instance=record, ignore_keys={"added_date", "asset_id", "metadata_json"}
+        ):
             # Update the existing record with new data
             self.session.commit()
-            logger.info("Updating Existing {f}".format(f=existing))
+            logger.info(f"Updating Existing {existing}")
             return existing, False, True
         else:
             # No update, retrun existing
@@ -175,9 +198,9 @@ class AssetRepository:
         """
         self.session.add(asset_json)
         self.session.commit()
-        self.session.query(AssetDetails)\
-            .filter(AssetDetails.asset_idx == asset_json.asset_idx)\
-            .update({"metadata_json": asset_json.metadata_json}, synchronize_session=False)
+        self.session.query(AssetDetails).filter(AssetDetails.asset_idx == asset_json.asset_idx).update(
+            {"metadata_json": asset_json.metadata_json}
+        )
         self.session.commit()
 
     def get_all_attributes(self):
@@ -189,9 +212,9 @@ class AssetRepository:
         result = self.conn.execute(
             text(
                 """
-                    SELECT 
+                    SELECT
                         asset_json -> 'attributes' AS attributes_json
-                    FROM "baxus"."asset_details"
+                    FROM "baxus"."assets"
                     WHERE asset_json ? 'attributes'
                     ORDER BY asset_id
 
@@ -210,9 +233,9 @@ class AssetRepository:
         result = self.conn.execute(
             text(
                 """
-                    SELECT 
+                    SELECT
                         asset_json
-                    FROM "baxus"."asset_details"
+                    FROM "baxus"."assets"
                     ORDER BY asset_id
 
         """

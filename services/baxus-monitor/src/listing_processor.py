@@ -7,7 +7,6 @@ from sqlalchemy import Null
 from .activity_repository import ActivityRepository
 from .asset_repository import AssetRepository
 from .baxus_client import BaxusClient
-from .helius_client import HeliusClient
 from .models import ActivityFeedImport, AssetJsonFeed
 from .pubsub import PubSubPublisher
 from .utils.clean_asset_data import get_spirit_types
@@ -21,22 +20,13 @@ logger = get_logger()
 class ListingProcessor:
     """Processes listings from Baxus API, persists them, and publishes notifications."""
 
-    def __init__(self, config: Config):
+    def __init__(self, config: Config, listing_activity_idx: int):
         self.config = config
         self.db = Database(config)
         self.baxus_client = BaxusClient(config)
         self.publisher = PubSubPublisher(config)
-        self.listing_activity_idx = 0
-        self.set_activity_type_idx()
-        self.ignore_metadata_baxus_ids = list()
-
-    def set_activity_type_idx(self):
-        """Fetch and store the activity type index for NEW_LISTING events."""
-        session = self.db.get_session()
-        activity_repo = ActivityRepository(session=session)
-        self.listing_activity_idx = activity_repo.get_activity_type_idx(
-            activity_type_code="NEW_LISTING")
-        session.close()
+        self.listing_activity_idx = listing_activity_idx
+        self.ignore_metadata_baxus_ids = []
 
     def populate_assets_on_start(self, response_size: int = 50) -> dict:
         """Populate the assets table with all available assets on service startup.
@@ -411,21 +401,3 @@ class ListingProcessor:
     def clean_ignore_metadata_baxus_ids(self):
         if len(self.ignore_metadata_baxus_ids) > 500:
             self.ignore_metadata_baxus_ids = list()
-
-
-class BlockchainProcessor:
-    """Processes listings from Baxus API, persists them, and publishes notifications."""
-
-    def __init__(self, config: Config):
-        self.config = config
-        self.db = Database(config)
-        self.baxus_client = BaxusClient(config)
-        self.publisher = PubSubPublisher(config)
-
-    def test(self):
-        H = HeliusClient(config=Config)
-        H.get_parsed_transactions()
-
-    def close(self):
-        """Clean up resources."""
-        self.db.close()

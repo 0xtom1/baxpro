@@ -1,4 +1,6 @@
 """Client for fetching listings from the Baxus API."""
+
+
 import requests
 from heliuspy import HeliusAPI
 from solana.rpc.api import Client
@@ -32,68 +34,41 @@ class HeliusClient:
         signer? BAXDZX8gHKByCrcxNoR2udxQwDAM4UYKTFbfDawgDHwR
         """
 
-    def get_parsed_transactions(self, pub_key: str = None):
+    def get_parsed_transactions(self, until_signature: str = None, before_signature: str = None, response_size: int = 100):
         """Get parsed transactions for a Solana wallet address.
 
         Fetches and prints the most recent transactions for the configured
         Baxus public key.
 
-        Args:
-            pub_key: The public key to query. Uses default Baxus key if not provided.
-        """
-        transactions = self.Helius.get_parsed_transactions(
-            address=self.pub_key, limit=10, before='3wXGMBHHxgsGckKF7H8HCywb7vb6o38bYz46v6nUZvPohhSrLhBYyKS7K9aabEYA8YXTt5Rtrh3ektpeQbrmiPr7')
-        print(transactions)
-        for each in transactions:
-            # print(each)
-            print('-----------------')
+        before_signature = starting point for pagination
 
-    def get_transactions(self, pub_key: str = None):
-        """Get raw transactions for a Solana wallet address.
+        until = end point for pagination
 
-        Fetches successful transactions for the Baxus public key using
-        the Helius RPC endpoint.
+        results in reverse chronological order
 
         Args:
             pub_key: The public key to query. Uses default Baxus key if not provided.
         """
-        params = {
-            "transactionDetails": 'full',
-            "sortOrder": 'desc',
-            "limit": 10,
-            "filters": {
-                "status": 'succeeded'
-            }
-        }
+        try:
+            transactions = self.Helius.get_parsed_transactions(
+                address=self.pub_key, limit=response_size, until=until_signature, before=before_signature, commitment="confirmed")
+            return transactions
+        except Exception as e:
+            logger.error(f"Error fetching parsed transactions: {e}")
+            return []
 
-        payload = [self.pub_key, {
-            "jsonrpc": "2.0",
-            "id": 1,
-            "method": "getTransactionsForAddress",
-            "params": params,
-        }]
+    def get_asset(self, id: str = None):
+        """Get an asset by its ID.
 
-        payload = {
-            "jsonrpc": '2.0',
-            "id": 1,
-            "method": 'getTransactionsForAddress',
-            "params": [
-                'BAXUz8YJsRtZVZuMaespnrDPMapvu83USD6PXh4GgHjg',
-                {
-                    "transactionDetails": 'full',
-                    "sortOrder": 'desc',
-                    "limit": 5,
-                    "filters": {
-                        "status": 'succeeded'
-                    }
-                }
-            ]
-        }
-        transactions = self._send_request(
-            url=self.RPC_ENDPOINT, postdict=payload)
-        for each in transactions['result'].get('data'):
-            print(each)
-            print('-----------------')
+        Args:
+            id: The public key to query. 
+        """
+        try:
+            asset_info = self.Helius.get_asset(id=id)
+            return asset_info
+        except Exception as e:
+            logger.error(f"Error fetching asset: {e}")
+            return None
 
     def _send_request(self, url, headers=None, params=None, postdict=None, verb=None):
         """Send an HTTP request to the specified endpoint.
@@ -127,4 +102,5 @@ if __name__ == "__main__":
     from .utils.config import config
     W = HeliusClient(config=config
                      )
-    W.get_transactions()
+    W.get_asset()
+    
