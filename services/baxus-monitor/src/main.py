@@ -2,12 +2,15 @@
 
 import os
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from threading import Thread
 
-from .processor import BlockchainProcessor, ListingProcessor
+from .activity_repository import ActivityRepository
+from .blockchain_processor import BlockchainProcessor
+from .listing_processor import ListingProcessor
 from .utils.config import config
+from .utils.db import Database
 from .utils.log import get_logger
 
 logger = get_logger()
@@ -27,7 +30,7 @@ class HealthHandler(BaseHTTPRequestHandler):
         pass
 
 
-def monitor_listings():
+def monitor_activity():
     """Monitor Baxus listings by polling the API and processing new/updated assets.
 
     This function runs an infinite loop that:
@@ -39,27 +42,42 @@ def monitor_listings():
     logger.info("Starting Baxus Monitor service...")
     logger.info(config)
 
-    processor = ListingProcessor(config)
+    db = Database(config)
+    session = db.get_session()
+    with ActivityRepository(session=session) as activity_repo:
+        activity_types_map = activity_repo.get_activity_type_map()
+        logger.info(f"Activity Types: {activity_types_map}")
+    session.close()
+    db.close()
 
+    listing_processor = ListingProcessor(config, listing_activity_idx=activity_types_map["NEW_LISTING"])
 
-    start_time = datetime.now(timezone.utc)
-    # initial asset_details population if table empty
-    stats = processor.process_import()
-    elapsed_secs = (datetime.now(timezone.utc) -
-                                start_time).total_seconds()
-    logger.info(
-        f"Poll cycle complete in {elapsed_secs:.2f}s - "
-        f"Processed: {stats['total_processed']}, "
-        f"New Assets: {stats['new_assets']}, "
-        f"Updated Assets: {stats['updated_assets']}, "
-        f"Inserted Activity: {stats['activity_inserted']}, "
-        f"Errors: {stats['errors']}, "
-    )
-    
-    elapsed_secs = 0
-    start_time = datetime.now(timezone.utc)
-    # Loop new listings
+    # Loop activity
     while True:
+        # Get blockchain activities
+        try:
+            start_time = datetime.now(UTC)
+            with BlockchainProcessor(config=config, activity_types_map=activity_types_map) as blockchain_processor:
+                logger.info("Starting blockchain processing...")
+                stats = blockchain_processor.process_transactions()
+                elapsed_secs = (datetime.now(UTC) - start_time).total_seconds()
+                logger.info(
+                    f"Poll cycle complete in {elapsed_secs:.2f}s - "
+                    f"Parsed Mints: {stats['parsed_mints']}, "
+                    f"Parsed Burns: {stats['parsed_burns']}, "
+                    f"Parsed Purchases: {stats['parsed_purchases']}, "
+                    f"Total Processed: {stats['total_processed']}, "
+                    f"Inserted Activities: {stats['inserted_activities']}, "
+                    f"Errors: {stats['errors']}, "
+                )
+        except KeyboardInterrupt:
+            logger.info("\nStopped by user")
+            break
+        except Exception as e:
+            logger.error(f"Error in blockchain poll cycle: {e}", exc_info=True)
+            time.sleep(60)  # Wait before retrying on error
+
+        # Get new listings, Loop until new listings != query size
         stats = {
             "total_processed": 0,
             "new_assets": 0,
@@ -69,15 +87,13 @@ def monitor_listings():
         query_size = 24
         start_from = 0
         try:
-            while stats.get('total_processed') == stats.get('new_listings'):
-                start_time = datetime.now(timezone.utc)
+            while stats.get("total_processed") == stats.get("new_listings"):
+                start_time = datetime.now(UTC)
                 logger.info("Starting poll cycle...")
-                stats = processor.process_listings(
-                    query_size=query_size, query_from=start_from)
-                elapsed_secs = (datetime.now(timezone.utc) -
-                                start_time).total_seconds()
+                stats = listing_processor.process_listings(query_size=query_size, query_from=start_from)
+                elapsed_secs = (datetime.now(UTC) - start_time).total_seconds()
                 start_from += query_size
-                if stats.get('total_processed') == stats.get('new_listings'):
+                if stats.get("total_processed") == stats.get("new_listings"):
                     logger.info(
                         f"Poll cycle complete in {elapsed_secs:.2f}s - "
                         f"Processed: {stats['total_processed']}, "
@@ -100,22 +116,11 @@ def monitor_listings():
 
         except KeyboardInterrupt:
             logger.info("\nStopped by user")
-            processor.close()
+            listing_processor.close()
             break
         except Exception as e:
             logger.error(f"Error in poll cycle: {e}", exc_info=True)
             time.sleep(60)  # Wait before retrying on error
-
-
-def monitor_blockchain():
-    """Monitor the Solana blockchain for Baxus-related transactions.
-
-    Initializes the blockchain processor and runs transaction monitoring.
-    """
-    logger.info("Starting Baxus Monitor service...")
-    logger.info(config)
-    B = BlockchainProcessor(config=config)
-    B.test()
 
 
 def run():
@@ -132,10 +137,7 @@ def run():
 
     Thread(target=server.serve_forever, daemon=True).start()
 
-    if config.instance_type != "blockchain_monitor":
-        monitor_listings()
-    else:
-        monitor_blockchain()
+    monitor_activity()
 
 
 if __name__ == "__main__":

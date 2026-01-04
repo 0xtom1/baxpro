@@ -9,6 +9,7 @@ Never miss products on Baxus.co. Get instant email alerts when items matching yo
 - **Year & Age Filters** - Filter by bottled year and product age
 - **Email Notifications** - Receive email alerts via SendGrid
 - **Secure Authentication** - Sign in with Google
+- **On-Chain Activity Tracking** - View mints, burns, and purchases from the Solana blockchain
 
 ### VIP Features (Experimental)
 
@@ -41,7 +42,7 @@ Never miss products on Baxus.co. Get instant email alerts when items matching yo
 
 | Service | Type | Purpose |
 |---------|------|---------|
-| **baxus-monitor** | Cloud Run | Polls Baxus API for listings (30s prod / 300s dev) |
+| **baxus-monitor** | Cloud Run | Polls Baxus API for listings + tracks on-chain activity via Helius |
 | **alert-processor** | Cloud Function | Matches listings to user alerts |
 | **alert-sender** | Cloud Function | Sends email notifications via SendGrid |
 
@@ -63,17 +64,20 @@ Never miss products on Baxus.co. Get instant email alerts when items matching yo
 ## Architecture
 
 ```
-[Baxus API]
-     │
-     ▼
-┌─────────────────┐    ┌────────────┐    ┌─────────────────┐
-│  baxus-monitor  │◄──►│ Cloud SQL  │◄──►│    Web App      │
-│  (Cloud Run)    │    │(PostgreSQL)│    │  (Cloud Run)    │
-│Find new listings│    │            │    │                 │
-└────────┬────────┘    └────────────┘    └─────────────────┘
-         │
-         │ Pub/Sub: new_listing
-         ▼
+[Baxus API]     [Helius API]
+     │               │
+     │               │ (Solana blockchain)
+     ▼               ▼
+┌─────────────────────────┐    ┌────────────┐    ┌─────────────────┐
+│     baxus-monitor       │◄──►│ Cloud SQL  │◄──►│    Web App      │
+│     (Cloud Run)         │    │(PostgreSQL)│    │  (Cloud Run)    │
+│ - Find new listings     │    │            │    │                 │
+│ - Track on-chain mints, │    │            │    │                 │
+│   burns, and purchases  │    │            │    │                 │
+└───────────┬─────────────┘    └────────────┘    └─────────────────┘
+            │
+            │ Pub/Sub: new_listing
+            ▼
 ┌─────────────────┐
 │ alert-processor │
 │ (Cloud Function)│
@@ -239,6 +243,11 @@ DATABASE_URL=postgresql://user:pass@host/db
 SESSION_SECRET=your-secret-key
 GOOGLE_CLIENT_ID=xxx
 GOOGLE_CLIENT_SECRET=xxx
+```
+
+### Baxus Monitor
+```bash
+HELIUS_API_KEY=your-helius-api-key
 ```
 
 ### Alert Sender

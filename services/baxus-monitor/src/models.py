@@ -1,14 +1,14 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from sqlalchemy import CHAR, VARCHAR, Column, DateTime, Float, Integer, Null, Text
+from sqlalchemy import CHAR, VARCHAR, Column, DateTime, Float, Integer, Null, Text, FetchedValue
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import column_property, declarative_base, mapped_column
 
 Base = declarative_base()
 
 
 def _fmt_dt(dt):
-    return dt.strftime('%Y-%m-%d %H:%M') if dt else "<None>"
+    return dt.strftime("%Y-%m-%d %H:%M") if dt else "<None>"
 
 
 def _fmt_price(p):
@@ -27,23 +27,22 @@ class AssetJsonFeed(Base):
     asset_idx = Column(Integer, primary_key=False, nullable=False)
     asset_json = Column(JSONB, nullable=True)
     metadata_json = Column(JSONB, nullable=True)
-    added_date = Column(DateTime, default=lambda: datetime.now(
-        timezone.utc), nullable=False)
+    added_date = Column(DateTime, default=lambda: datetime.now(UTC), nullable=False)
 
     def __str__(self):
-        added_str = _fmt_dt(self.added_date) if self.added_date else '<None>'
+        added_str = _fmt_dt(self.added_date) if self.added_date else "<None>"
 
         if isinstance(self.metadata_json, Null):
-            meta_json_str = '<null>'
+            meta_json_str = "<null>"
         elif self.metadata_json is None:
-            meta_json_str = '<None>'
+            meta_json_str = "<None>"
         else:
             meta_json_str = str(len(self.metadata_json))
 
         if isinstance(self.asset_json, Null):
-            asset_json_str = '<null>'
+            asset_json_str = "<null>"
         elif self.asset_json is None:
-            asset_json_str = '<None>'
+            asset_json_str = "<None>"
         else:
             asset_json_str = str(len(self.asset_json))
 
@@ -87,8 +86,10 @@ class AssetDetails(Base):
     listed_date = Column(DateTime, nullable=True)
     asset_json = Column(JSONB, nullable=False)
     metadata_json = Column(JSONB, nullable=True)
-    added_date = Column(DateTime, default=lambda: datetime.now(
-        timezone.utc), nullable=False)
+    added_date = Column(DateTime, default=lambda: datetime.now(UTC), nullable=False)
+    last_updated = mapped_column(DateTime, server_default=FetchedValue())
+
+    # last_updated = column_property(Column("last_updated", DateTime))
 
     def __str__(self):
         url = f"https://baxus.co/asset/{self.asset_id}" if self.asset_id else "—"
@@ -99,16 +100,15 @@ class AssetDetails(Base):
 
         age_str = f" age={self.age}" if self.age else "age=<None>"
         bottled_str = f"bottledyear={self.bottled_year}" if self.bottled_year else "bottledyear=<None>"
-        price_str = _fmt_price(
-            self.price) if self.price is not None else "<None>"
+        price_str = _fmt_price(self.price) if self.price is not None else "<None>"
         listed_str = _fmt_dt(self.listed_date)
         is_listed_str = "true" if self.is_listed else "false"
-        json_len = len(self.asset_json) if self.asset_json else '<None>'
+        json_len = len(self.asset_json) if self.asset_json else "<None>"
 
         if isinstance(self.metadata_json, Null):
-            meta_json_str = '<null>'
+            meta_json_str = "<null>"
         elif self.metadata_json is None:
-            meta_json_str = '<None>'
+            meta_json_str = "<None>"
         else:
             meta_json_str = str(len(self.metadata_json))
 
@@ -129,6 +129,7 @@ class AssetDetails(Base):
         ]
         return "\n".join(lines)
 
+
 class ActivityFeedImport(Base):
     __tablename__ = "activity_feed_import"
     __table_args__ = {"schema": "baxus"}
@@ -148,7 +149,7 @@ class ActivityFeedImport(Base):
             "</ActivityLogImport>",
         ]
         return "\n".join(lines)
-    
+
 
 class ActivityFeed(Base):
     __tablename__ = "activity_feed"
@@ -156,16 +157,15 @@ class ActivityFeed(Base):
 
     activity_idx = Column(Integer, primary_key=True, autoincrement=True)
     activity_type_idx = Column(Integer, nullable=False)
-    asset_idx = Column(Integer, primary_key=False,
-                       autoincrement=False, nullable=False)
+    asset_idx = Column(Integer, primary_key=False, autoincrement=False, nullable=False)
     price = Column(Float, nullable=True)
     activity_date = Column(DateTime, nullable=False)
-    signature = Column(CHAR(44), primary_key=False, nullable=False, index=True)
+    signature = Column(VARCHAR(88), primary_key=False, nullable=True)
+    from_user_account = Column(VARCHAR(44), primary_key=False, nullable=True)
+    to_user_account = Column(VARCHAR(44), primary_key=False, nullable=True)
 
     def __str__(self):
         price_str = _fmt_price(self.price) if self.price is not None else "—"
-        sig_str = _fmt_price(
-            self.signature) if self.signature is not None else "—"
         activitystr = _fmt_dt(self.activity_date)
         lines = [
             "<ActivityLog>",
@@ -174,9 +174,13 @@ class ActivityFeed(Base):
             f"  asset_idx        : {self.asset_idx or '—'}",
             f"  price            : {price_str}",
             f"  date             : {activitystr}",
-            f"  signature        : {sig_str}",
+            f"  signature        : {self.signature or '—'}",
+            f"  from_user_account: {self.from_user_account or '—'}",
+            f"  to_user_account  : {self.to_user_account or '—'}",
             "</ActivityLog>",
         ]
+        if "mint" in self.__dict__:
+            lines.insert(-1, f"  mint             : {self.mint or '—'}")
         return "\n".join(lines)
 
 
@@ -185,10 +189,8 @@ class ActivityTypes(Base):
     __table_args__ = {"schema": "baxus"}
 
     activity_type_idx = Column(Integer, primary_key=True, autoincrement=True)
-    activity_type_code = Column(
-        VARCHAR(50), primary_key=False, nullable=False, index=False)
-    activity_type_name = Column(
-        VARCHAR(100), primary_key=False, nullable=False, index=False)
+    activity_type_code = Column(VARCHAR(50), primary_key=False, nullable=False, index=False)
+    activity_type_name = Column(VARCHAR(100), primary_key=False, nullable=False, index=False)
 
     def __str__(self):
         lines = [
@@ -212,13 +214,12 @@ class Bottle(Base):
     bottler = Column(Text, nullable=True)
     brand = Column(Text, nullable=True)
     sub_brand = Column(Text, nullable=True)
-    added_date = Column(DateTime, default=lambda: datetime.now(
-        timezone.utc), nullable=False)
+    added_date = Column(DateTime, default=lambda: datetime.now(UTC), nullable=False)
 
     def __str__(self):
-        
+
         if not self.bottle_name:
-            name_display = '<None>'
+            name_display = "<None>"
         elif len(self.bottle_name) > 60:
             name_display = self.bottle_name[:57] + "..."
         else:
