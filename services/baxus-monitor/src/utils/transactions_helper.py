@@ -1,4 +1,4 @@
-"""Main processor that orchestrates polling, deduplication, and notifications."""
+"""Utilities for parsing Solana transactions into activity feed objects."""
 
 from datetime import datetime
 
@@ -10,7 +10,7 @@ logger = get_logger()
 
 
 class TransactionsHelper:
-    """Processes listings from Baxus API, persists them, and publishes notifications."""
+    """Helper class for parsing Solana transactions into activity feed objects."""
 
     def __init__(self, activity_types_map: dict = None):
         self.activity_types_map = activity_types_map
@@ -95,15 +95,16 @@ class TransactionsHelper:
         return activity_feed
 
     def is_burn_transaction(self, transaction: dict) -> bool:
-        """Determine if a transaction is a mint transaction.
+        """Determine if a transaction is a burn transaction.
 
-            Logic:
-                    1. No tokenTransfers
-                    2. Instructions progamID = TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb
-                    3. Must have exactly 1 token balance change
-                    4. Must have a mint and rawTokenAmount in that change
+        A burn transaction has exactly one mint with a net change of -1,
+        indicating a token was destroyed.
+
         Args:
-            transaction: The transaction data.
+            transaction: The parsed transaction data from Helius.
+
+        Returns:
+            bool: True if the transaction is a burn event.
         """
         net_changes = self.get_net_mint_changes(transaction=transaction)
         if len(net_changes) == 1:
@@ -166,10 +167,13 @@ class TransactionsHelper:
         return net_changes
 
     def get_net_mint_changes_per_user_account(self, transaction: dict) -> dict:
-        """Get net mint changes from a transaction.
+        """Get net token balance changes grouped by mint and user account.
 
         Args:
-            transaction: The transaction data.
+            transaction: The parsed transaction data from Helius.
+
+        Returns:
+            dict: Nested dict of {mint: {user_account: net_amount}}.
         """
         net_user_changes = {}
         account_data = transaction.get("accountData", [])
@@ -189,15 +193,18 @@ class TransactionsHelper:
         return net_user_changes
 
     def is_purchase_transaction(self, transaction: dict) -> bool:
-        """Determine if a transaction is a mint transaction.
+        """Determine if a transaction is a purchase transaction.
 
-            Logic:
-                    1. USDC must be involved
-                    2. USDC net change must be zero
-                    3. Exactly two mints involved (USDC + NFT)
-                    4. USDC coming from one account
+        A purchase transaction involves USDC and an NFT token where:
+        1. USDC net change is zero (transferred between accounts)
+        2. Exactly two mints involved (USDC + the NFT)
+        3. USDC is sent from exactly one account (the buyer)
+
         Args:
-            transaction: The transaction data.
+            transaction: The parsed transaction data from Helius.
+
+        Returns:
+            bool: True if the transaction is a purchase event.
         """
         net_changes = self.get_net_mint_changes(transaction=transaction)
         net_user_changes = self.get_net_mint_changes_per_user_account(transaction=transaction)
@@ -217,10 +224,13 @@ class TransactionsHelper:
         return True
 
     def parse_purchase_transaction(self, transaction: dict) -> ActivityFeed:
-        """Parse burn transaction to extract relevant details.
+        """Parse a purchase transaction to extract buyer, seller, price, and asset.
 
         Args:
-            transaction: The transaction data.
+            transaction: The parsed transaction data from Helius.
+
+        Returns:
+            ActivityFeed: Activity record with from/to accounts and USDC price.
         """
         activity_feed = None
         net_user_changes = self.get_net_mint_changes_per_user_account(transaction=transaction)

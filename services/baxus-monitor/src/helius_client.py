@@ -1,4 +1,4 @@
-"""Client for fetching listings from the Baxus API."""
+"""Client for interacting with the Helius RPC API for Solana blockchain data."""
 
 
 import requests
@@ -12,7 +12,7 @@ logger = get_logger()
 
 
 class HeliusClient:
-    """HTTP client for the Baxus API with retry logic."""
+    """Client for interacting with the Helius RPC API for Solana blockchain data."""
 
     def __init__(self, config: Config):
         self.config = config
@@ -58,10 +58,13 @@ class HeliusClient:
             return []
 
     def get_asset(self, id: str = None):
-        """Get an asset by its ID.
+        """Fetch asset metadata from the Helius DAS API.
 
         Args:
-            id: The public key to query. 
+            id: The Solana token mint address to query.
+
+        Returns:
+            dict: Asset metadata including content, ownership, and mint extensions.
         """
         try:
             asset_info = self.Helius.get_asset(id=id)

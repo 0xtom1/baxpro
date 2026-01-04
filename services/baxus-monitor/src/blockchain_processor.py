@@ -1,4 +1,4 @@
-"""Main processor that orchestrates polling, deduplication, and notifications."""
+"""Processor for tracking Solana blockchain activity via the Helius API."""
 
 from datetime import datetime
 from itertools import groupby
@@ -20,7 +20,11 @@ logger = get_logger()
 
 
 class BlockchainProcessor:
-    """Processes listings from Baxus API, persists them, and publishes notifications."""
+    """Processes Solana blockchain transactions to track on-chain activity.
+    
+    Fetches parsed transactions from Helius, identifies mint/burn/purchase events,
+    resolves asset metadata, and persists activity records to the database.
+    """
 
     def __init__(self, config: Config, activity_types_map: dict = None):
         self.config = config
@@ -48,7 +52,16 @@ class BlockchainProcessor:
         return latest_signature
 
     def process_transactions(self) -> dict:
-        """Process transactions from Helius and persist relevant activities."""
+        """Process blockchain transactions from Helius and persist relevant activities.
+
+        Fetches transactions from the Helius API starting from the last processed
+        signature, parses mint/burn/purchase events, resolves asset metadata,
+        and inserts activity records into the database.
+
+        Returns:
+            dict: Statistics including parsed_mints, parsed_burns, parsed_purchases,
+                  total_processed, inserted_activities, and errors count.
+        """
 
         search_until_signature = self.get_latest_processed_signature()
         results = self.get_transactions(until_signature=search_until_signature)
@@ -106,9 +119,18 @@ class BlockchainProcessor:
         }
 
     def get_transactions(self, until_signature: str = None, response_size: int = 100) -> list[ActivityFeed]:
-        """Get and process transactions from Helius API.
+        """Fetch and parse transactions from the Helius API.
+
+        Paginates through transaction history in reverse chronological order,
+        parsing each transaction into ActivityFeed objects for mint, burn, and
+        purchase events.
+
         Args:
-            until_signature: The signature to paginate until.
+            until_signature: Stop pagination when this signature is reached.
+            response_size: Number of transactions to fetch per API call.
+
+        Returns:
+            list[ActivityFeed]: Parsed activity feed objects from transactions.
         """
         before_signature = None
         transactions = []
@@ -131,13 +153,17 @@ class BlockchainProcessor:
         return results
 
     def process_asset(self, asset_id: str, max_activity_date: datetime) -> int:
-        """_summary_
+        """Fetch or update asset details and return the asset index.
+
+        Checks if the asset already exists and is up-to-date. If not, fetches
+        asset data from the Baxus API or on-chain metadata and upserts it.
 
         Args:
-            asset_id (str): _description_
-            max_activity_date (datetime): _description_
+            asset_id: The Solana token mint address of the asset.
+            max_activity_date: The latest activity date for cache invalidation.
 
-        Returns asset_idx
+        Returns:
+            int: The database asset_idx for the asset.
         """
         # asset_id = "9pdjyHBGgsVEMMrEjoqFPZvZeeMaj3F8QEvWyRBcAqQn"
         session = self.db.get_session()
@@ -162,14 +188,17 @@ class BlockchainProcessor:
         return asset_idx
 
     def insert_asset_details(self, source_data: dict, asset_repo: AssetRepository) -> int:
-        """_summary_
+        """Insert or update asset details in the database.
+
+        Upserts the asset record and fetches additional metadata from Baxus
+        if the asset has a baxus_idx.
 
         Args:
-            source_data (dict): _description_
-            asset_repo (AssetRepository): _description_
+            source_data: Asset data dict containing token_asset_address and name.
+            asset_repo: Repository instance for asset database operations.
 
         Returns:
-            _type_: _description_
+            int: The database asset_idx, or None if insertion failed.
         """
         if source_data is None:
             return None
@@ -197,14 +226,17 @@ class BlockchainProcessor:
             return None
 
     def get_asset_data_from_onchain(self, asset_id: str, asset_repo: AssetRepository) -> dict:
-        """_summary_
+        """Fetch asset metadata directly from on-chain data via Helius.
+
+        Used as a fallback when the asset is not found in the Baxus API.
+        Extracts the asset name from token metadata extensions.
 
         Args:
-            source_data (dict): _description_
-            asset_repo (AssetRepository): _description_
+            asset_id: The Solana token mint address.
+            asset_repo: Repository instance (unused, kept for interface consistency).
 
         Returns:
-            _type_: _description_
+            dict: Asset data with token_asset_address and name, or None on error.
         """
         try:
             # Get / Update asset
