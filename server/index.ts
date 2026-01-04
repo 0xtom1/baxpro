@@ -7,8 +7,9 @@ import fs from "fs";
 
 const app = express();
 
-// Trust Cloud Run's proxy for correct HTTPS detection
-app.set('trust proxy', true);
+// Trust exactly 1 proxy hop (GCP Load Balancer) for correct client IP detection
+// Using 'true' allows IP spoofing; using a number is more secure
+app.set('trust proxy', 1);
 
 declare module 'http' {
   interface IncomingMessage {
