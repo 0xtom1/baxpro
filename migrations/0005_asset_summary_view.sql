@@ -11,5 +11,6 @@ SELECT
   a.price,
   a.age,
   a.bottled_year,
-  (a.asset_json -> 'bottle_release' ->> 'market_price')::DOUBLE PRECISION AS market_price
+  (a.asset_json -> 'bottle_release' ->> 'market_price')::DOUBLE PRECISION AS market_price,
+  jsonb_path_query_first(a.metadata_json, '$.attributes[*] ? (@.trait_type == "Producer").value') #>> '{}' AS producer
 FROM baxus.assets a;
