@@ -635,6 +635,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Brand page endpoints (for v_asset_summary brand names)
+  app.get("/api/brand-names", requireAuth, apiLimiter, async (req, res) => {
+    try {
+      const brands = await storage.getBrandNames();
+      res.json(brands);
+    } catch (error) {
+      console.error("Get brand names error:", error);
+      res.status(500).json({ error: "Failed to fetch brand names" });
+    }
+  });
+
+  app.get("/api/brands-list", requireAuth, apiLimiter, async (req, res) => {
+    try {
+      const brands = await storage.getBrandsList();
+      res.json(brands);
+    } catch (error) {
+      console.error("Get brands list error:", error);
+      res.status(500).json({ error: "Failed to fetch brands list" });
+    }
+  });
+
+  app.get("/api/brand", requireAuth, apiLimiter, async (req, res) => {
+    try {
+      const brandName = req.query.name as string;
+      if (!brandName) {
+        return res.status(400).json({ error: "Brand name is required" });
+      }
+
+      const traitFilters: Record<string, string[]> = {};
+      for (const [key, value] of Object.entries(req.query)) {
+        if (key.startsWith('trait_') && value) {
+          const traitType = key.replace('trait_', '');
+          // Normalize ParsedQs values to plain strings
+          if (Array.isArray(value)) {
+            traitFilters[traitType] = value.map(v => String(v));
+          } else if (typeof value === 'object') {
+            // Handle ParsedQs object (e.g., {'0': 'value'})
+            traitFilters[traitType] = Object.values(value).map(v => String(v));
+          } else {
+            traitFilters[traitType] = [String(value)];
+          }
+        }
+      }
+
+      const [assets, stats, traits, activity] = await Promise.all([
+        storage.getBrandAssets(brandName, Object.keys(traitFilters).length > 0 ? traitFilters : undefined),
+        storage.getBrandStats(brandName),
+        storage.getBrandTraits(brandName),
+        storage.getBrandActivity(brandName, 50),
+      ]);
+
+      res.json({ brandName, assets, stats, traits, activity });
+    } catch (error) {
+      console.error("Get brand error:", error);
+      res.status(500).json({ error: "Failed to fetch brand data" });
+    }
+  });
+
   // Product hierarchy endpoints (VIP only)
   app.get("/api/producers", requireVip, apiLimiter, async (req, res) => {
     try {

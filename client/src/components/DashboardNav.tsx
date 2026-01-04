@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Moon, Sun, LogOut, Bell, User, Activity, Crown } from "lucide-react";
+import { Plus, Moon, Sun, LogOut, Bell, User, Activity, Crown, Package } from "lucide-react";
 import GlencairnLogo from "./GlencairnLogo";
 import {
   DropdownMenu,
@@ -119,6 +119,10 @@ export default function DashboardNav({ onNewAlert, alertCount = 0 }: DashboardNa
                 </div>
               </div>
               <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setLocation("/brands")} data-testid="button-brands">
+                <Package className="w-4 h-4 mr-2" />
+                Browse Brands
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setLocation("/activity")} data-testid="button-activity-feed">
                 <Activity className="w-4 h-4 mr-2" />
                 Activity Feed
