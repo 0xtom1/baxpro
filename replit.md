@@ -46,6 +46,20 @@ Services use SQLAlchemy for database access and share common patterns in their `
 Baxus API → baxus-monitor → Pub/Sub → alert-processor → Pub/Sub → alert-sender → Email
 ```
 
+### Brands Listing Page
+
+The Brands page (`/brands`) displays a searchable, sortable list of all brands:
+
+**API Endpoint**:
+- `GET /api/brands-list` - Returns all brands with producer, asset count, listed count, floor price
+
+**Features**:
+- Search filter for brands and producers
+- Sortable columns (brand name, producer, assets, listed, floor price)
+- Brand images with fallback icons
+- Mobile-responsive layout
+- Click to navigate to individual brand page
+
 ### Brand Page
 
 The Brand page (`/brand?name=<brand_name>`) displays detailed information about a specific brand:

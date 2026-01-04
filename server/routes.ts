@@ -646,6 +646,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/brands-list", requireAuth, apiLimiter, async (req, res) => {
+    try {
+      const brands = await storage.getBrandsList();
+      res.json(brands);
+    } catch (error) {
+      console.error("Get brands list error:", error);
+      res.status(500).json({ error: "Failed to fetch brands list" });
+    }
+  });
+
   app.get("/api/brand", requireAuth, apiLimiter, async (req, res) => {
     try {
       const brandName = req.query.name as string;

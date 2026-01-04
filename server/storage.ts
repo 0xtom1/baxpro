@@ -20,6 +20,15 @@ export type BrandAsset = {
   imageUrl: string | null;
 };
 
+export type BrandListItem = {
+  brandName: string;
+  producer: string | null;
+  assetCount: number;
+  listedCount: number;
+  floorPrice: number | null;
+  imageUrl: string | null;
+};
+
 export type BrandStats = {
   totalBottles: number;
   listedCount: number;
@@ -60,6 +69,7 @@ export interface IStorage {
   matchAlertToAssets(alertId: string): Promise<{ matched: number; matchingAssetsString: string }>;
 
   getBrandNames(): Promise<string[]>;
+  getBrandsList(): Promise<BrandListItem[]>;
   getBrandAssets(brandName: string, traitFilters?: Record<string, string[]>): Promise<BrandAsset[]>;
   getBrandStats(brandName: string): Promise<BrandStats>;
   getBrandTraits(brandName: string): Promise<BrandTrait[]>;
@@ -592,6 +602,42 @@ export class DbStorage implements IStorage {
        ORDER BY brand_name`
     );
     return result.rows.map((r: any) => r.brand_name);
+  }
+
+  async getBrandsList(): Promise<BrandListItem[]> {
+    const client = await pool.connect();
+    try {
+      const result = await client.query(`
+        SELECT 
+          v.brand_name,
+          v.producer,
+          COUNT(*) as asset_count,
+          COUNT(*) FILTER (WHERE v.is_listed = true) as listed_count,
+          MIN(v.price) FILTER (WHERE v.is_listed = true) as floor_price,
+          (
+            SELECT a.asset_json -> 'bottle_release' ->> 'image_url'
+            FROM baxus.assets a
+            JOIN baxus.v_asset_summary vs ON a.asset_idx = vs.asset_idx
+            WHERE vs.brand_name = v.brand_name
+            AND a.asset_json -> 'bottle_release' ->> 'image_url' IS NOT NULL
+            LIMIT 1
+          ) as image_url
+        FROM baxus.v_asset_summary v
+        WHERE v.brand_name IS NOT NULL
+        GROUP BY v.brand_name, v.producer
+        ORDER BY listed_count DESC, asset_count DESC
+      `);
+      return result.rows.map((r: any) => ({
+        brandName: r.brand_name,
+        producer: r.producer,
+        assetCount: parseInt(r.asset_count, 10),
+        listedCount: parseInt(r.listed_count, 10),
+        floorPrice: r.floor_price ? parseFloat(r.floor_price) : null,
+        imageUrl: r.image_url,
+      }));
+    } finally {
+      client.release();
+    }
   }
 
   async getBrandAssets(brandName: string, traitFilters?: Record<string, string[]>): Promise<BrandAsset[]> {
