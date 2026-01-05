@@ -2,8 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState, useMemo } from "react";
-import { Search, ArrowUpDown, Package } from "lucide-react";
+import { useState } from "react";
+import { useLocation } from "wouter";
+import { Search, ChevronLeft, ChevronRight, Package, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type BrandListItem = {
@@ -15,69 +16,37 @@ type BrandListItem = {
   imageUrl: string | null;
 };
 
-type SortField = "brandName" | "producer" | "assetCount" | "listedCount" | "floorPrice";
-type SortDirection = "asc" | "desc";
+type BrandsListResponse = {
+  brands: BrandListItem[];
+  total: number;
+};
+
+const ITEMS_PER_PAGE = 30;
 
 export default function Brands() {
+  const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
-  const [sortField, setSortField] = useState<SortField>("listedCount");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [page, setPage] = useState(1);
 
-  const { data: brands, isLoading, error } = useQuery<BrandListItem[]>({
-    queryKey: ["/api/brands-list"],
+  const { data, isLoading, error } = useQuery<BrandsListResponse>({
+    queryKey: ["/api/brands-list", page],
+    queryFn: async () => {
+      const res = await fetch(`/api/brands-list?page=${page}&limit=${ITEMS_PER_PAGE}`);
+      if (!res.ok) throw new Error("Failed to fetch brands");
+      return res.json();
+    },
   });
 
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortDirection(field === "brandName" || field === "producer" ? "asc" : "desc");
-    }
-  };
+  const brands = data?.brands || [];
+  const total = data?.total || 0;
+  const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
 
-  const filteredAndSortedBrands = useMemo(() => {
-    if (!brands) return [];
-    
-    let filtered = brands;
-    if (search.trim()) {
-      const searchLower = search.toLowerCase();
-      filtered = brands.filter(
-        b => b.brandName.toLowerCase().includes(searchLower) ||
-             (b.producer && b.producer.toLowerCase().includes(searchLower))
-      );
-    }
-
-    return [...filtered].sort((a, b) => {
-      let aVal: any = a[sortField];
-      let bVal: any = b[sortField];
-      
-      if (aVal === null) aVal = sortDirection === "asc" ? Infinity : -Infinity;
-      if (bVal === null) bVal = sortDirection === "asc" ? Infinity : -Infinity;
-      
-      if (typeof aVal === "string") {
-        aVal = aVal.toLowerCase();
-        bVal = (bVal as string).toLowerCase();
-      }
-      
-      if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
-      if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
-      return 0;
-    });
-  }, [brands, search, sortField, sortDirection]);
-
-  const SortHeader = ({ field, label }: { field: SortField; label: string }) => (
-    <Button
-      variant="ghost"
-      size="sm"
-      onClick={() => handleSort(field)}
-      className="h-auto p-0 font-medium text-muted-foreground hover:text-foreground"
-      data-testid={`sort-${field}`}
-    >
-      {label}
-      <ArrowUpDown className="ml-1 h-3 w-3" />
-    </Button>
-  );
+  const filteredBrands = search.trim()
+    ? brands.filter(
+        b => b.brandName.toLowerCase().includes(search.toLowerCase()) ||
+             (b.producer && b.producer.toLowerCase().includes(search.toLowerCase()))
+      )
+    : brands;
 
   if (error) {
     return (
@@ -91,11 +60,21 @@ export default function Brands() {
     <div className="h-full flex flex-col">
       <div className="border-b p-4 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <h1 className="text-2xl font-bold" data-testid="text-page-title">Brands</h1>
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => setLocation("/")}
+              data-testid="button-back"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <h1 className="text-2xl font-bold" data-testid="text-page-title">Brands</h1>
+          </div>
           <div className="relative w-full sm:w-72">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search brands or producers..."
+              placeholder="Search on this page..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
@@ -103,21 +82,43 @@ export default function Brands() {
             />
           </div>
         </div>
-        {!isLoading && brands && (
-          <p className="text-sm text-muted-foreground" data-testid="text-brand-count">
-            {filteredAndSortedBrands.length} of {brands.length} brands
-          </p>
+        {!isLoading && (
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-sm text-muted-foreground" data-testid="text-brand-count">
+              Page {page} of {totalPages} ({total} brands total)
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                data-testid="button-prev-page"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+                data-testid="button-next-page"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         )}
       </div>
 
       <div className="flex-1 overflow-auto">
         <div className="hidden md:grid grid-cols-[auto_1fr_1fr_100px_100px_100px] gap-4 px-4 py-3 border-b bg-muted/50 sticky top-0 z-10">
           <div className="w-12"></div>
-          <SortHeader field="brandName" label="Brand" />
-          <SortHeader field="producer" label="Producer" />
-          <SortHeader field="assetCount" label="Assets" />
-          <SortHeader field="listedCount" label="Listed" />
-          <SortHeader field="floorPrice" label="Floor" />
+          <span className="font-medium text-muted-foreground">Brand</span>
+          <span className="font-medium text-muted-foreground">Producer</span>
+          <span className="font-medium text-muted-foreground text-right">Assets</span>
+          <span className="font-medium text-muted-foreground text-right">Listed</span>
+          <span className="font-medium text-muted-foreground text-right">Floor</span>
         </div>
 
         {isLoading ? (
@@ -128,7 +129,7 @@ export default function Brands() {
           </div>
         ) : (
           <div className="divide-y">
-            {filteredAndSortedBrands.map((brand) => (
+            {filteredBrands.map((brand) => (
               <Link
                 key={brand.brandName}
                 href={`/brand?name=${encodeURIComponent(brand.brandName)}`}
@@ -178,7 +179,7 @@ export default function Brands() {
               </Link>
             ))}
 
-            {filteredAndSortedBrands.length === 0 && (
+            {filteredBrands.length === 0 && (
               <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                 <Package className="w-12 h-12 mb-4" />
                 <p>No brands found</p>

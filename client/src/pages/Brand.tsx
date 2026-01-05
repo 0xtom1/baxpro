@@ -254,8 +254,275 @@ export default function Brand() {
     { id: "activity", label: "ACTIVITY", icon: ActivityIcon },
   ];
 
+  const DesktopItemsTable = () => (
+    <div className="flex-1 overflow-auto">
+      <table className="w-full text-sm">
+        <thead className="sticky top-0 bg-background border-b border-border">
+          <tr className="text-xs text-muted-foreground uppercase tracking-wider">
+            <th className="text-left py-3 px-4 font-medium">Item</th>
+            <th className="text-right py-3 px-2 font-medium w-20">Age</th>
+            <th className="text-right py-3 px-2 font-medium w-24">Buy Now</th>
+            <th className="text-right py-3 px-2 font-medium w-24">Market</th>
+            <th className="text-left py-3 px-2 font-medium w-32">Producer</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-border">
+          {isLoading ? (
+            Array.from({ length: 8 }).map((_, i) => (
+              <tr key={i}>
+                <td className="py-2 px-4"><Skeleton className="h-10 w-full" /></td>
+                <td className="py-2 px-2"><Skeleton className="h-4 w-12 ml-auto" /></td>
+                <td className="py-2 px-2"><Skeleton className="h-4 w-16 ml-auto" /></td>
+                <td className="py-2 px-2"><Skeleton className="h-4 w-16 ml-auto" /></td>
+                <td className="py-2 px-2"><Skeleton className="h-4 w-20" /></td>
+              </tr>
+            ))
+          ) : (
+            filteredAssets.map((asset) => (
+              <tr 
+                key={asset.assetIdx} 
+                className="hover-elevate cursor-pointer"
+                onClick={() => setLocation(`/asset/${asset.assetIdx}`)}
+                data-testid={`desktop-row-asset-${asset.assetIdx}`}
+              >
+                <td className="py-2 px-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded bg-muted flex-shrink-0 overflow-hidden">
+                      {asset.imageUrl ? (
+                        <img src={asset.imageUrl} alt={asset.name} className="w-full h-full object-cover" loading="lazy" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <GlencairnLogo className="w-5 h-5 opacity-30" />
+                        </div>
+                      )}
+                    </div>
+                    <span className="font-medium truncate max-w-[200px]">{asset.name}</span>
+                  </div>
+                </td>
+                <td className="py-2 px-2 text-right text-muted-foreground">
+                  {asset.age ? `${asset.age}yr` : '-'}
+                </td>
+                <td className="py-2 px-2 text-right">
+                  <Badge variant="outline" className="font-mono text-xs">
+                    {formatPrice(asset.price)}
+                  </Badge>
+                </td>
+                <td className="py-2 px-2 text-right text-muted-foreground">
+                  {asset.marketPrice ? formatPrice(asset.marketPrice) : '-'}
+                </td>
+                <td className="py-2 px-2 text-muted-foreground truncate max-w-[120px]">
+                  {asset.producer || '-'}
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+      {filteredAssets.length === 0 && !isLoading && (
+        <div className="text-center py-12 text-muted-foreground">No listed bottles found</div>
+      )}
+    </div>
+  );
+
+  const DesktopActivityFeed = () => {
+    const activities = data?.activity ?? [];
+    return (
+      <div className="flex flex-col h-full">
+        <div className="flex items-center justify-between px-3 py-2 border-b border-border">
+          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider">
+            <ActivityIcon className="w-3 h-3" />
+            <span>Activity</span>
+          </div>
+        </div>
+        <div className="flex-1 overflow-auto">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 border-b border-border">
+            <span>Item</span>
+            <span className="w-16 text-right">Price</span>
+            <span className="w-12 text-right">Type</span>
+          </div>
+          {isLoading ? (
+            <div className="p-3 space-y-2">
+              {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-6 w-full" />)}
+            </div>
+          ) : activities.length === 0 ? (
+            <div className="p-3 text-center text-xs text-muted-foreground">No activity</div>
+          ) : (
+            <div className="divide-y divide-border">
+              {activities.slice(0, 15).map((item) => {
+                const isDelisted = item.activityTypeCode?.toUpperCase() === 'NEW_LISTING' && item.isListed === false;
+                return (
+                  <div key={item.activityIdx} className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 text-xs hover-elevate">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-muted-foreground w-6 flex-shrink-0">{formatTimeAgo(item.activityDate)}</span>
+                      <span className={`truncate ${isDelisted ? 'line-through opacity-60' : ''}`}>{item.assetName}</span>
+                    </div>
+                    <span className="w-16 text-right font-mono">{item.price ? formatPrice(item.price) : '-'}</span>
+                    <span className="w-12 text-right text-muted-foreground truncate">{item.activityTypeName?.split(' ')[0] || '-'}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const DesktopChart = () => (
+    <div className="flex flex-col h-full">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-border">
+        <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider">
+          <BarChart3 className="w-3 h-3" />
+          <span>Price Chart</span>
+        </div>
+      </div>
+      <div className="flex-1 p-2">
+        {chartData.length > 0 ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <ScatterChart margin={{ top: 5, right: 5, bottom: 15, left: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+              <XAxis type="number" dataKey="price" tickFormatter={(v) => `$${v}`} className="text-[10px]" />
+              <YAxis type="number" dataKey="marketPrice" tickFormatter={(v) => `$${v}`} className="text-[10px]" />
+              <Tooltip
+                formatter={(value: number) => formatPrice(value)}
+                contentStyle={{ backgroundColor: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: '6px', fontSize: '10px' }}
+              />
+              <Scatter data={chartData} fill="hsl(var(--primary))" />
+            </ScatterChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No data</div>
+        )}
+      </div>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <>
+    {/* Desktop Layout */}
+    <div className="hidden lg:flex flex-col h-screen bg-background">
+      {/* Desktop Header */}
+      <header className="border-b border-border">
+        <div className="flex items-center justify-between h-12 px-4">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => setLocation("/brands")} data-testid="desktop-button-back">
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center">
+                <GlencairnLogo className="w-4 h-4" />
+              </div>
+              <span className="font-semibold" data-testid="desktop-text-brand-name">{brandName}</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-6 text-xs">
+            <div className="text-center">
+              <div className="text-muted-foreground uppercase tracking-wider">Floor Price</div>
+              <div className="font-mono font-semibold text-green-500">{formatPrice(data?.stats.floorPrice || null)}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-muted-foreground uppercase tracking-wider">Listed</div>
+              <div className="font-semibold">{data?.stats.listedCount || 0}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-muted-foreground uppercase tracking-wider">Total</div>
+              <div className="font-semibold">{data?.stats.totalBottles || 0}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-muted-foreground uppercase tracking-wider">Avg Market</div>
+              <div className="font-mono">{formatPrice(data?.stats.avgMarketPrice || null)}</div>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" data-testid="desktop-button-connect">CONNECT</Button>
+        </div>
+      </header>
+
+      {/* Desktop Tabs */}
+      <div className="border-b border-border px-4">
+        <div className="flex items-center gap-1">
+          {tabs.slice(0, 4).map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-3 text-xs font-medium tracking-wider border-b-2 transition-colors ${
+                  isActive ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+                data-testid={`desktop-tab-${tab.id}`}
+              >
+                <Icon className="w-4 h-4" />
+                {tab.label}
+              </button>
+            );
+          })}
+          <div className="flex-1" />
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search items..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 h-8 w-48 text-sm"
+              data-testid="desktop-input-search"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Main Content - Three Columns */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Sidebar - Filters */}
+        <aside className="w-56 border-r border-border overflow-y-auto p-3 flex-shrink-0">
+          <TraitsSidebar />
+        </aside>
+
+        {/* Center - Items Table */}
+        <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          {activeTab === "items" && <DesktopItemsTable />}
+          {activeTab === "bids" && (
+            <div className="flex-1 flex items-center justify-center text-muted-foreground">
+              <div className="text-center"><DollarSign className="w-12 h-12 mx-auto mb-4 opacity-30" /><p>Bids Coming Soon</p></div>
+            </div>
+          )}
+          {activeTab === "loans" && (
+            <div className="flex-1 flex items-center justify-center text-muted-foreground">
+              <div className="text-center"><Clock className="w-12 h-12 mx-auto mb-4 opacity-30" /><p>Loans Coming Soon</p></div>
+            </div>
+          )}
+          {activeTab === "holders" && (
+            <div className="flex-1 flex items-center justify-center text-muted-foreground">
+              <div className="text-center"><Users className="w-12 h-12 mx-auto mb-4 opacity-30" /><p>Holders Coming Soon</p></div>
+            </div>
+          )}
+        </main>
+
+        {/* Right Sidebar - Activity & Chart */}
+        <aside className="w-72 border-l border-border flex flex-col flex-shrink-0 overflow-hidden">
+          <div className="h-1/2 border-b border-border overflow-hidden">
+            <DesktopActivityFeed />
+          </div>
+          <div className="h-1/2 overflow-hidden">
+            <DesktopChart />
+          </div>
+        </aside>
+      </div>
+
+      {/* Desktop Buy Floor Banner */}
+      {data?.stats.floorPrice && activeTab === "items" && (
+        <div className="bg-gradient-to-r from-yellow-500 to-green-500 text-black px-4 py-2 flex items-center justify-between font-medium text-sm">
+          <div className="flex items-center gap-2">
+            <span>BUY FLOOR</span>
+            <span className="font-mono">{formatPrice(data.stats.floorPrice)}</span>
+          </div>
+          <Button size="sm" className="bg-black/20 hover:bg-black/30 text-black border-0">Buy Now</Button>
+        </div>
+      )}
+    </div>
+
+    {/* Mobile Layout */}
+    <div className="lg:hidden min-h-screen bg-background flex flex-col">
       <header className="sticky top-0 z-50 bg-background border-b border-border">
         <div className="flex items-center justify-between h-14 px-4">
           <div className="flex items-center gap-3">
@@ -602,5 +869,6 @@ export default function Brand() {
         </div>
       </nav>
     </div>
+    </>
   );
 }
