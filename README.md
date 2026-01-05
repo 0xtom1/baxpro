@@ -11,6 +11,18 @@ Never miss products on Baxus.co. Get instant email alerts when items matching yo
 - **Secure Authentication** - Sign in with Google
 - **On-Chain Activity Tracking** - View mints, burns, and purchases from the Solana blockchain
 
+### Brand Browsing (blur.io-inspired)
+
+- **Brands List** (`/brands`) - Searchable, sortable table of all brands with producer, asset counts, and floor prices
+- **Brand Detail Page** (`/brand?name=X`) - Mobile-first design inspired by blur.io NFT marketplace:
+  - **Fixed Bottom Navigation** - ITEMS, BIDS, LOANS, HOLDERS, CHARTS, ACTIVITY tabs
+  - **Items Tab** - Compact list view with thumbnails, item names, age, and price badges
+  - **Activity Tab** - Real-time feed showing time ago, item, price, and activity type
+  - **Charts Tab** - Scatter plot of listed price vs market price
+  - **Trait Filtering** - Slide-out filter drawer with collapsible trait sections
+  - **Search** - Filter items by name within a brand
+  - **Buy Floor Banner** - Shows floor price with purchase CTA
+
 ### VIP Features (Experimental)
 
 - **Product Hierarchy Editor** - Browse and manage the product hierarchy (Producers, Brands, Sub-Brands) for better alert matching
@@ -138,6 +150,14 @@ All services connect to Cloud SQL for reads/writes.
 | GET | `/api/activity` | Get activity feed (paginated) | Session |
 | GET | `/api/assets/idx/:assetIdx` | Get asset by index | Session |
 | GET | `/api/assets/:assetId` | Get asset by ID | Session |
+
+### Brand Browsing
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/api/brand-names` | Get list of distinct brand names | Session |
+| GET | `/api/brands-list` | Get all brands with stats (count, floor price) | Session |
+| GET | `/api/brand?name=X&trait_*=Y` | Get brand assets, stats, traits, and activity | Session |
 
 ### Product Hierarchy
 
