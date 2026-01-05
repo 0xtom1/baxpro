@@ -69,7 +69,7 @@ export interface IStorage {
   matchAlertToAssets(alertId: string): Promise<{ matched: number; matchingAssetsString: string }>;
 
   getBrandNames(): Promise<string[]>;
-  getBrandsList(): Promise<BrandListItem[]>;
+  getBrandsList(page?: number, limit?: number): Promise<{ brands: BrandListItem[]; total: number }>;
   getBrandAssets(brandName: string, traitFilters?: Record<string, string[]>): Promise<BrandAsset[]>;
   getBrandStats(brandName: string): Promise<BrandStats>;
   getBrandTraits(brandName: string): Promise<BrandTrait[]>;
@@ -604,9 +604,18 @@ export class DbStorage implements IStorage {
     return result.rows.map((r: any) => r.brand_name);
   }
 
-  async getBrandsList(): Promise<BrandListItem[]> {
+  async getBrandsList(page: number = 1, limit: number = 30): Promise<{ brands: BrandListItem[]; total: number }> {
     const client = await pool.connect();
     try {
+      const offset = (page - 1) * limit;
+      
+      const countResult = await client.query(`
+        SELECT COUNT(DISTINCT (v.brand_name, v.producer)) as total
+        FROM baxus.v_asset_summary v
+        WHERE v.brand_name IS NOT NULL
+      `);
+      const total = parseInt(countResult.rows[0].total, 10);
+
       const result = await client.query(`
         SELECT 
           v.brand_name,
@@ -626,15 +635,20 @@ export class DbStorage implements IStorage {
         WHERE v.brand_name IS NOT NULL
         GROUP BY v.brand_name, v.producer
         ORDER BY listed_count DESC, asset_count DESC
-      `);
-      return result.rows.map((r: any) => ({
-        brandName: r.brand_name,
-        producer: r.producer,
-        assetCount: parseInt(r.asset_count, 10),
-        listedCount: parseInt(r.listed_count, 10),
-        floorPrice: r.floor_price ? parseFloat(r.floor_price) : null,
-        imageUrl: r.image_url,
-      }));
+        LIMIT $1 OFFSET $2
+      `, [limit, offset]);
+
+      return {
+        brands: result.rows.map((r: any) => ({
+          brandName: r.brand_name,
+          producer: r.producer,
+          assetCount: parseInt(r.asset_count, 10),
+          listedCount: parseInt(r.listed_count, 10),
+          floorPrice: r.floor_price ? parseFloat(r.floor_price) : null,
+          imageUrl: r.image_url,
+        })),
+        total,
+      };
     } finally {
       client.release();
     }

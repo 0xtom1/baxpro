@@ -648,8 +648,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/brands-list", requireAuth, apiLimiter, async (req, res) => {
     try {
-      const brands = await storage.getBrandsList();
-      res.json(brands);
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = Math.min(parseInt(req.query.limit as string) || 30, 100);
+      const result = await storage.getBrandsList(page, limit);
+      res.json(result);
     } catch (error) {
       console.error("Get brands list error:", error);
       res.status(500).json({ error: "Failed to fetch brands list" });
