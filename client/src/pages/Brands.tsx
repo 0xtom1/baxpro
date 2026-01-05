@@ -3,7 +3,8 @@ import { Link } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
-import { Search, ChevronLeft, ChevronRight, Package } from "lucide-react";
+import { useLocation } from "wouter";
+import { Search, ChevronLeft, ChevronRight, Package, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type BrandListItem = {
@@ -23,6 +24,7 @@ type BrandsListResponse = {
 const ITEMS_PER_PAGE = 30;
 
 export default function Brands() {
+  const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
@@ -58,7 +60,17 @@ export default function Brands() {
     <div className="h-full flex flex-col">
       <div className="border-b p-4 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <h1 className="text-2xl font-bold" data-testid="text-page-title">Brands</h1>
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => setLocation("/")}
+              data-testid="button-back"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <h1 className="text-2xl font-bold" data-testid="text-page-title">Brands</h1>
+          </div>
           <div className="relative w-full sm:w-72">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
