@@ -11,10 +11,10 @@ Never miss products on Baxus.co. Get instant email alerts when items matching yo
 - **Secure Authentication** - Sign in with Google
 - **On-Chain Activity Tracking** - View mints, burns, and purchases from the Solana blockchain
 
-### Brand Browsing (blur.io-inspired)
+### Brand Browsing
 
 - **Brands List** (`/brands`) - Searchable, sortable table of all brands with producer, asset counts, and floor prices
-- **Brand Detail Page** (`/brand?name=X`) - Mobile-first design inspired by blur.io NFT marketplace:
+- **Brand Detail Page** (`/brand?name=X`) - Mobile-first design with:
   - **Fixed Bottom Navigation** - ITEMS, BIDS, LOANS, HOLDERS, CHARTS, ACTIVITY tabs
   - **Items Tab** - Compact list view with thumbnails, item names, age, and price badges
   - **Activity Tab** - Real-time feed showing time ago, item, price, and activity type
