@@ -45,7 +45,10 @@ SELECT
   COUNT(*) as asset_count,
   COUNT(*) FILTER (WHERE v.is_listed = true) as listed_count,
   MIN(v.price) FILTER (WHERE v.is_listed = true) as floor_price,
-  MAX(v.image_url) as image_url
+  MAX(v.image_url) as image_url,
+  SUM(v.volume_7d) as volume_7d,
+  SUM(v.volume_30d) as volume_30d,
+  COUNT(DISTINCT v.current_owner_id) as distinct_owners_count
 FROM baxus.v_asset_summary v
 WHERE v.brand_name IS NOT NULL
 GROUP BY v.brand_name, v.producer;
