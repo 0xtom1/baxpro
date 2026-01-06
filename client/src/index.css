@@ -43,7 +43,7 @@
   --chart-3: 35 65% 38%;
   --chart-4: 200 65% 35%;
   --chart-5: 280 60% 35%;
-  --font-sans: Manrope, sans-serif;
+  --font-sans: 'IBM Plex Sans', sans-serif;
   --font-serif: Playfair Display, serif;
   --font-mono: Menlo, monospace;
   --radius: .5rem;
