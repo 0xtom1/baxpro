@@ -13,7 +13,8 @@ SELECT
   a.age,
   a.bottled_year,
   (a.asset_json -> 'bottle_release' ->> 'market_price')::DOUBLE PRECISION AS market_price,
-  jsonb_path_query_first(a.metadata_json, '$.attributes[*] ? (@.trait_type == "Producer").value') #>> '{}' AS producer
+  jsonb_path_query_first(a.metadata_json, '$.attributes[*] ? (@.trait_type == "Producer").value') #>> '{}' AS producer,
+  a.metadata_json ->> 'image' AS image_url
 FROM baxus.assets a
 WHERE (a.asset_json ->> 'status') IS DISTINCT FROM 'REDEEMED';
 
@@ -27,14 +28,7 @@ SELECT
   COUNT(*) as asset_count,
   COUNT(*) FILTER (WHERE v.is_listed = true) as listed_count,
   MIN(v.price) FILTER (WHERE v.is_listed = true) as floor_price,
-  (
-    SELECT a.asset_json -> 'bottle_release' ->> 'image_url'
-    FROM baxus.assets a
-    JOIN baxus.v_asset_summary vs ON a.asset_idx = vs.asset_idx
-    WHERE vs.brand_name = v.brand_name
-    AND a.asset_json -> 'bottle_release' ->> 'image_url' IS NOT NULL
-    LIMIT 1
-  ) as image_url
+  (SELECT vs.image_url FROM baxus.v_asset_summary vs WHERE vs.brand_name = v.brand_name AND vs.image_url IS NOT NULL LIMIT 1) as image_url
 FROM baxus.v_asset_summary v
 WHERE v.brand_name IS NOT NULL
 GROUP BY v.brand_name, v.producer;
