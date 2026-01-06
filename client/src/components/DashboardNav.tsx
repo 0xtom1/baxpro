@@ -59,7 +59,7 @@ export default function DashboardNav({ onNewAlert, alertCount = 0 }: DashboardNa
 
   return (
     <nav className="border-b border-border bg-background">
-      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div className="px-6 h-16 flex items-center justify-between">
         <a 
           href="/dashboard" 
           className="flex items-center gap-2 hover:opacity-80 transition-opacity"
