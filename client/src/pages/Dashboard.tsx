@@ -4,8 +4,10 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { Search, ChevronLeft, ChevronRight, Package, ArrowLeft } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useRequireAuth } from "@/hooks/use-require-auth";
+import DashboardNav from "@/components/DashboardNav";
 
 type BrandListItem = {
   brandName: string;
@@ -23,7 +25,8 @@ type BrandsListResponse = {
 
 const ITEMS_PER_PAGE = 30;
 
-export default function Brands() {
+export default function Dashboard() {
+  const { user, loading: authLoading } = useRequireAuth();
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -48,68 +51,72 @@ export default function Brands() {
       )
     : brands;
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
   if (error) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-muted-foreground">Failed to load brands</p>
+      <div className="min-h-screen flex flex-col">
+        <DashboardNav />
+        <div className="flex items-center justify-center flex-1">
+          <p className="text-muted-foreground">Failed to load brands</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="border-b p-4 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => setLocation("/")}
-              data-testid="button-back"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <h1 className="text-2xl font-bold" data-testid="text-page-title">Brands</h1>
-          </div>
-          <div className="relative w-full sm:w-72">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search on this page..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
-              data-testid="input-search"
-            />
-          </div>
-        </div>
-        {!isLoading && (
-          <div className="flex items-center justify-between gap-4">
-            <p className="text-sm text-muted-foreground" data-testid="text-brand-count">
-              Page {page} of {totalPages} ({total} brands total)
-            </p>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1}
-                data-testid="button-prev-page"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                disabled={page >= totalPages}
-                data-testid="button-next-page"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+    <div className="min-h-screen flex flex-col bg-background">
+      <DashboardNav />
+      
+      <div className="max-w-7xl mx-auto w-full px-6 py-6 flex-1 flex flex-col">
+        <div className="border-b pb-4 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <h1 className="text-2xl font-bold" data-testid="text-page-title">Browse Brands</h1>
+            <div className="relative w-full sm:w-72">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search on this page..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9"
+                data-testid="input-search"
+              />
             </div>
           </div>
-        )}
-      </div>
+          {!isLoading && (
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-sm text-muted-foreground" data-testid="text-brand-count">
+                Page {page} of {totalPages} ({total} brands total)
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  data-testid="button-prev-page"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page >= totalPages}
+                  data-testid="button-next-page"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
 
       <div className="flex-1 overflow-auto">
         <div className="hidden md:grid grid-cols-[auto_1fr_1fr_100px_100px_100px] gap-4 px-4 py-3 border-b bg-muted/50 sticky top-0 z-10">
@@ -187,6 +194,7 @@ export default function Brands() {
             )}
           </div>
         )}
+      </div>
       </div>
     </div>
   );
