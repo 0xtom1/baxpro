@@ -14,7 +14,23 @@ SELECT
   a.bottled_year,
   (a.asset_json -> 'bottle_release' ->> 'market_price')::DOUBLE PRECISION AS market_price,
   jsonb_path_query_first(a.metadata_json, '$.attributes[*] ? (@.trait_type == "Producer").value') #>> '{}' AS producer,
-  a.metadata_json ->> 'image' AS image_url
+  a.metadata_json ->> 'image' AS image_url,
+  (
+    SELECT COALESCE(SUM(af.price), 0)
+    FROM baxus.activity_feed af
+    JOIN baxus.dim_activity_types dat ON af.activity_type_idx = dat.activity_type_idx
+    WHERE af.asset_idx = a.asset_idx
+      AND dat.activity_type_code = 'PURCHASE'
+      AND af.activity_date >= CURRENT_DATE - INTERVAL '7 days'
+  ) AS volume_7d,
+  (
+    SELECT COALESCE(SUM(af.price), 0)
+    FROM baxus.activity_feed af
+    JOIN baxus.dim_activity_types dat ON af.activity_type_idx = dat.activity_type_idx
+    WHERE af.asset_idx = a.asset_idx
+      AND dat.activity_type_code = 'PURCHASE'
+      AND af.activity_date >= CURRENT_DATE - INTERVAL '30 days'
+  ) AS volume_30d
 FROM baxus.assets a
 WHERE (a.asset_json ->> 'status') IS DISTINCT FROM 'REDEEMED';
 
