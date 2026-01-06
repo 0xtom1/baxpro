@@ -28,7 +28,7 @@ SELECT
   COUNT(*) as asset_count,
   COUNT(*) FILTER (WHERE v.is_listed = true) as listed_count,
   MIN(v.price) FILTER (WHERE v.is_listed = true) as floor_price,
-  (SELECT vs.image_url FROM baxus.v_asset_summary vs WHERE vs.brand_name = v.brand_name AND vs.image_url IS NOT NULL LIMIT 1) as image_url
+  MAX(v.image_url) as image_url
 FROM baxus.v_asset_summary v
 WHERE v.brand_name IS NOT NULL
 GROUP BY v.brand_name, v.producer;
