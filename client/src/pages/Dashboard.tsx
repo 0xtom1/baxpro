@@ -153,7 +153,7 @@ export default function Dashboard() {
 
   const BrandsTable = () => (
     <div className="flex-1 overflow-hidden">
-      <div className="overflow-x-auto h-full">
+      <div className="overflow-x-auto h-full scrollbar-hide">
         <table className="w-full text-sm min-w-[900px]">
           <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur-sm">
             <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
@@ -248,7 +248,7 @@ export default function Dashboard() {
 
   const ActivityTable = () => (
     <div className="flex-1 overflow-hidden">
-      <div className="overflow-x-auto h-full">
+      <div className="overflow-x-auto h-full scrollbar-hide">
         <table className="w-full text-sm min-w-[700px]">
           <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur-sm">
             <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
