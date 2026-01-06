@@ -27,6 +27,9 @@ export type BrandListItem = {
   listedCount: number;
   floorPrice: number | null;
   imageUrl: string | null;
+  volume7d: number;
+  volume30d: number;
+  distinctOwnersCount: number;
 };
 
 export type BrandStats = {
@@ -615,7 +618,8 @@ export class DbStorage implements IStorage {
       const total = parseInt(countResult.rows[0].total, 10);
 
       const result = await client.query(`
-        SELECT brand_name, producer, asset_count, listed_count, floor_price, image_url
+        SELECT brand_name, producer, asset_count, listed_count, floor_price, image_url,
+               volume_7d, volume_30d, distinct_owners_count
         FROM baxus.mv_brands_list
         ORDER BY listed_count DESC, asset_count DESC
         LIMIT $1 OFFSET $2
@@ -629,6 +633,9 @@ export class DbStorage implements IStorage {
           listedCount: parseInt(r.listed_count, 10),
           floorPrice: r.floor_price ? parseFloat(r.floor_price) : null,
           imageUrl: r.image_url,
+          volume7d: r.volume_7d ? parseFloat(r.volume_7d) : 0,
+          volume30d: r.volume_30d ? parseFloat(r.volume_30d) : 0,
+          distinctOwnersCount: parseInt(r.distinct_owners_count, 10) || 0,
         })),
         total,
       };
