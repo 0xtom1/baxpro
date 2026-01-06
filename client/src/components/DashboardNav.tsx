@@ -72,15 +72,17 @@ export default function DashboardNav({ onNewAlert, alertCount = 0 }: DashboardNa
         </div>
         
         <div className="flex items-center gap-3">
-          <Button 
-            onClick={onNewAlert}
-            disabled={isAtLimit}
-            title={isAtLimit ? `Maximum of ${MAX_ALERTS} alerts reached` : undefined}
-            data-testid="button-new-alert"
-          >
-            <Plus className="w-4 h-4 mr-1" />
-            New Alert
-          </Button>
+          {onNewAlert && (
+            <Button 
+              onClick={onNewAlert}
+              disabled={isAtLimit}
+              title={isAtLimit ? `Maximum of ${MAX_ALERTS} alerts reached` : undefined}
+              data-testid="button-new-alert"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              New Alert
+            </Button>
+          )}
           
           <Button
             size="icon"
