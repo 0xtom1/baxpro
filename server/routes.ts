@@ -559,6 +559,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Refresh brands list materialized view (VIP only)
+  app.post("/api/refresh-brands-list", requireVip, apiLimiter, async (req, res) => {
+    try {
+      await storage.refreshBrandsListView();
+      res.json({ success: true, message: "Brands list view refreshed" });
+    } catch (error) {
+      console.error("Refresh brands list error:", error);
+      res.status(500).json({ error: "Failed to refresh brands list" });
+    }
+  });
+
   // Activity types endpoint (for filter dropdown)
   app.get("/api/activity-types", requireAuth, apiLimiter, async (req, res) => {
     try {

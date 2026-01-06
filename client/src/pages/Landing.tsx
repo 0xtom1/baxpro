@@ -6,7 +6,7 @@ import FinalCTA from "@/components/FinalCTA";
 
 export default function Landing() {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen" style={{ fontFamily: "'Inter', sans-serif" }}>
       <LandingNav />
       <Hero />
       

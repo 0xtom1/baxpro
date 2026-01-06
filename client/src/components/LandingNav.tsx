@@ -20,7 +20,7 @@ export default function LandingNav() {
       scrolled ? 'bg-background/95 backdrop-blur-sm border-b border-border' : 'bg-transparent'
     }`}>
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <Link href="/dashboard" className="flex items-center gap-2 hover:opacity-80 transition-opacity" data-testid="link-logo-dashboard">
           <GlencairnLogo className="w-6 h-6" white={!scrolled} />
           <span className={`font-serif text-xl font-bold ${scrolled ? 'text-foreground' : 'text-white'}`}>
             BaxPro
@@ -35,7 +35,7 @@ export default function LandingNav() {
           >
             beta
           </Badge>
-        </div>
+        </Link>
         
         <Link href="/login">
           <Button 

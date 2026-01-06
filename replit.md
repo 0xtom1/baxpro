@@ -46,19 +46,37 @@ Services use SQLAlchemy for database access and share common patterns in their `
 Baxus API → baxus-monitor → Pub/Sub → alert-processor → Pub/Sub → alert-sender → Email
 ```
 
-### Brands Listing Page
+### Route Structure
 
-The Brands page (`/brands`) displays a searchable, sortable list of all brands:
+- `/dashboard` - Main landing page after sign-in with tabbed interface (Brands/Activity)
+- `/alerts` - User's alert management page
+- `/brand?name=<brand_name>` - Individual brand detail page
 
-**API Endpoint**:
-- `GET /api/brands-list` - Returns all brands with producer, asset count, listed count, floor price
+### Dashboard Page
 
-**Features**:
+The Dashboard page (`/dashboard`) is a Blur NFT marketplace-inspired interface with two tabs:
+
+**Brands Tab**:
+- Horizontal scrollable table with sticky first column on mobile
+- Columns: Brand (with image), Producer, Floor Price, 7D Volume, 30D Volume, Owners, Supply, Listed
 - Search filter for brands and producers
-- Sortable columns (brand name, producer, assets, listed, floor price)
-- Brand images with fallback icons
-- Mobile-responsive layout
 - Click to navigate to individual brand page
+- Pagination controls
+
+**Activity Tab**:
+- Paginated activity feed showing recent marketplace activity
+- Type filter dropdown (New Listing, Purchase, etc.)
+- Columns: Asset name, Type badge, Producer, Price, External link, Date
+- Delisted items shown with strikethrough styling
+
+**API Endpoints**:
+- `GET /api/brands-list` - Returns brands with producer, asset count, listed count, floor price, volume_7d, volume_30d, distinct_owners_count
+- `GET /api/activity` - Paginated activity feed with optional type filter
+- `GET /api/activity-types` - List of activity type options for filtering
+
+**Design Features**:
+- Desktop: Top tabs, horizontal scroll table
+- Mobile: Bottom tab bar navigation, sticky first column
 
 ### Brand Page
 
@@ -85,6 +103,14 @@ The Brand page (`/brand?name=<brand_name>`) displays detailed information about 
 Users with `isVip: true` can access:
 - Product hierarchy editor (Producers → Brands → Sub-Brands)
 - System-wide alert match refresh
+- Refresh brands list materialized view (`POST /api/refresh-brands-list`)
+
+### Performance Optimizations
+
+**Brands List Materialized View** (`baxus.mv_brands_list`):
+- Pre-computes brand aggregations (asset counts, floor prices) for faster dashboard loading
+- Refresh via VIP endpoint or manually: `REFRESH MATERIALIZED VIEW CONCURRENTLY baxus.mv_brands_list`
+- Migration: `migrations/0006_brands_list_materialized_view.sql`
 
 ## External Dependencies
 

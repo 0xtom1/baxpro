@@ -255,7 +255,7 @@ export default function Brand() {
   ];
 
   const DesktopItemsTable = () => (
-    <div className="flex-1 overflow-auto">
+    <div className="flex-1 overflow-auto scrollbar-hide">
       <table className="w-full text-sm">
         <thead className="sticky top-0 bg-background border-b border-border">
           <tr className="text-xs text-muted-foreground uppercase tracking-wider">
@@ -334,7 +334,7 @@ export default function Brand() {
             <span>Activity</span>
           </div>
         </div>
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 overflow-auto scrollbar-hide">
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2 border-b border-border">
             <span>Item</span>
             <span className="w-16 text-right">Price</span>
@@ -405,7 +405,7 @@ export default function Brand() {
       <header className="border-b border-border">
         <div className="flex items-center justify-between h-12 px-4">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => setLocation("/brands")} data-testid="desktop-button-back">
+            <Button variant="ghost" size="icon" onClick={() => setLocation("/dashboard")} data-testid="desktop-button-back">
               <ArrowLeft className="w-4 h-4" />
             </Button>
             <div className="flex items-center gap-2">
@@ -474,7 +474,7 @@ export default function Brand() {
       {/* Desktop Main Content - Three Columns */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Sidebar - Filters */}
-        <aside className="w-56 border-r border-border overflow-y-auto p-3 flex-shrink-0">
+        <aside className="w-56 border-r border-border overflow-y-auto scrollbar-hide p-3 flex-shrink-0">
           <TraitsSidebar />
         </aside>
 
@@ -529,7 +529,7 @@ export default function Brand() {
             <Button 
               variant="ghost" 
               size="icon"
-              onClick={() => setLocation("/brands")}
+              onClick={() => setLocation("/dashboard")}
               data-testid="button-back"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -586,7 +586,7 @@ export default function Brand() {
         )}
       </div>
 
-      <main className="flex-1 overflow-auto pb-20">
+      <main className="flex-1 overflow-auto scrollbar-hide pb-20">
         {activeTab === "items" && (
           <div className="flex flex-col">
             <div className="flex items-center justify-between px-4 py-2 text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
