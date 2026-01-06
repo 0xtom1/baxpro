@@ -44,7 +44,8 @@ function Router() {
       <Route path="/notification-setup" component={NotificationSetup} />
       <Route path="/notification-settings" component={NotificationSettings} />
       <Route path="/account-settings" component={AccountSettings} />
-      <Route path="/dashboard" component={Dashboard} />
+      <Route path="/alerts" component={Dashboard} />
+      <Route path="/dashboard" component={Brands} />
       <Route path="/privacy" component={PrivacyPolicy} />
       <Route path="/terms" component={TermsOfService} />
       <Route path="/opt-in-proof" component={OptInProof} />
@@ -58,7 +59,6 @@ function Router() {
       <Route path="/product-hierarchy-editor/sub-brand/:subBrandIdx/assets" component={SubBrandAssets} />
       <Route path="/unsubscribe" component={Unsubscribe} />
       <Route path="/brand" component={Brand} />
-      <Route path="/brands" component={Brands} />
       <Route component={NotFound} />
     </Switch>
   );

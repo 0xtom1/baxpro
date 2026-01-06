@@ -46,9 +46,16 @@ Services use SQLAlchemy for database access and share common patterns in their `
 Baxus API → baxus-monitor → Pub/Sub → alert-processor → Pub/Sub → alert-sender → Email
 ```
 
-### Brands Listing Page
+### Route Structure
 
-The Brands page (`/brands`) displays a searchable, sortable list of all brands:
+- `/dashboard` - Main landing page after sign-in, displays searchable brands list
+- `/alerts` - User's alert management page
+- `/brand?name=<brand_name>` - Individual brand detail page
+- `/activity` - Activity feed
+
+### Brands Listing Page (Dashboard)
+
+The Dashboard page (`/dashboard`) displays a searchable, sortable list of all brands:
 
 **API Endpoint**:
 - `GET /api/brands-list` - Returns all brands with producer, asset count, listed count, floor price

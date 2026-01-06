@@ -405,7 +405,7 @@ export default function Brand() {
       <header className="border-b border-border">
         <div className="flex items-center justify-between h-12 px-4">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => setLocation("/brands")} data-testid="desktop-button-back">
+            <Button variant="ghost" size="icon" onClick={() => setLocation("/dashboard")} data-testid="desktop-button-back">
               <ArrowLeft className="w-4 h-4" />
             </Button>
             <div className="flex items-center gap-2">
@@ -529,7 +529,7 @@ export default function Brand() {
             <Button 
               variant="ghost" 
               size="icon"
-              onClick={() => setLocation("/brands")}
+              onClick={() => setLocation("/dashboard")}
               data-testid="button-back"
             >
               <ArrowLeft className="w-5 h-5" />
