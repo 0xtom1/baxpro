@@ -43,6 +43,13 @@
       "when": 1736030400000,
       "tag": "0005_asset_summary_view",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1736121600000,
+      "tag": "0006_brands_list_materialized_view",
+      "breakpoints": true
     }
   ]
 }

@@ -19,6 +19,7 @@ import Login from "@/pages/Login";
 import NotificationSetup from "@/pages/NotificationSetup";
 import NotificationSettings from "@/pages/NotificationSettings";
 import AccountSettings from "@/pages/AccountSettings";
+import Alerts from "@/pages/Alerts";
 import Dashboard from "@/pages/Dashboard";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TermsOfService from "@/pages/TermsOfService";
@@ -26,14 +27,12 @@ import OptInProof from "@/pages/OptInProof";
 import ReadMe from "@/pages/ReadMe";
 import AssetDetail from "@/pages/AssetDetail";
 import AssetDetailByIdx from "@/pages/AssetDetailByIdx";
-import Activity from "@/pages/Activity";
 import ProductHierarchy from "@/pages/ProductHierarchy";
 import VipTools from "@/pages/VipTools";
-import BrandSubBrands from "@/pages/BrandSubBrands";
-import SubBrandAssets from "@/pages/SubBrandAssets";
+import BrandSubBrands from "@/pages/ProductHierarchy-BrandSubBrands";
+import SubBrandAssets from "@/pages/ProductHierarchy-SubBrandAssets";
 import Unsubscribe from "@/pages/Unsubscribe";
 import Brand from "@/pages/Brand";
-import Brands from "@/pages/Brands";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -44,6 +43,7 @@ function Router() {
       <Route path="/notification-setup" component={NotificationSetup} />
       <Route path="/notification-settings" component={NotificationSettings} />
       <Route path="/account-settings" component={AccountSettings} />
+      <Route path="/alerts" component={Alerts} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/privacy" component={PrivacyPolicy} />
       <Route path="/terms" component={TermsOfService} />
@@ -51,14 +51,12 @@ function Router() {
       <Route path="/read-me" component={ReadMe} />
       <Route path="/b/:assetId" component={AssetDetail} />
       <Route path="/asset/:assetIdx" component={AssetDetailByIdx} />
-      <Route path="/activity" component={Activity} />
       <Route path="/vip-tools" component={VipTools} />
       <Route path="/product-hierarchy-editor" component={ProductHierarchy} />
       <Route path="/product-hierarchy-editor/brand/:brandIdx" component={BrandSubBrands} />
       <Route path="/product-hierarchy-editor/sub-brand/:subBrandIdx/assets" component={SubBrandAssets} />
       <Route path="/unsubscribe" component={Unsubscribe} />
       <Route path="/brand" component={Brand} />
-      <Route path="/brands" component={Brands} />
       <Route component={NotFound} />
     </Switch>
   );

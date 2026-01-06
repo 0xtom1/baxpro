@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Moon, Sun, LogOut, Bell, User, Activity, Crown, Package } from "lucide-react";
+import { Plus, Moon, Sun, LogOut, Bell, User, Crown, AlertCircle } from "lucide-react";
 import GlencairnLogo from "./GlencairnLogo";
 import {
   DropdownMenu,
@@ -60,7 +60,11 @@ export default function DashboardNav({ onNewAlert, alertCount = 0 }: DashboardNa
   return (
     <nav className="border-b border-border bg-background">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <a 
+          href="/dashboard" 
+          className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          data-testid="link-logo-dashboard"
+        >
           <GlencairnLogo className="w-6 h-6" />
           <span className="font-serif text-xl font-bold">BaxPro</span>
           <Badge 
@@ -69,18 +73,20 @@ export default function DashboardNav({ onNewAlert, alertCount = 0 }: DashboardNa
           >
             beta
           </Badge>
-        </div>
+        </a>
         
         <div className="flex items-center gap-3">
-          <Button 
-            onClick={onNewAlert}
-            disabled={isAtLimit}
-            title={isAtLimit ? `Maximum of ${MAX_ALERTS} alerts reached` : undefined}
-            data-testid="button-new-alert"
-          >
-            <Plus className="w-4 h-4 mr-1" />
-            New Alert
-          </Button>
+          {onNewAlert && (
+            <Button 
+              onClick={onNewAlert}
+              disabled={isAtLimit}
+              title={isAtLimit ? `Maximum of ${MAX_ALERTS} alerts reached` : undefined}
+              data-testid="button-new-alert"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              New Alert
+            </Button>
+          )}
           
           <Button
             size="icon"
@@ -119,13 +125,9 @@ export default function DashboardNav({ onNewAlert, alertCount = 0 }: DashboardNa
                 </div>
               </div>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setLocation("/brands")} data-testid="button-brands">
-                <Package className="w-4 h-4 mr-2" />
-                Browse Brands
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setLocation("/activity")} data-testid="button-activity-feed">
-                <Activity className="w-4 h-4 mr-2" />
-                Activity Feed
+              <DropdownMenuItem onClick={() => setLocation("/alerts")} data-testid="button-my-alerts">
+                <AlertCircle className="w-4 h-4 mr-2" />
+                My Alerts
               </DropdownMenuItem>
               {user?.isVip && (
                 <DropdownMenuItem onClick={() => setLocation("/vip-tools")} data-testid="button-vip-tools">
