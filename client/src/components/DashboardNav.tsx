@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Moon, Sun, LogOut, Bell, User, Crown, AlertCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Plus, Moon, Sun, LogOut, Bell, User, Crown, AlertCircle, Search } from "lucide-react";
 import GlencairnLogo from "./GlencairnLogo";
 import {
   DropdownMenu,
@@ -19,9 +20,12 @@ const MAX_ALERTS = 50;
 interface DashboardNavProps {
   onNewAlert?: () => void;
   alertCount?: number;
+  search?: string;
+  onSearchChange?: (value: string) => void;
+  searchPlaceholder?: string;
 }
 
-export default function DashboardNav({ onNewAlert, alertCount = 0 }: DashboardNavProps) {
+export default function DashboardNav({ onNewAlert, alertCount = 0, search, onSearchChange, searchPlaceholder = "Brands, producers..." }: DashboardNavProps) {
   const isAtLimit = alertCount >= MAX_ALERTS;
   const { user, logout } = useAuth();
   const [, setLocation] = useLocation();
@@ -59,10 +63,10 @@ export default function DashboardNav({ onNewAlert, alertCount = 0 }: DashboardNa
 
   return (
     <nav className="border-b border-border bg-background">
-      <div className="px-6 h-16 flex items-center justify-between">
+      <div className="px-6 h-16 flex items-center justify-between gap-4">
         <a 
           href="/dashboard" 
-          className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          className="flex items-center gap-2 hover:opacity-80 transition-opacity flex-shrink-0"
           data-testid="link-logo-dashboard"
         >
           <GlencairnLogo className="w-6 h-6" />
@@ -75,7 +79,22 @@ export default function DashboardNav({ onNewAlert, alertCount = 0 }: DashboardNa
           </Badge>
         </a>
         
-        <div className="flex items-center gap-3">
+        {onSearchChange && (
+          <div className="flex-1 max-w-md mx-auto hidden lg:block">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder={searchPlaceholder}
+                value={search || ""}
+                onChange={(e) => onSearchChange(e.target.value)}
+                className="pl-9"
+                data-testid="input-search"
+              />
+            </div>
+          </div>
+        )}
+        
+        <div className="flex items-center gap-3 flex-shrink-0">
           {onNewAlert && (
             <Button 
               onClick={onNewAlert}
