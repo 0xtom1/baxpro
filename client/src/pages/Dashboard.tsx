@@ -336,23 +336,10 @@ export default function Dashboard() {
     <>
       {/* Desktop Layout */}
       <div className="hidden lg:flex flex-col h-screen bg-background">
-        <DashboardNav />
-        
-        {/* Search Bar */}
-        <div className="border-b border-border px-6 py-3">
-          <div className="max-w-md">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Brands, producers..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
-                data-testid="input-search"
-              />
-            </div>
-          </div>
-        </div>
+        <DashboardNav 
+          search={search}
+          onSearchChange={setSearch}
+        />
 
         {/* Tabs */}
         <div className="border-b border-border px-6">
