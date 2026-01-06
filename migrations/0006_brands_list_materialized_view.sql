@@ -15,6 +15,7 @@ SELECT
   (a.asset_json -> 'bottle_release' ->> 'market_price')::DOUBLE PRECISION AS market_price,
   jsonb_path_query_first(a.metadata_json, '$.attributes[*] ? (@.trait_type == "Producer").value') #>> '{}' AS producer,
   a.metadata_json ->> 'image' AS image_url,
+  a.asset_json ->> 'current_owner_id' AS current_owner_id,
   (
     SELECT COALESCE(SUM(af.price), 0)
     FROM baxus.activity_feed af
