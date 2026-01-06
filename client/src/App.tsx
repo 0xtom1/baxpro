@@ -19,6 +19,7 @@ import Login from "@/pages/Login";
 import NotificationSetup from "@/pages/NotificationSetup";
 import NotificationSettings from "@/pages/NotificationSettings";
 import AccountSettings from "@/pages/AccountSettings";
+import Alerts from "@/pages/Alerts";
 import Dashboard from "@/pages/Dashboard";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TermsOfService from "@/pages/TermsOfService";
@@ -33,7 +34,6 @@ import BrandSubBrands from "@/pages/BrandSubBrands";
 import SubBrandAssets from "@/pages/SubBrandAssets";
 import Unsubscribe from "@/pages/Unsubscribe";
 import Brand from "@/pages/Brand";
-import Brands from "@/pages/Brands";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -44,8 +44,8 @@ function Router() {
       <Route path="/notification-setup" component={NotificationSetup} />
       <Route path="/notification-settings" component={NotificationSettings} />
       <Route path="/account-settings" component={AccountSettings} />
-      <Route path="/alerts" component={Dashboard} />
-      <Route path="/dashboard" component={Brands} />
+      <Route path="/alerts" component={Alerts} />
+      <Route path="/dashboard" component={Dashboard} />
       <Route path="/privacy" component={PrivacyPolicy} />
       <Route path="/terms" component={TermsOfService} />
       <Route path="/opt-in-proof" component={OptInProof} />
