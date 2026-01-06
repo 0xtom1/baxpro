@@ -92,6 +92,14 @@ The Brand page (`/brand?name=<brand_name>`) displays detailed information about 
 Users with `isVip: true` can access:
 - Product hierarchy editor (Producers → Brands → Sub-Brands)
 - System-wide alert match refresh
+- Refresh brands list materialized view (`POST /api/refresh-brands-list`)
+
+### Performance Optimizations
+
+**Brands List Materialized View** (`baxus.mv_brands_list`):
+- Pre-computes brand aggregations (asset counts, floor prices) for faster dashboard loading
+- Refresh via VIP endpoint or manually: `REFRESH MATERIALIZED VIEW CONCURRENTLY baxus.mv_brands_list`
+- Migration: `migrations/0006_brands_list_materialized_view.sql`
 
 ## External Dependencies
 

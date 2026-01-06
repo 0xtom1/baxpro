@@ -1,0 +1,30 @@
+-- Materialized view for brands list (dashboard page)
+-- This pre-computes the aggregations for faster dashboard loading
+
+CREATE MATERIALIZED VIEW IF NOT EXISTS baxus.mv_brands_list AS
+SELECT 
+  v.brand_name,
+  v.producer,
+  COUNT(*) as asset_count,
+  COUNT(*) FILTER (WHERE v.is_listed = true) as listed_count,
+  MIN(v.price) FILTER (WHERE v.is_listed = true) as floor_price,
+  (
+    SELECT a.asset_json -> 'bottle_release' ->> 'image_url'
+    FROM baxus.assets a
+    JOIN baxus.v_asset_summary vs ON a.asset_idx = vs.asset_idx
+    WHERE vs.brand_name = v.brand_name
+    AND a.asset_json -> 'bottle_release' ->> 'image_url' IS NOT NULL
+    LIMIT 1
+  ) as image_url
+FROM baxus.v_asset_summary v
+WHERE v.brand_name IS NOT NULL
+GROUP BY v.brand_name, v.producer;
+
+-- Create index for faster ordering/pagination
+CREATE UNIQUE INDEX IF NOT EXISTS mv_brands_list_brand_producer_idx 
+ON baxus.mv_brands_list (brand_name, producer);
+
+CREATE INDEX IF NOT EXISTS mv_brands_list_listed_count_idx 
+ON baxus.mv_brands_list (listed_count DESC, asset_count DESC);
+
+-- To refresh: REFRESH MATERIALIZED VIEW CONCURRENTLY baxus.mv_brands_list;

@@ -610,30 +610,13 @@ export class DbStorage implements IStorage {
       const offset = (page - 1) * limit;
       
       const countResult = await client.query(`
-        SELECT COUNT(DISTINCT (v.brand_name, v.producer)) as total
-        FROM baxus.v_asset_summary v
-        WHERE v.brand_name IS NOT NULL
+        SELECT COUNT(*) as total FROM baxus.mv_brands_list
       `);
       const total = parseInt(countResult.rows[0].total, 10);
 
       const result = await client.query(`
-        SELECT 
-          v.brand_name,
-          v.producer,
-          COUNT(*) as asset_count,
-          COUNT(*) FILTER (WHERE v.is_listed = true) as listed_count,
-          MIN(v.price) FILTER (WHERE v.is_listed = true) as floor_price,
-          (
-            SELECT a.asset_json -> 'bottle_release' ->> 'image_url'
-            FROM baxus.assets a
-            JOIN baxus.v_asset_summary vs ON a.asset_idx = vs.asset_idx
-            WHERE vs.brand_name = v.brand_name
-            AND a.asset_json -> 'bottle_release' ->> 'image_url' IS NOT NULL
-            LIMIT 1
-          ) as image_url
-        FROM baxus.v_asset_summary v
-        WHERE v.brand_name IS NOT NULL
-        GROUP BY v.brand_name, v.producer
+        SELECT brand_name, producer, asset_count, listed_count, floor_price, image_url
+        FROM baxus.mv_brands_list
         ORDER BY listed_count DESC, asset_count DESC
         LIMIT $1 OFFSET $2
       `, [limit, offset]);
@@ -649,6 +632,15 @@ export class DbStorage implements IStorage {
         })),
         total,
       };
+    } finally {
+      client.release();
+    }
+  }
+
+  async refreshBrandsListView(): Promise<void> {
+    const client = await pool.connect();
+    try {
+      await client.query('REFRESH MATERIALIZED VIEW CONCURRENTLY baxus.mv_brands_list');
     } finally {
       client.release();
     }
