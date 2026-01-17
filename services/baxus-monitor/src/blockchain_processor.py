@@ -21,7 +21,7 @@ logger = get_logger()
 
 class BlockchainProcessor:
     """Processes Solana blockchain transactions to track on-chain activity.
-    
+
     Fetches parsed transactions from Helius, identifies mint/burn/purchase events,
     resolves asset metadata, and persists activity records to the database.
     """
@@ -83,6 +83,8 @@ class BlockchainProcessor:
         }
         asset_id_to_idx_map = {}
         for mint in tqdm(max_dates_per_asset, desc="Processing assets"):
+            if mint == self.USDC_MINT:
+                continue
             asset_idx = self.process_asset(asset_id=mint, max_activity_date=max_dates_per_asset[mint])
             asset_id_to_idx_map[mint] = asset_idx
 
