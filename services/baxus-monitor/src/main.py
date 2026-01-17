@@ -51,32 +51,34 @@ def monitor_activity():
     db.close()
 
     listing_processor = ListingProcessor(config, listing_activity_idx=activity_types_map["NEW_LISTING"])
-
+    blockchain_counter = 1
     # Loop activity
     while True:
-        # Get blockchain activities
-        try:
-            start_time = datetime.now(UTC)
-            with BlockchainProcessor(config=config, activity_types_map=activity_types_map) as blockchain_processor:
-                logger.info("Starting blockchain processing...")
-                stats = blockchain_processor.process_transactions()
-                elapsed_secs = (datetime.now(UTC) - start_time).total_seconds()
-                logger.info(
-                    f"Poll cycle complete in {elapsed_secs:.2f}s - "
-                    f"Parsed Mints: {stats['parsed_mints']}, "
-                    f"Parsed Burns: {stats['parsed_burns']}, "
-                    f"Parsed Purchases: {stats['parsed_purchases']}, "
-                    f"Total Processed: {stats['total_processed']}, "
-                    f"Inserted Activities: {stats['inserted_activities']}, "
-                    f"Errors: {stats['errors']}, "
-                )
-        except KeyboardInterrupt:
-            logger.info("\nStopped by user")
-            break
-        except Exception as e:
-            logger.error(f"Error in blockchain poll cycle: {e}", exc_info=True)
-            time.sleep(60)  # Wait before retrying on error
+        if blockchain_counter % 4 == 0:
+            # Get blockchain activities
+            try:
+                start_time = datetime.now(UTC)
+                with BlockchainProcessor(config=config, activity_types_map=activity_types_map) as blockchain_processor:
+                    logger.info("Starting blockchain processing...")
+                    stats = blockchain_processor.process_transactions()
+                    elapsed_secs = (datetime.now(UTC) - start_time).total_seconds()
+                    logger.info(
+                        f"Poll cycle complete in {elapsed_secs:.2f}s - "
+                        f"Parsed Mints: {stats['parsed_mints']}, "
+                        f"Parsed Burns: {stats['parsed_burns']}, "
+                        f"Parsed Purchases: {stats['parsed_purchases']}, "
+                        f"Total Processed: {stats['total_processed']}, "
+                        f"Inserted Activities: {stats['inserted_activities']}, "
+                        f"Errors: {stats['errors']}, "
+                    )
+            except KeyboardInterrupt:
+                logger.info("\nStopped by user")
+                break
+            except Exception as e:
+                logger.error(f"Error in blockchain poll cycle: {e}", exc_info=True)
+                time.sleep(60)  # Wait before retrying on error
 
+        blockchain_counter += 1
         # Get new listings, Loop until new listings != query size
         stats = {
             "total_processed": 0,
