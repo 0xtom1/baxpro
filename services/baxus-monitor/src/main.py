@@ -51,10 +51,36 @@ def monitor_activity():
     db.close()
 
     listing_processor = ListingProcessor(config, listing_activity_idx=activity_types_map["NEW_LISTING"])
-    blockchain_counter = 1
+    loop_counter = 0
     # Loop activity
     while True:
-        if blockchain_counter % 4 == 0:
+        loop_counter += 1
+        loop_time = datetime.now(UTC)
+        if loop_time.hour == 4 and loop_time.minute < 15:
+            # Process incomplete assets
+            try:
+                start_time = datetime.now(UTC)
+                logger.info("Starting process of incomplete assets...")
+                stats = listing_processor.process_incomplete_assets()
+                elapsed_secs = (datetime.now(UTC) - start_time).total_seconds()
+                logger.info(
+                    f"Processed incomplete assets in {elapsed_secs:.2f}s - "
+                    f"Processed: {stats['total_processed']}, "
+                    f"Updated Assets: {stats['updated_assets']}, "
+                    f"Errors: {stats['errors']}, "
+                )
+                if stats["updated_assets"] > 0:
+                    listing_processor.refresh_materialized_views()
+
+            except KeyboardInterrupt:
+                logger.info("\nStopped by user")
+                listing_processor.close()
+                break
+            except Exception as e:
+                logger.error(f"Error in processing incomplete assets: {e}", exc_info=True)
+                time.sleep(60)  # Wait before retrying on error
+
+        if loop_counter % 4 == 0:
             # Get blockchain activities
             try:
                 start_time = datetime.now(UTC)
@@ -78,7 +104,6 @@ def monitor_activity():
                 logger.error(f"Error in blockchain poll cycle: {e}", exc_info=True)
                 time.sleep(60)  # Wait before retrying on error
 
-        blockchain_counter += 1
         # Get new listings, Loop until new listings != query size
         stats = {
             "total_processed": 0,
@@ -95,6 +120,8 @@ def monitor_activity():
                 stats = listing_processor.process_listings(query_size=query_size, query_from=start_from)
                 elapsed_secs = (datetime.now(UTC) - start_time).total_seconds()
                 start_from += query_size
+                if stats.get("new_assets") > 0 or stats.get("new_listings") > 0:
+                    listing_processor.refresh_materialized_views()
                 if stats.get("total_processed") == stats.get("new_listings"):
                     logger.info(
                         f"Poll cycle complete in {elapsed_secs:.2f}s - "
