@@ -243,3 +243,11 @@ class AssetRepository:
         )
         rows = result.fetchall()
         return rows
+
+    def refresh_materialized_views(self):
+        """Refresh materialized views related to assets."""
+        start_refresh = datetime.now()
+        self.conn.execute(text("REFRESH MATERIALIZED VIEW CONCURRENTLY baxus.mv_brands_list;"))
+        self.conn.commit()
+        elapsed_secs = (datetime.now() - start_refresh).total_seconds()
+        logger.info(f"Refreshed materialized views: mv_brands_list in {elapsed_secs:.2f} seconds")
