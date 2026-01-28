@@ -51,6 +51,22 @@ class BlockchainProcessor:
         logger.info(f"Latest processed signature: {latest_signature}")
         return latest_signature
 
+    def should_run(self, latest_signature: str) -> bool:
+        """_summary_
+
+        Args:
+            latest_signature (str): _description_
+
+        Returns:
+            bool: _description_
+        """
+        signatures = self.helius.get_signatures_for_address(until_signature=latest_signature, response_size=10)
+        signatures = signatures.get("result")
+        if signatures and len(signatures) > 0:
+            return True
+        else:
+            return False
+
     def process_transactions(self) -> dict:
         """Process blockchain transactions from Helius and persist relevant activities.
 
@@ -64,7 +80,17 @@ class BlockchainProcessor:
         """
 
         search_until_signature = self.get_latest_processed_signature()
-        results = self.get_transactions(until_signature=search_until_signature)
+        if not self.should_run(latest_signature=search_until_signature):
+            return {
+                "parsed_mints": 0,
+                "parsed_burns": 0,
+                "parsed_purchases": 0,
+                "total_processed": 0,
+                "inserted_activities": 0,
+                "errors": 0,
+            }
+
+        results, max_signature_parsed = self.get_transactions(until_signature=search_until_signature)
 
         # Process oldest 500 per batch
         results = sorted(results, key=attrgetter("activity_date"))[:500]
@@ -106,8 +132,8 @@ class BlockchainProcessor:
         activity_repo = ActivityRepository(session=session, conn=conn)
         inserted = activity_repo.insert_many(activity_feeds=valid_activities)
         # Update latest processed signature in metadata
-        if len(inserted) > 0:
-            activity_repo.update_latest_processed_signature()
+        if max_signature_parsed:
+            activity_repo.update_latest_processed_signature(new_signature=max_signature_parsed)
 
         session.close()
         conn.close()
@@ -134,6 +160,7 @@ class BlockchainProcessor:
         Returns:
             list[ActivityFeed]: Parsed activity feed objects from transactions.
         """
+        max_signature_parsed = None
         before_signature = None
         transactions = []
         results = []
@@ -141,6 +168,10 @@ class BlockchainProcessor:
             transactions = self.helius.get_parsed_transactions(
                 before_signature=before_signature, until_signature=until_signature, response_size=response_size
             )
+            # If first loop, get first transaction
+            if before_signature is None and transactions and len(transactions) > 0:
+                max_signature_parsed = transactions[0].get("signature")
+
             for each in transactions:
                 before_signature = each["signature"]
                 activity_feed = self.transaction_helper.create_activity_feed_object(transaction=each)
@@ -152,7 +183,7 @@ class BlockchainProcessor:
                 dt = datetime.fromtimestamp(transactions[-1]["timestamp"])
                 logger.info(dt.strftime("%Y-%m-%d %H:%M:%S"))
                 logger.info(before_signature)
-        return results
+        return results, max_signature_parsed
 
     def process_asset(self, asset_id: str, max_activity_date: datetime) -> int:
         """Fetch or update asset details and return the asset index.
