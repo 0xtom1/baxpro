@@ -184,33 +184,8 @@ class ActivityRepository:
         rows = result.fetchone()
         return rows[0]
 
-    def update_latest_processed_signature(self) -> None:
+    def update_latest_processed_signature(self, new_signature: str) -> None:
         """Update the MAX_SIGNATURE metadata value to the signature from the latest activity_date (where signature is not null)."""
-
-        # Subquery to find the max activity_date with a non-null signature
-        find_latest_sig_query = text(
-            """
-            SELECT signature
-            FROM "baxus"."activity_feed"
-            WHERE signature IS NOT NULL
-            AND activity_date = (
-                SELECT MAX(activity_date)
-                FROM "baxus"."activity_feed"
-                WHERE signature IS NOT NULL
-            )
-            LIMIT 1
-        """
-        )
-
-        result = self.conn.execute(find_latest_sig_query)
-        row = result.fetchone()
-
-        if row is None or row[0] is None:
-            # No activities with signature yet — maybe leave unchanged, or set to empty/null?
-            # Here we'll skip updating (or you can set to None/'')
-            return
-
-        new_signature = row[0]
 
         # Now update the sys_metadata table
         update_query = text(
