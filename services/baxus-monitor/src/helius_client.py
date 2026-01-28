@@ -1,6 +1,5 @@
 """Client for interacting with the Helius RPC API for Solana blockchain data."""
 
-
 import requests
 from heliuspy import HeliusAPI
 from solana.rpc.api import Client
@@ -27,14 +26,16 @@ class HeliusClient:
             self.client = Client(self.RPC_ENDPOINT, commitment=self.COMMITMENT)
         except Exception as e:
             raise Exception(f"Failed to connect to Helius RPC: {e}")
-        self.pub_key = 'BAXUz8YJsRtZVZuMaespnrDPMapvu83USD6PXh4GgHjg'
+        self.pub_key = "BAXUz8YJsRtZVZuMaespnrDPMapvu83USD6PXh4GgHjg"
         """
         burn and mint ? BAXUz8YJsRtZVZuMaespnrDPMapvu83USD6PXh4GgHjg
         recieves usd? 
         signer? BAXDZX8gHKByCrcxNoR2udxQwDAM4UYKTFbfDawgDHwR
         """
 
-    def get_parsed_transactions(self, until_signature: str = None, before_signature: str = None, response_size: int = 100):
+    def get_parsed_transactions(
+        self, until_signature: str = None, before_signature: str = None, response_size: int = 100
+    ):
         """Get parsed transactions for a Solana wallet address.
 
         Fetches and prints the most recent transactions for the configured
@@ -51,10 +52,45 @@ class HeliusClient:
         """
         try:
             transactions = self.Helius.get_parsed_transactions(
-                address=self.pub_key, limit=response_size, until=until_signature, before=before_signature, commitment="confirmed")
+                address=self.pub_key,
+                limit=response_size,
+                until=until_signature,
+                before=before_signature,
+                commitment="confirmed",
+            )
             return transactions
         except Exception as e:
             logger.error(f"Error fetching parsed transactions: {e}")
+            return []
+
+    def get_signatures_for_address(
+        self, until_signature: str = None, before_signature: str = None, response_size: int = 100
+    ):
+        """Get parsed transactions for a Solana wallet address.
+
+        Fetches and prints the most recent transactions for the configured
+        Baxus public key.
+
+        before_signature = starting point for pagination
+
+        until = end point for pagination
+
+        results in reverse chronological order
+
+        Args:
+            pub_key: The public key to query. Uses default Baxus key if not provided.
+        """
+        try:
+            signatures = self.Helius.get_signatures_for_address(
+                address=self.pub_key,
+                limit=response_size,
+                until=until_signature,
+                before=before_signature,
+                commitment="confirmed",
+            )
+            return signatures
+        except Exception as e:
+            logger.error(f"Error fetching parsed signatures: {e}")
             return []
 
     def get_asset(self, id: str = None):
@@ -103,7 +139,6 @@ class HeliusClient:
 
 if __name__ == "__main__":
     from .utils.config import config
-    W = HeliusClient(config=config
-                     )
+
+    W = HeliusClient(config=config)
     W.get_asset()
-    
