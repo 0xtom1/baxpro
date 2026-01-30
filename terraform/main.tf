@@ -409,7 +409,7 @@ locals {
   ]
 
   # Baxus Monitor polling interval: 5 min (300s) for dev, 30s for production
-  baxus_poll_interval = var.baxus_poll_interval_sec != null ? var.baxus_poll_interval_sec : (var.environment == "production" ? 60 : 600)
+  baxus_poll_interval = var.baxus_poll_interval_sec != null ? var.baxus_poll_interval_sec : (var.environment == "production" ? 30 : 300)
 }
 
 resource "google_secret_manager_secret_iam_member" "secret_access" {

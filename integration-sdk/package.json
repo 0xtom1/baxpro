@@ -1,0 +1,27 @@
+{
+  "name": "nft-lending-sdk",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for the NFT Lending Protocol on Solana",
+  "main": "dist/client.js",
+  "types": "dist/client.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.32.1",
+    "@solana/spl-token": "^0.4.0",
+    "@solana/web3.js": "^1.95.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "@coral-xyz/anchor": ">=0.29.0",
+    "@solana/web3.js": ">=1.87.0"
+  }
+}
