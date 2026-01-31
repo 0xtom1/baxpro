@@ -183,18 +183,16 @@ export default function Dashboard() {
               onClick={() => setLocation(`/brand?name=${encodeURIComponent(brand.brandName)}`)}
               data-testid={`card-brand-${brand.brandName}`}
             >
-              {/* Bottle Image */}
+              {/* Bottle Image - Using test URLs for preview */}
               <div className="aspect-[2/3] bg-gradient-to-b from-muted/20 to-muted/40 relative overflow-hidden flex items-center justify-center">
-                {brand.imageUrl ? (
-                  <img
-                    src={brand.imageUrl}
-                    alt={brand.brandName}
-                    className="w-full h-full object-contain"
-                    loading="lazy"
-                  />
-                ) : (
-                  <GlencairnLogo className="w-16 h-16 opacity-20" />
-                )}
+                <img
+                  src={filteredBrands.indexOf(brand) % 2 === 0 
+                    ? "https://assets.baxus.co/364/364.jpg" 
+                    : "https://assets.baxus.co/644/644.jpg"}
+                  alt={brand.brandName}
+                  className="w-full h-full object-contain"
+                  loading="lazy"
+                />
               </div>
               
               {/* Brand Info */}
