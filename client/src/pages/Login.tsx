@@ -64,7 +64,9 @@ export default function Login() {
         setLoggingIn(true);
         try {
           // Get the Solana address from the connected user
-          const solanaAddress = phantomUser.solana?.address;
+          // Cast to access the solana property from the SDK response
+          const userWithSolana = phantomUser as { solana?: { address?: string } };
+          const solanaAddress = userWithSolana.solana?.address;
           if (!solanaAddress) {
             throw new Error("No Solana address found");
           }
