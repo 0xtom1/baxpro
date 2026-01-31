@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SiGoogle } from "react-icons/si";
-import { User, Wallet } from "lucide-react";
+import { User } from "lucide-react";
+import PhantomLogo from "@/components/PhantomLogo";
 import { useState, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import GlencairnLogo from "@/components/GlencairnLogo";
@@ -172,7 +173,7 @@ export default function Login() {
               disabled={loggingIn || !agreedToTerms}
               data-testid="button-phantom-login"
             >
-              <Wallet className="w-5 h-5 mr-2" />
+              <PhantomLogo className="w-5 h-5 mr-2" />
               Continue with Phantom
             </Button>
             
