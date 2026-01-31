@@ -157,13 +157,15 @@ export default function Dashboard() {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-4">
           {Array.from({ length: 14 }).map((_, i) => (
             <div key={i} className="bg-card rounded-lg border border-border overflow-hidden">
-              <Skeleton className="aspect-[3/4] w-full" />
-              <div className="p-3 space-y-2">
+              <Skeleton className="h-40 w-full" />
+              <div className="p-2 space-y-1">
                 <Skeleton className="h-4 w-3/4" />
                 <Skeleton className="h-3 w-1/2" />
-                <div className="grid grid-cols-2 gap-2 pt-2">
-                  <Skeleton className="h-8" />
-                  <Skeleton className="h-8" />
+                <div className="grid grid-cols-2 gap-1 pt-1">
+                  <Skeleton className="h-4" />
+                  <Skeleton className="h-4" />
+                  <Skeleton className="h-4" />
+                  <Skeleton className="h-4" />
                 </div>
               </div>
             </div>
@@ -179,53 +181,51 @@ export default function Dashboard() {
           {filteredBrands.map((brand) => (
             <div
               key={brand.brandName}
-              className="bg-card rounded-lg border border-border overflow-hidden hover-elevate cursor-pointer transition-all"
+              className="bg-card rounded-lg border border-border overflow-hidden hover-elevate cursor-pointer transition-all flex flex-col"
               onClick={() => setLocation(`/brand?name=${encodeURIComponent(brand.brandName)}`)}
               data-testid={`card-brand-${brand.brandName}`}
             >
-              {/* Bottle Image */}
-              <div className="aspect-[3/4] bg-gradient-to-b from-muted/20 to-muted/40 relative overflow-hidden flex items-center justify-center p-2">
-                {brand.imageUrl ? (
-                  <img
-                    src={brand.imageUrl}
-                    alt={brand.brandName}
-                    className="max-w-full max-h-full object-contain"
-                    loading="lazy"
-                  />
-                ) : (
-                  <GlencairnLogo className="w-16 h-16 opacity-20" />
-                )}
+              {/* Bottle Image - Using test URLs for preview */}
+              <div className="h-40 bg-muted/30 relative overflow-hidden flex items-end justify-center">
+                <img
+                  src={filteredBrands.indexOf(brand) % 2 === 0 
+                    ? "https://assets.baxus.co/364/364.jpg" 
+                    : "https://assets.baxus.co/644/644.jpg"}
+                  alt={brand.brandName}
+                  className="max-h-full object-contain"
+                  loading="lazy"
+                />
               </div>
               
               {/* Brand Info */}
-              <div className="p-3">
+              <div className="p-2 flex flex-col gap-1">
                 <h3 
-                  className="font-medium text-sm truncate mb-0.5"
+                  className="font-medium text-sm truncate leading-tight"
                   data-testid={`text-brand-name-${brand.brandName}`}
                 >
                   {brand.brandName}
                 </h3>
-                <p className="text-xs text-muted-foreground truncate mb-3">
+                <p className="text-xs text-muted-foreground truncate leading-tight">
                   {brand.producer || "Unknown Producer"}
                 </p>
                 
                 {/* Metrics Grid */}
-                <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
-                  <div>
+                <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-xs mt-1">
+                  <div className="flex justify-between">
                     <span className="text-muted-foreground">Floor</span>
-                    <p className="font-medium text-green-500 tabular-nums">{formatPrice(brand.floorPrice)}</p>
+                    <span className="font-medium text-green-500 tabular-nums">{formatPrice(brand.floorPrice)}</span>
                   </div>
-                  <div>
+                  <div className="flex justify-between">
                     <span className="text-muted-foreground">30D Vol</span>
-                    <p className="font-medium tabular-nums">{formatVolume(brand.volume30d)}</p>
+                    <span className="font-medium tabular-nums">{formatVolume(brand.volume30d)}</span>
                   </div>
-                  <div>
+                  <div className="flex justify-between">
                     <span className="text-muted-foreground">Listed</span>
-                    <p className="font-medium tabular-nums">{brand.listedCount.toLocaleString()}</p>
+                    <span className="font-medium tabular-nums">{brand.listedCount.toLocaleString()}</span>
                   </div>
-                  <div>
+                  <div className="flex justify-between">
                     <span className="text-muted-foreground">Supply</span>
-                    <p className="font-medium tabular-nums text-muted-foreground">{brand.assetCount.toLocaleString()}</p>
+                    <span className="font-medium tabular-nums text-muted-foreground">{brand.assetCount.toLocaleString()}</span>
                   </div>
                 </div>
               </div>
