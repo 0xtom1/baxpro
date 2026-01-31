@@ -185,12 +185,18 @@ export default function Dashboard() {
             >
               {/* Bottle Image */}
               <div className="aspect-[2/3] bg-gradient-to-b from-muted/30 to-muted/60 relative overflow-hidden">
-                <img
-                  src="https://assets.baxus.co/11950/11950.jpg"
-                  alt={brand.brandName}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
+                {brand.imageUrl ? (
+                  <img
+                    src={brand.imageUrl}
+                    alt={brand.brandName}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <GlencairnLogo className="w-16 h-16 opacity-20" />
+                  </div>
+                )}
               </div>
               
               {/* Brand Info */}
