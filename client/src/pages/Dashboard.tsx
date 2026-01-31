@@ -157,7 +157,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-4">
           {Array.from({ length: 14 }).map((_, i) => (
             <div key={i} className="bg-card rounded-lg border border-border overflow-hidden">
-              <Skeleton className="aspect-[2/3] w-full" />
+              <Skeleton className="aspect-[3/4] w-full" />
               <div className="p-3 space-y-2">
                 <Skeleton className="h-4 w-3/4" />
                 <Skeleton className="h-3 w-1/2" />
@@ -184,13 +184,13 @@ export default function Dashboard() {
               data-testid={`card-brand-${brand.brandName}`}
             >
               {/* Bottle Image - Using test URLs for preview */}
-              <div className="aspect-[2/3] bg-gradient-to-b from-muted/20 to-muted/40 relative overflow-hidden flex items-center justify-center">
+              <div className="aspect-[3/4] bg-gradient-to-b from-muted/20 to-muted/40 relative overflow-hidden flex items-center justify-center p-2">
                 <img
                   src={filteredBrands.indexOf(brand) % 2 === 0 
                     ? "https://assets.baxus.co/364/364.jpg" 
                     : "https://assets.baxus.co/644/644.jpg"}
                   alt={brand.brandName}
-                  className="w-full h-full object-contain"
+                  className="max-w-full max-h-full object-contain"
                   loading="lazy"
                 />
               </div>
