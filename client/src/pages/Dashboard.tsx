@@ -184,18 +184,16 @@ export default function Dashboard() {
               data-testid={`card-brand-${brand.brandName}`}
             >
               {/* Bottle Image */}
-              <div className="aspect-[2/3] bg-gradient-to-b from-muted/30 to-muted/60 relative overflow-hidden">
+              <div className="aspect-[2/3] bg-gradient-to-b from-muted/20 to-muted/40 relative overflow-hidden flex items-center justify-center">
                 {brand.imageUrl ? (
                   <img
                     src={brand.imageUrl}
                     alt={brand.brandName}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                     loading="lazy"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <GlencairnLogo className="w-16 h-16 opacity-20" />
-                  </div>
+                  <GlencairnLogo className="w-16 h-16 opacity-20" />
                 )}
               </div>
               
