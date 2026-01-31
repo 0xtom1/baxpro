@@ -157,7 +157,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-4">
           {Array.from({ length: 14 }).map((_, i) => (
             <div key={i} className="bg-card rounded-lg border border-border overflow-hidden">
-              <Skeleton className="aspect-[3/4] w-full" />
+              <Skeleton className="aspect-[2/3] w-full" />
               <div className="p-3 space-y-2">
                 <Skeleton className="h-4 w-3/4" />
                 <Skeleton className="h-3 w-1/2" />
@@ -184,19 +184,13 @@ export default function Dashboard() {
               data-testid={`card-brand-${brand.brandName}`}
             >
               {/* Bottle Image */}
-              <div className="aspect-[3/4] bg-muted/50 relative overflow-hidden">
-                {brand.imageUrl ? (
-                  <img
-                    src={brand.imageUrl}
-                    alt={brand.brandName}
-                    className="w-full h-full object-contain p-2"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <GlencairnLogo className="w-12 h-12 opacity-20" />
-                  </div>
-                )}
+              <div className="aspect-[2/3] bg-gradient-to-b from-muted/30 to-muted/60 relative overflow-hidden">
+                <img
+                  src="https://assets.baxus.co/11950/11950.jpg"
+                  alt={brand.brandName}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
               </div>
               
               {/* Brand Info */}
