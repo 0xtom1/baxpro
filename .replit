@@ -45,3 +45,11 @@ outputType = "webview"
 [agent]
 integrations = ["javascript_database:1.0.0", "javascript_log_in_with_replit:1.0.0"]
 expertMode = true
+
+[userenv]
+
+[userenv.development]
+VITE_PHANTOM_APP_ID = "f2232260-fe61-4cb7-a551-316fc1ed4346"
+
+[userenv.production]
+VITE_PHANTOM_APP_ID = "725e984c-f944-4ba4-931b-e7203c9b792a"

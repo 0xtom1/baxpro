@@ -329,6 +329,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Phantom SDK authentication - simplified flow where SDK handles wallet verification
+  app.post("/api/auth/phantom/sdk-login", authLimiter, async (req, res) => {
+    try {
+      const sdkLoginSchema = z.object({
+        publicKey: z.string().min(32).max(44),
+      });
+
+      const { publicKey } = sdkLoginSchema.parse(req.body);
+
+      // Check if user exists by phantom wallet
+      let user = await storage.getUserByPhantomWallet(publicKey);
+      
+      if (!user) {
+        // Create new user with phantom wallet
+        user = await storage.createUser({
+          email: null,
+          name: null,
+          displayName: generateDisplayName(),
+          phantomWallet: publicKey,
+          provider: "phantom",
+          providerId: publicKey,
+        });
+      }
+
+      // Update last login timestamp
+      await storage.updateUser(user.id, { lastLoginAt: new Date() });
+
+      req.session.userId = user.id;
+      
+      // Check if user needs notification setup
+      const needsSetup = !user.seenNotificationSetup;
+      
+      res.json({ user, needsSetup });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      console.error("Phantom SDK auth error:", error);
+      res.status(500).json({ error: "Authentication failed" });
+    }
+  });
+
   app.post("/api/auth/logout", authLimiter, (req, res) => {
     req.session.destroy((err) => {
       if (err) {

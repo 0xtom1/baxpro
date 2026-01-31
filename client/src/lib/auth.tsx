@@ -6,6 +6,7 @@ interface AuthContextType {
   loading: boolean;
   loginWithGoogle: (returnTo?: string) => Promise<void>;
   loginWithPhantom: () => Promise<{ user: User; needsSetup: boolean }>;
+  loginWithPhantomSDK: (publicKey: string) => Promise<{ user: User; needsSetup: boolean }>;
   loginDemo: (provider: string, email: string, name?: string) => Promise<User>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -113,6 +114,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { user: data.user, needsSetup: data.needsSetup };
   };
 
+  // Login with Phantom SDK - uses SDK's connection, then verifies with backend
+  const loginWithPhantomSDK = async (publicKey: string): Promise<{ user: User; needsSetup: boolean }> => {
+    // Register/login user with our backend using the public key from Phantom SDK
+    const response = await fetch("/api/auth/phantom/sdk-login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ publicKey }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Authentication failed");
+    }
+
+    const data = await response.json();
+    setUser(data.user);
+    return { user: data.user, needsSetup: data.needsSetup };
+  };
+
   const loginDemo = async (provider: string, email: string, name?: string) => {
     const response = await fetch("/api/auth/demo-login", {
       method: "POST",
@@ -147,7 +167,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, loginWithGoogle, loginWithPhantom, loginDemo, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, loginWithGoogle, loginWithPhantom, loginWithPhantomSDK, loginDemo, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
