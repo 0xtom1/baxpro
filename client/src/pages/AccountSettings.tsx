@@ -29,9 +29,16 @@ export default function AccountSettings() {
   const { toast } = useToast();
   
   const [displayName, setDisplayName] = useState("");
+  const [email, setEmail] = useState("");
   const [baxusWallet, setBaxusWallet] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  
+  // Check if user logged in with Phantom wallet
+  const hasPhantomWallet = !!user?.phantomWallet;
+  // Check if email can be edited - only for users who signed in with Phantom (provider === 'phantom')
+  // Users who signed in with Google OAuth cannot edit their email
+  const canEditEmail = user?.provider === 'phantom';
 
   useEffect(() => {
     refreshUser();
@@ -40,6 +47,7 @@ export default function AccountSettings() {
   useEffect(() => {
     if (user) {
       setDisplayName(user.displayName || "");
+      setEmail(user.email || "");
       setBaxusWallet(user.baxusWallet || "");
     }
   }, [user]);
@@ -47,6 +55,11 @@ export default function AccountSettings() {
   const isValidBase58 = (address: string) => {
     const base58Regex = /^[1-9A-HJ-NP-Za-km-z]+$/;
     return base58Regex.test(address);
+  };
+
+  const isValidEmail = (emailStr: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(emailStr);
   };
 
   const handleSave = async () => {
@@ -69,15 +82,32 @@ export default function AccountSettings() {
       }
     }
 
+    // Validate email for wallet users if they're setting one
+    if (canEditEmail && email && !isValidEmail(email)) {
+      toast({
+        title: "Invalid email",
+        description: "Please enter a valid email address",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSaving(true);
     try {
+      const updateData: { displayName: string | null; baxusWallet: string | null; email?: string | null } = { 
+        displayName: displayName || null,
+        baxusWallet: baxusWallet || null,
+      };
+      
+      // Only include email in update for wallet users
+      if (canEditEmail) {
+        updateData.email = email || null;
+      }
+
       const response = await fetch("/api/user/account", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          displayName: displayName || null,
-          baxusWallet: baxusWallet || null,
-        }),
+        body: JSON.stringify(updateData),
       });
 
       if (!response.ok) {
@@ -188,17 +218,40 @@ export default function AccountSettings() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={user.email}
-                  disabled
-                  className="bg-muted"
-                  data-testid="input-email"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Your email is managed through Google sign-in and cannot be changed here.
-                </p>
+                {canEditEmail ? (
+                  <>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="Enter your email for notifications"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      data-testid="input-email"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {email ? "Your email for notifications." : "Add your email to receive alert notifications."}
+                    </p>
+                    {email && !isValidEmail(email) && (
+                      <p className="text-xs text-destructive">
+                        Please enter a valid email address
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={user.email || ""}
+                      disabled
+                      className="bg-muted"
+                      data-testid="input-email"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Your email is managed through Google sign-in and cannot be changed here.
+                    </p>
+                  </>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -217,6 +270,31 @@ export default function AccountSettings() {
               </div>
             </CardContent>
           </Card>
+
+          {hasPhantomWallet && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Wallet className="w-5 h-5" />
+                  Connected Wallet
+                </CardTitle>
+                <CardDescription>
+                  Your Phantom wallet used to sign in
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <Label>Phantom Wallet Address</Label>
+                  <Input
+                    value={user.phantomWallet || ""}
+                    disabled
+                    className="bg-muted font-mono text-sm"
+                    data-testid="input-phantom-wallet"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <Card>
             <CardHeader>

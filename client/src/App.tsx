@@ -5,6 +5,8 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "./lib/auth";
+import { PhantomProvider, darkTheme } from "@phantom/react-sdk";
+import { AddressType } from "@phantom/browser-sdk";
 
 function ThemeInitializer() {
   useEffect(() => {
@@ -63,16 +65,31 @@ function Router() {
 }
 
 function App() {
+  const phantomAppId = import.meta.env.VITE_PHANTOM_APP_ID || "";
+  const redirectUrl = typeof window !== 'undefined' 
+    ? `${window.location.origin}/auth/phantom/callback`
+    : "";
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <ThemeInitializer />
-          <Toaster />
-          <Router />
-        </TooltipProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <PhantomProvider
+      config={{
+        providers: ["injected", "deeplink"],
+        appId: phantomAppId,
+        addressTypes: [AddressType.solana],
+      }}
+      theme={darkTheme}
+      appName="BaxPro"
+    >
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TooltipProvider>
+            <ThemeInitializer />
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </PhantomProvider>
   );
 }
 

@@ -11,6 +11,8 @@ import { PubSub } from "@google-cloud/pubsub";
 import { generateDisplayName } from "./data/nameGenerator";
 import crypto from "crypto";
 import { authLimiter, apiLimiter, emailLimiter } from "./rateLimit";
+import nacl from "tweetnacl";
+import bs58 from "bs58";
 
 declare module "express-session" {
   interface SessionData {
@@ -256,6 +258,119 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Phantom Wallet authentication
+  // Step 1: Get a challenge message to sign
+  app.get("/api/auth/phantom/challenge", authLimiter, (req, res) => {
+    const nonce = crypto.randomBytes(32).toString('hex');
+    const message = `Sign this message to authenticate with BaxPro.\n\nNonce: ${nonce}\nTimestamp: ${Date.now()}`;
+    
+    // Store nonce in session for verification
+    req.session.oauthCsrfToken = nonce;
+    
+    res.json({ message, nonce });
+  });
+
+  // Step 2: Verify signature and authenticate
+  app.post("/api/auth/phantom/verify", authLimiter, async (req, res) => {
+    try {
+      const verifySchema = z.object({
+        publicKey: z.string().min(32).max(44),
+        signature: z.string(),
+        message: z.string(),
+      });
+
+      const { publicKey, signature, message } = verifySchema.parse(req.body);
+
+      // Verify the signature
+      const messageBytes = new TextEncoder().encode(message);
+      const signatureBytes = bs58.decode(signature);
+      const publicKeyBytes = bs58.decode(publicKey);
+
+      const isValid = nacl.sign.detached.verify(
+        messageBytes,
+        signatureBytes,
+        publicKeyBytes
+      );
+
+      if (!isValid) {
+        return res.status(401).json({ error: "Invalid signature" });
+      }
+
+      // Check if user exists by phantom wallet
+      let user = await storage.getUserByPhantomWallet(publicKey);
+      
+      if (!user) {
+        // Create new user with phantom wallet
+        user = await storage.createUser({
+          email: null,
+          name: null,
+          displayName: generateDisplayName(),
+          phantomWallet: publicKey,
+          provider: "phantom",
+          providerId: publicKey,
+        });
+      }
+
+      // Update last login timestamp
+      await storage.updateUser(user.id, { lastLoginAt: new Date() });
+
+      req.session.userId = user.id;
+      
+      // Check if user needs notification setup
+      const needsSetup = !user.seenNotificationSetup;
+      
+      res.json({ user, needsSetup });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      console.error("Phantom auth error:", error);
+      res.status(500).json({ error: "Authentication failed" });
+    }
+  });
+
+  // Phantom SDK authentication - simplified flow where SDK handles wallet verification
+  app.post("/api/auth/phantom/sdk-login", authLimiter, async (req, res) => {
+    try {
+      const sdkLoginSchema = z.object({
+        publicKey: z.string().min(32).max(44),
+      });
+
+      const { publicKey } = sdkLoginSchema.parse(req.body);
+
+      // Check if user exists by phantom wallet
+      let user = await storage.getUserByPhantomWallet(publicKey);
+      
+      if (!user) {
+        // Create new user with phantom wallet
+        user = await storage.createUser({
+          email: null,
+          name: null,
+          displayName: generateDisplayName(),
+          phantomWallet: publicKey,
+          provider: "phantom",
+          providerId: publicKey,
+        });
+      }
+
+      // Update last login timestamp
+      await storage.updateUser(user.id, { lastLoginAt: new Date() });
+
+      req.session.userId = user.id;
+      
+      // Check if user needs notification setup
+      const needsSetup = !user.seenNotificationSetup;
+      
+      res.json({ user, needsSetup });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      console.error("Phantom SDK auth error:", error);
+      res.status(500).json({ error: "Authentication failed" });
+    }
+  });
+
   app.post("/api/auth/logout", authLimiter, (req, res) => {
     req.session.destroy((err) => {
       if (err) {
@@ -332,14 +447,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/user/account", requireAuth, apiLimiter, async (req, res) => {
     try {
       const base58Regex = /^[1-9A-HJ-NP-Za-km-z]+$/;
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       const accountSchema = z.object({
         displayName: z.string().nullable().optional(),
         baxusWallet: z.string().min(32).max(44).regex(base58Regex, "Invalid wallet address format").nullable().optional().or(z.literal(null)),
+        email: z.string().regex(emailRegex, "Invalid email format").nullable().optional(),
       });
 
       const data = accountSchema.parse(req.body);
       
-      const user = await storage.updateUser(req.session.userId!, data);
+      // Get current user to check if they can update email
+      const currentUser = await storage.getUser(req.session.userId!);
+      if (!currentUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      // Only allow email updates for users who signed in with Phantom wallet (provider === 'phantom')
+      const updateData: { displayName?: string | null; baxusWallet?: string | null; email?: string | null } = {
+        displayName: data.displayName,
+        baxusWallet: data.baxusWallet,
+      };
+      
+      // Allow email update only for Phantom wallet users (not Google OAuth users)
+      if (currentUser.provider === 'phantom' && data.email !== undefined) {
+        updateData.email = data.email;
+      }
+      
+      const user = await storage.updateUser(req.session.userId!, updateData);
       
       if (!user) {
         return res.status(404).json({ error: "User not found" });

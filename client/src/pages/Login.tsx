@@ -8,16 +8,22 @@ import { User } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import GlencairnLogo from "@/components/GlencairnLogo";
+import PhantomLogo from "@/components/PhantomLogo";
+import { usePhantom, useModal } from "@phantom/react-sdk";
 
 const isDev = import.meta.env.DEV;
 
 export default function Login() {
   const [, setLocation] = useLocation();
   const search = useSearch();
-  const { user, loading, loginWithGoogle, refreshUser } = useAuth();
+  const { user, loading, loginWithGoogle, loginWithPhantomSDK, refreshUser } = useAuth();
   const { toast } = useToast();
   const [loggingIn, setLoggingIn] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  
+  // Phantom SDK hooks
+  const { isConnected, user: phantomUser } = usePhantom();
+  const { open: openPhantomModal } = useModal();
 
   // Parse returnTo from query string
   const returnTo = useMemo(() => {
@@ -45,6 +51,47 @@ export default function Login() {
       setLoggingIn(false);
     }
   };
+
+  const handlePhantomLogin = () => {
+    // Open the Phantom SDK modal to connect wallet
+    openPhantomModal();
+  };
+
+  // Effect to handle Phantom SDK connection
+  useEffect(() => {
+    const completePhantomAuth = async () => {
+      if (isConnected && phantomUser && !user) {
+        setLoggingIn(true);
+        try {
+          // Get the Solana address from the connected user
+          // Cast to access the solana property from the SDK response
+          const userWithSolana = phantomUser as { solana?: { address?: string } };
+          const solanaAddress = userWithSolana.solana?.address;
+          if (!solanaAddress) {
+            throw new Error("No Solana address found");
+          }
+          
+          const { needsSetup } = await loginWithPhantomSDK(solanaAddress);
+          if (needsSetup) {
+            setLocation("/notification-setup");
+          } else if (returnTo) {
+            setLocation(returnTo);
+          } else {
+            setLocation("/dashboard");
+          }
+        } catch (error) {
+          toast({
+            title: "Phantom login failed",
+            description: error instanceof Error ? error.message : "Please try again",
+            variant: "destructive",
+          });
+          setLoggingIn(false);
+        }
+      }
+    };
+    
+    completePhantomAuth();
+  }, [isConnected, phantomUser, user]);
 
   const handleDemoLogin = async () => {
     setLoggingIn(true);
@@ -141,6 +188,18 @@ export default function Login() {
             >
               <SiGoogle className="w-5 h-5 mr-2" />
               Continue with Google
+            </Button>
+
+            <Button 
+              variant="outline"
+              size="lg"
+              className="w-full"
+              onClick={handlePhantomLogin}
+              disabled={loggingIn || !agreedToTerms}
+              data-testid="button-phantom-login"
+            >
+              <PhantomLogo className="w-5 h-5 mr-2" />
+              Continue with Phantom
             </Button>
             
             {isDev && (
