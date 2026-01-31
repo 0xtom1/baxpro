@@ -405,14 +405,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/user/account", requireAuth, apiLimiter, async (req, res) => {
     try {
       const base58Regex = /^[1-9A-HJ-NP-Za-km-z]+$/;
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       const accountSchema = z.object({
         displayName: z.string().nullable().optional(),
         baxusWallet: z.string().min(32).max(44).regex(base58Regex, "Invalid wallet address format").nullable().optional().or(z.literal(null)),
+        email: z.string().regex(emailRegex, "Invalid email format").nullable().optional(),
       });
 
       const data = accountSchema.parse(req.body);
       
-      const user = await storage.updateUser(req.session.userId!, data);
+      // Get current user to check if they can update email
+      const currentUser = await storage.getUser(req.session.userId!);
+      if (!currentUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      // Only allow email updates for users who signed in with Phantom wallet (provider === 'phantom')
+      const updateData: { displayName?: string | null; baxusWallet?: string | null; email?: string | null } = {
+        displayName: data.displayName,
+        baxusWallet: data.baxusWallet,
+      };
+      
+      // Allow email update only for Phantom wallet users (not Google OAuth users)
+      if (currentUser.provider === 'phantom' && data.email !== undefined) {
+        updateData.email = data.email;
+      }
+      
+      const user = await storage.updateUser(req.session.userId!, updateData);
       
       if (!user) {
         return res.status(404).json({ error: "User not found" });
