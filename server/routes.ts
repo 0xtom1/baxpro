@@ -11,6 +11,8 @@ import { PubSub } from "@google-cloud/pubsub";
 import { generateDisplayName } from "./data/nameGenerator";
 import crypto from "crypto";
 import { authLimiter, apiLimiter, emailLimiter } from "./rateLimit";
+import nacl from "tweetnacl";
+import bs58 from "bs58";
 
 declare module "express-session" {
   interface SessionData {
@@ -253,6 +255,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Login error:", error);
       res.status(500).json({ error: "Login failed" });
+    }
+  });
+
+  // Phantom Wallet authentication
+  // Step 1: Get a challenge message to sign
+  app.get("/api/auth/phantom/challenge", authLimiter, (req, res) => {
+    const nonce = crypto.randomBytes(32).toString('hex');
+    const message = `Sign this message to authenticate with BaxPro.\n\nNonce: ${nonce}\nTimestamp: ${Date.now()}`;
+    
+    // Store nonce in session for verification
+    req.session.oauthCsrfToken = nonce;
+    
+    res.json({ message, nonce });
+  });
+
+  // Step 2: Verify signature and authenticate
+  app.post("/api/auth/phantom/verify", authLimiter, async (req, res) => {
+    try {
+      const verifySchema = z.object({
+        publicKey: z.string().min(32).max(44),
+        signature: z.string(),
+        message: z.string(),
+      });
+
+      const { publicKey, signature, message } = verifySchema.parse(req.body);
+
+      // Verify the signature
+      const messageBytes = new TextEncoder().encode(message);
+      const signatureBytes = bs58.decode(signature);
+      const publicKeyBytes = bs58.decode(publicKey);
+
+      const isValid = nacl.sign.detached.verify(
+        messageBytes,
+        signatureBytes,
+        publicKeyBytes
+      );
+
+      if (!isValid) {
+        return res.status(401).json({ error: "Invalid signature" });
+      }
+
+      // Check if user exists by phantom wallet
+      let user = await storage.getUserByPhantomWallet(publicKey);
+      
+      if (!user) {
+        // Create new user with phantom wallet
+        user = await storage.createUser({
+          email: null,
+          name: null,
+          displayName: generateDisplayName(),
+          phantomWallet: publicKey,
+          provider: "phantom",
+          providerId: publicKey,
+        });
+      }
+
+      // Update last login timestamp
+      await storage.updateUser(user.id, { lastLoginAt: new Date() });
+
+      req.session.userId = user.id;
+      
+      // Check if user needs notification setup
+      const needsSetup = !user.seenNotificationSetup;
+      
+      res.json({ user, needsSetup });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      console.error("Phantom auth error:", error);
+      res.status(500).json({ error: "Authentication failed" });
     }
   });
 
