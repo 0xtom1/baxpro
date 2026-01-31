@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SiGoogle } from "react-icons/si";
-import { User } from "lucide-react";
+import { User, Wallet } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import GlencairnLogo from "@/components/GlencairnLogo";
@@ -14,7 +14,7 @@ const isDev = import.meta.env.DEV;
 export default function Login() {
   const [, setLocation] = useLocation();
   const search = useSearch();
-  const { user, loading, loginWithGoogle, refreshUser } = useAuth();
+  const { user, loading, loginWithGoogle, loginWithPhantom, refreshUser } = useAuth();
   const { toast } = useToast();
   const [loggingIn, setLoggingIn] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
@@ -40,6 +40,27 @@ export default function Login() {
       toast({
         title: "Login failed",
         description: "Please try again",
+        variant: "destructive",
+      });
+      setLoggingIn(false);
+    }
+  };
+
+  const handlePhantomLogin = async () => {
+    setLoggingIn(true);
+    try {
+      const { needsSetup } = await loginWithPhantom();
+      if (needsSetup) {
+        setLocation("/notification-setup");
+      } else if (returnTo) {
+        setLocation(returnTo);
+      } else {
+        setLocation("/dashboard");
+      }
+    } catch (error) {
+      toast({
+        title: "Phantom login failed",
+        description: error instanceof Error ? error.message : "Please try again",
         variant: "destructive",
       });
       setLoggingIn(false);
@@ -141,6 +162,18 @@ export default function Login() {
             >
               <SiGoogle className="w-5 h-5 mr-2" />
               Continue with Google
+            </Button>
+
+            <Button 
+              variant="outline"
+              size="lg"
+              className="w-full"
+              onClick={handlePhantomLogin}
+              disabled={loggingIn || !agreedToTerms}
+              data-testid="button-phantom-login"
+            >
+              <Wallet className="w-5 h-5 mr-2" />
+              Continue with Phantom
             </Button>
             
             {isDev && (
