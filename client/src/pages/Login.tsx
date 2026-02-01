@@ -53,59 +53,15 @@ export default function Login() {
   };
 
   const extractSolanaAddress = (userObj: Record<string, any>): string | undefined => {
-    // Log the full user object structure to understand what the SDK returns
-    console.log("Phantom user object keys:", Object.keys(userObj));
-    console.log("Phantom user object:", JSON.stringify(userObj, (key, value) => {
-      if (typeof value === 'function') return '[Function]';
-      if (value && typeof value === 'object' && value.constructor?.name !== 'Object' && value.constructor?.name !== 'Array') {
-        return `[${value.constructor?.name}]: ${value.toString?.() || JSON.stringify(value)}`;
+    // The Phantom SDK returns: { addresses: [{ addressType: "Solana", address: "..." }], source: "...", authUserId: ... }
+    if (userObj.addresses?.length > 0) {
+      const solanaAddr = userObj.addresses.find((a: any) => a.addressType === 'Solana');
+      if (solanaAddr?.address) {
+        return solanaAddr.address;
       }
-      return value;
-    }, 2));
-    
-    // Try different possible structures from the Phantom SDK
-    // Path 1: user.solana.address
-    if (userObj.solana?.address) {
-      console.log("Found address at solana.address:", userObj.solana.address);
-      return userObj.solana.address;
-    }
-    // Path 2: user.address (direct)
-    if (userObj.address) {
-      console.log("Found address at address:", userObj.address);
-      return userObj.address;
-    }
-    // Path 3: user.publicKey
-    if (userObj.publicKey) {
-      const addr = typeof userObj.publicKey === 'string' 
-        ? userObj.publicKey 
-        : userObj.publicKey.toString?.();
-      console.log("Found address at publicKey:", addr);
-      return addr;
-    }
-    // Path 4: user.wallet?.address or user.wallet?.publicKey
-    if (userObj.wallet?.address) {
-      console.log("Found address at wallet.address:", userObj.wallet.address);
-      return userObj.wallet.address;
-    }
-    if (userObj.wallet?.publicKey) {
-      const addr = typeof userObj.wallet.publicKey === 'string'
-        ? userObj.wallet.publicKey
-        : userObj.wallet.publicKey.toString?.();
-      console.log("Found address at wallet.publicKey:", addr);
-      return addr;
-    }
-    // Path 5: Check for wallets array
-    if (userObj.wallets?.length > 0) {
-      const solanaWallet = userObj.wallets.find((w: any) => w.chain === 'solana' || w.type === 'solana');
-      if (solanaWallet?.address) {
-        console.log("Found address in wallets array:", solanaWallet.address);
-        return solanaWallet.address;
-      }
-      // Try first wallet if no solana-specific one found
-      const firstWallet = userObj.wallets[0];
-      if (firstWallet?.address) {
-        console.log("Found address in first wallet:", firstWallet.address);
-        return firstWallet.address;
+      // Fallback to first address if no Solana-specific one
+      if (userObj.addresses[0]?.address) {
+        return userObj.addresses[0].address;
       }
     }
     return undefined;
@@ -140,17 +96,10 @@ export default function Login() {
   };
 
   const handlePhantomLogin = async () => {
-    console.log("handlePhantomLogin called");
-    console.log("isConnected:", isConnected);
-    console.log("phantomUser:", phantomUser);
-    console.log("user:", user);
-    
     // If already connected with a user, proceed directly with auth
     if (isConnected && phantomUser && !user) {
-      console.log("Already connected, proceeding with auth");
       await completePhantomAuth(phantomUser as Record<string, any>);
     } else {
-      console.log("Not connected, opening modal");
       // Open the Phantom SDK modal to connect wallet
       openPhantomModal();
     }
