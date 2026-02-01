@@ -57,6 +57,13 @@
       "when": 1738370400000,
       "tag": "0007_add_phantom_wallet",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1738443600000,
+      "tag": "0008_make_email_nullable",
+      "breakpoints": true
     }
   ]
 }
