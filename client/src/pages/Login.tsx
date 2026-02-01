@@ -21,7 +21,7 @@ export default function Login() {
   const { toast } = useToast();
   const [loggingIn, setLoggingIn] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
-  
+
   // Phantom SDK hooks - safe wrapper that returns no-ops when Phantom is not enabled
   const { isConnected, user: phantomUser, openModal: openPhantomModal } = usePhantomSafe();
 
@@ -64,13 +64,41 @@ export default function Login() {
         setLoggingIn(true);
         try {
           // Get the Solana address from the connected user
-          // Cast to access the solana property from the SDK response
-          const userWithSolana = phantomUser as { solana?: { address?: string } };
-          const solanaAddress = userWithSolana.solana?.address;
+          // The SDK returns different structures, try multiple paths
+          let solanaAddress: string | undefined;
+
+          // Try different possible structures from the Phantom SDK
+          const userObj = phantomUser as Record<string, any>;
+
+          // Path 1: user.solana.address
+          if (userObj.solana?.address) {
+            solanaAddress = userObj.solana.address;
+          }
+          // Path 2: user.address (direct)
+          else if (userObj.address) {
+            solanaAddress = userObj.address;
+          }
+          // Path 3: user.publicKey
+          else if (userObj.publicKey) {
+            solanaAddress = typeof userObj.publicKey === 'string' 
+              ? userObj.publicKey 
+              : userObj.publicKey.toString?.();
+          }
+          // Path 4: user.wallet?.address or user.wallet?.publicKey
+          else if (userObj.wallet?.address) {
+            solanaAddress = userObj.wallet.address;
+          }
+          else if (userObj.wallet?.publicKey) {
+            solanaAddress = typeof userObj.wallet.publicKey === 'string'
+              ? userObj.wallet.publicKey
+              : userObj.wallet.publicKey.toString?.();
+          }
+
           if (!solanaAddress) {
+            console.error("Phantom user object:", JSON.stringify(userObj, null, 2));
             throw new Error("No Solana address found");
           }
-          
+
           const { needsSetup } = await loginWithPhantomSDK(solanaAddress);
           if (needsSetup) {
             setLocation("/notification-setup");
@@ -89,7 +117,7 @@ export default function Login() {
         }
       }
     };
-    
+
     completePhantomAuth();
   }, [isConnected, phantomUser, user]);
 
@@ -194,7 +222,7 @@ export default function Login() {
               <Button 
                 variant="outline"
                 size="lg"
-                className="w-full"
+                className="w-full border-[#AB9FF2] text-[#AB9FF2] hover:bg-[#AB9FF2]/10"
                 onClick={handlePhantomLogin}
                 disabled={loggingIn || !agreedToTerms}
                 data-testid="button-phantom-login"
@@ -203,7 +231,7 @@ export default function Login() {
                 Continue with Phantom
               </Button>
             )}
-            
+
             {isDev && (
               <Button 
                 variant="outline"
