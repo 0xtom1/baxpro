@@ -140,10 +140,17 @@ export default function Login() {
   };
 
   const handlePhantomLogin = async () => {
+    console.log("handlePhantomLogin called");
+    console.log("isConnected:", isConnected);
+    console.log("phantomUser:", phantomUser);
+    console.log("user:", user);
+    
     // If already connected with a user, proceed directly with auth
     if (isConnected && phantomUser && !user) {
+      console.log("Already connected, proceeding with auth");
       await completePhantomAuth(phantomUser as Record<string, any>);
     } else {
+      console.log("Not connected, opening modal");
       // Open the Phantom SDK modal to connect wallet
       openPhantomModal();
     }
