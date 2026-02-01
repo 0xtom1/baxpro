@@ -53,25 +53,60 @@ export default function Login() {
   };
 
   const extractSolanaAddress = (userObj: Record<string, any>): string | undefined => {
+    // Log the full user object structure to understand what the SDK returns
+    console.log("Phantom user object keys:", Object.keys(userObj));
+    console.log("Phantom user object:", JSON.stringify(userObj, (key, value) => {
+      if (typeof value === 'function') return '[Function]';
+      if (value && typeof value === 'object' && value.constructor?.name !== 'Object' && value.constructor?.name !== 'Array') {
+        return `[${value.constructor?.name}]: ${value.toString?.() || JSON.stringify(value)}`;
+      }
+      return value;
+    }, 2));
+    
     // Try different possible structures from the Phantom SDK
+    // Path 1: user.solana.address
     if (userObj.solana?.address) {
+      console.log("Found address at solana.address:", userObj.solana.address);
       return userObj.solana.address;
     }
+    // Path 2: user.address (direct)
     if (userObj.address) {
+      console.log("Found address at address:", userObj.address);
       return userObj.address;
     }
+    // Path 3: user.publicKey
     if (userObj.publicKey) {
-      return typeof userObj.publicKey === 'string' 
+      const addr = typeof userObj.publicKey === 'string' 
         ? userObj.publicKey 
         : userObj.publicKey.toString?.();
+      console.log("Found address at publicKey:", addr);
+      return addr;
     }
+    // Path 4: user.wallet?.address or user.wallet?.publicKey
     if (userObj.wallet?.address) {
+      console.log("Found address at wallet.address:", userObj.wallet.address);
       return userObj.wallet.address;
     }
     if (userObj.wallet?.publicKey) {
-      return typeof userObj.wallet.publicKey === 'string'
+      const addr = typeof userObj.wallet.publicKey === 'string'
         ? userObj.wallet.publicKey
         : userObj.wallet.publicKey.toString?.();
+      console.log("Found address at wallet.publicKey:", addr);
+      return addr;
+    }
+    // Path 5: Check for wallets array
+    if (userObj.wallets?.length > 0) {
+      const solanaWallet = userObj.wallets.find((w: any) => w.chain === 'solana' || w.type === 'solana');
+      if (solanaWallet?.address) {
+        console.log("Found address in wallets array:", solanaWallet.address);
+        return solanaWallet.address;
+      }
+      // Try first wallet if no solana-specific one found
+      const firstWallet = userObj.wallets[0];
+      if (firstWallet?.address) {
+        console.log("Found address in first wallet:", firstWallet.address);
+        return firstWallet.address;
+      }
     }
     return undefined;
   };
