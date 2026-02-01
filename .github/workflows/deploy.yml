@@ -51,6 +51,7 @@ jobs:
             echo "sendgrid_api_key=${{ secrets.SENDGRID_API_KEY }}" >> $GITHUB_OUTPUT
             echo "gemini_api_key=${{ secrets.GEMINI_API_KEY }}" >> $GITHUB_OUTPUT
             echo "helius_api_key=${{ secrets.HELIUS_API_KEY }}" >> $GITHUB_OUTPUT
+            echo "phantom_app_id=${{ secrets.VITE_PHANTOM_APP_ID }}" >> $GITHUB_OUTPUT
             echo "service_name=baxpro-production" >> $GITHUB_OUTPUT
             echo "terraform_workspace=production" >> $GITHUB_OUTPUT
             echo "image_prefix=production" >> $GITHUB_OUTPUT
@@ -64,6 +65,7 @@ jobs:
             echo "sendgrid_api_key=${{ secrets.SENDGRID_API_KEY_DEV }}" >> $GITHUB_OUTPUT
             echo "gemini_api_key=${{ secrets.GEMINI_API_KEY_DEV }}" >> $GITHUB_OUTPUT
             echo "helius_api_key=${{ secrets.HELIUS_API_KEY_DEV }}" >> $GITHUB_OUTPUT
+            echo "phantom_app_id=${{ secrets.VITE_PHANTOM_APP_ID_DEV }}" >> $GITHUB_OUTPUT
             echo "authorized_home_ip=${{ secrets.DAN_HOME_IP }}" >> $GITHUB_OUTPUT
             echo "service_name=baxpro-dev" >> $GITHUB_OUTPUT
             echo "terraform_workspace=dev" >> $GITHUB_OUTPUT
@@ -134,7 +136,9 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t ${{ steps.image.outputs.name }} .
+          docker build \
+            --build-arg VITE_PHANTOM_APP_ID=${{ steps.vars.outputs.phantom_app_id }} \
+            -t ${{ steps.image.outputs.name }} .
           docker tag ${{ steps.image.outputs.name }} \
             ${{ env.REGION }}-docker.pkg.dev/${{ steps.vars.outputs.project_id }}/baxpro/baxpro:${{ steps.vars.outputs.image_prefix }}-latest
 
