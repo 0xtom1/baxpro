@@ -9,9 +9,10 @@ import { useState, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import GlencairnLogo from "@/components/GlencairnLogo";
 import PhantomLogo from "@/components/PhantomLogo";
-import { usePhantom, useModal } from "@phantom/react-sdk";
+import { usePhantomSafe } from "@/hooks/use-phantom-safe";
 
 const isDev = import.meta.env.DEV;
+const phantomEnabled = !!import.meta.env.VITE_PHANTOM_APP_ID;
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -21,9 +22,8 @@ export default function Login() {
   const [loggingIn, setLoggingIn] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   
-  // Phantom SDK hooks
-  const { isConnected, user: phantomUser } = usePhantom();
-  const { open: openPhantomModal } = useModal();
+  // Phantom SDK hooks - safe wrapper that returns no-ops when Phantom is not enabled
+  const { isConnected, user: phantomUser, openModal: openPhantomModal } = usePhantomSafe();
 
   // Parse returnTo from query string
   const returnTo = useMemo(() => {
@@ -190,17 +190,19 @@ export default function Login() {
               Continue with Google
             </Button>
 
-            <Button 
-              variant="outline"
-              size="lg"
-              className="w-full"
-              onClick={handlePhantomLogin}
-              disabled={loggingIn || !agreedToTerms}
-              data-testid="button-phantom-login"
-            >
-              <PhantomLogo className="w-5 h-5 mr-2" />
-              Continue with Phantom
-            </Button>
+            {phantomEnabled && (
+              <Button 
+                variant="outline"
+                size="lg"
+                className="w-full"
+                onClick={handlePhantomLogin}
+                disabled={loggingIn || !agreedToTerms}
+                data-testid="button-phantom-login"
+              >
+                <PhantomLogo className="w-5 h-5 mr-2" />
+                Continue with Phantom
+              </Button>
+            )}
             
             {isDev && (
               <Button 
