@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SiGoogle } from "react-icons/si";
 import { User } from "lucide-react";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import GlencairnLogo from "@/components/GlencairnLogo";
 import PhantomLogo from "@/components/PhantomLogo";
@@ -52,73 +52,87 @@ export default function Login() {
     }
   };
 
-  const handlePhantomLogin = () => {
-    // Open the Phantom SDK modal to connect wallet
-    openPhantomModal();
+  const extractSolanaAddress = (userObj: Record<string, any>): string | undefined => {
+    // Try different possible structures from the Phantom SDK
+    if (userObj.solana?.address) {
+      return userObj.solana.address;
+    }
+    if (userObj.address) {
+      return userObj.address;
+    }
+    if (userObj.publicKey) {
+      return typeof userObj.publicKey === 'string' 
+        ? userObj.publicKey 
+        : userObj.publicKey.toString?.();
+    }
+    if (userObj.wallet?.address) {
+      return userObj.wallet.address;
+    }
+    if (userObj.wallet?.publicKey) {
+      return typeof userObj.wallet.publicKey === 'string'
+        ? userObj.wallet.publicKey
+        : userObj.wallet.publicKey.toString?.();
+    }
+    return undefined;
   };
 
-  // Effect to handle Phantom SDK connection
+  const completePhantomAuth = async (userObj: Record<string, any>) => {
+    setLoggingIn(true);
+    try {
+      const solanaAddress = extractSolanaAddress(userObj);
+      
+      if (!solanaAddress) {
+        console.error("Phantom user object:", JSON.stringify(userObj, null, 2));
+        throw new Error("No Solana address found");
+      }
+      
+      const { needsSetup } = await loginWithPhantomSDK(solanaAddress);
+      if (needsSetup) {
+        setLocation("/notification-setup");
+      } else if (returnTo) {
+        setLocation(returnTo);
+      } else {
+        setLocation("/dashboard");
+      }
+    } catch (error) {
+      toast({
+        title: "Phantom login failed",
+        description: error instanceof Error ? error.message : "Please try again",
+        variant: "destructive",
+      });
+      setLoggingIn(false);
+    }
+  };
+
+  const handlePhantomLogin = async () => {
+    // If already connected with a user, proceed directly with auth
+    if (isConnected && phantomUser && !user) {
+      await completePhantomAuth(phantomUser as Record<string, any>);
+    } else {
+      // Open the Phantom SDK modal to connect wallet
+      openPhantomModal();
+    }
+  };
+
+  // Effect to handle Phantom SDK connection (for new connections)
   useEffect(() => {
-    const completePhantomAuth = async () => {
-      if (isConnected && phantomUser && !user) {
-        setLoggingIn(true);
-        try {
-          // Get the Solana address from the connected user
-          // The SDK returns different structures, try multiple paths
-          let solanaAddress: string | undefined;
-
-          // Try different possible structures from the Phantom SDK
-          const userObj = phantomUser as Record<string, any>;
-
-          // Path 1: user.solana.address
-          if (userObj.solana?.address) {
-            solanaAddress = userObj.solana.address;
-          }
-          // Path 2: user.address (direct)
-          else if (userObj.address) {
-            solanaAddress = userObj.address;
-          }
-          // Path 3: user.publicKey
-          else if (userObj.publicKey) {
-            solanaAddress = typeof userObj.publicKey === 'string' 
-              ? userObj.publicKey 
-              : userObj.publicKey.toString?.();
-          }
-          // Path 4: user.wallet?.address or user.wallet?.publicKey
-          else if (userObj.wallet?.address) {
-            solanaAddress = userObj.wallet.address;
-          }
-          else if (userObj.wallet?.publicKey) {
-            solanaAddress = typeof userObj.wallet.publicKey === 'string'
-              ? userObj.wallet.publicKey
-              : userObj.wallet.publicKey.toString?.();
-          }
-
-          if (!solanaAddress) {
-            console.error("Phantom user object:", JSON.stringify(userObj, null, 2));
-            throw new Error("No Solana address found");
-          }
-
-          const { needsSetup } = await loginWithPhantomSDK(solanaAddress);
-          if (needsSetup) {
-            setLocation("/notification-setup");
-          } else if (returnTo) {
-            setLocation(returnTo);
-          } else {
-            setLocation("/dashboard");
-          }
-        } catch (error) {
-          toast({
-            title: "Phantom login failed",
-            description: error instanceof Error ? error.message : "Please try again",
-            variant: "destructive",
-          });
-          setLoggingIn(false);
-        }
+    const handleNewConnection = async () => {
+      if (isConnected && phantomUser && !user && !loggingIn) {
+        await completePhantomAuth(phantomUser as Record<string, any>);
       }
     };
+    
+    handleNewConnection();
+  }, [isConnected, phantomUser, user]);
 
-    completePhantomAuth();
+  // Tracking ref to detect when connection state actually changes
+  const prevConnectedRef = useRef(isConnected);
+  useEffect(() => {
+    // Only trigger auth when connection state changes from false to true
+    if (!prevConnectedRef.current && isConnected && phantomUser && !user) {
+      completePhantomAuth(phantomUser as Record<string, any>);
+    }
+    prevConnectedRef.current = isConnected;
   }, [isConnected, phantomUser, user]);
 
   const handleDemoLogin = async () => {
