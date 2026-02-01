@@ -15,6 +15,10 @@ RUN npm ci --only=production
 FROM node:20-slim AS builder
 WORKDIR /app
 
+# Build arguments for Vite environment variables (needed at build time)
+ARG VITE_PHANTOM_APP_ID
+ENV VITE_PHANTOM_APP_ID=$VITE_PHANTOM_APP_ID
+
 # Copy package files
 COPY package.json package-lock.json ./
 
