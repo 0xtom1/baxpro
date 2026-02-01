@@ -220,9 +220,8 @@ export default function Login() {
 
             {phantomEnabled && (
               <Button 
-                variant="outline"
                 size="lg"
-                className="w-full border-[#AB9FF2] text-[#AB9FF2] hover:bg-[#AB9FF2]/10"
+                className="w-full bg-[#AB9FF2] text-white hover:bg-[#AB9FF2]/90 border-[#AB9FF2]"
                 onClick={handlePhantomLogin}
                 disabled={loggingIn || !agreedToTerms}
                 data-testid="button-phantom-login"
