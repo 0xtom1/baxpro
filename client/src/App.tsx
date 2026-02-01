@@ -64,11 +64,29 @@ function Router() {
   );
 }
 
+function AppContent() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <ThemeInitializer />
+          <Toaster />
+          <Router />
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+}
+
 function App() {
   const phantomAppId = import.meta.env.VITE_PHANTOM_APP_ID || "";
-  const redirectUrl = typeof window !== 'undefined' 
-    ? `${window.location.origin}/auth/phantom/callback`
-    : "";
+
+  // If no Phantom App ID is configured, render without PhantomProvider
+  // This prevents the app from crashing in environments where the SDK isn't configured
+  if (!phantomAppId) {
+    console.warn("VITE_PHANTOM_APP_ID not configured - Phantom wallet login disabled");
+    return <AppContent />;
+  }
 
   return (
     <PhantomProvider
@@ -80,15 +98,7 @@ function App() {
       theme={darkTheme}
       appName="BaxPro"
     >
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <TooltipProvider>
-            <ThemeInitializer />
-            <Toaster />
-            <Router />
-          </TooltipProvider>
-        </AuthProvider>
-      </QueryClientProvider>
+      <AppContent />
     </PhantomProvider>
   );
 }
