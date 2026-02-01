@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Moon, Sun, LogOut, Bell, User, Crown, AlertCircle, Search } from "lucide-react";
+import { Plus, Moon, Sun, LogOut, User, Crown, AlertCircle, Search } from "lucide-react";
 import GlencairnLogo from "./GlencairnLogo";
 import {
   DropdownMenu,
@@ -156,11 +156,7 @@ export default function DashboardNav({ onNewAlert, alertCount = 0, search, onSea
               )}
               <DropdownMenuItem onClick={() => setLocation("/account-settings")} data-testid="button-account-settings">
                 <User className="w-4 h-4 mr-2" />
-                Account Details
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setLocation("/notification-settings")} data-testid="button-notification-settings">
-                <Bell className="w-4 h-4 mr-2" />
-                Notification Settings
+                Account Settings
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleLogout} data-testid="button-logout">
                 <LogOut className="w-4 h-4 mr-2" />

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   AlertDialog,
@@ -19,7 +20,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, User, Wallet, Trash2 } from "lucide-react";
+import { ArrowLeft, User, Wallet, Trash2, Bell, Mail, AlertCircle, Check } from "lucide-react";
 import GlencairnLogo from "@/components/GlencairnLogo";
 
 export default function AccountSettings() {
@@ -34,11 +35,19 @@ export default function AccountSettings() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   
+  // Notification settings state
+  const [emailConsent, setEmailConsent] = useState(false);
+  const [savingNotifications, setSavingNotifications] = useState(false);
+  const [sendingTestEmail, setSendingTestEmail] = useState(false);
+  const [testEmailSent, setTestEmailSent] = useState(false);
+  
   // Check if user logged in with Phantom wallet
   const hasPhantomWallet = !!user?.phantomWallet;
   // Check if email can be edited - only for users who signed in with Phantom (provider === 'phantom')
   // Users who signed in with Google OAuth cannot edit their email
   const canEditEmail = user?.provider === 'phantom';
+  // Check if user has an email for notifications
+  const hasEmail = !!user?.email;
 
   useEffect(() => {
     refreshUser();
@@ -49,8 +58,85 @@ export default function AccountSettings() {
       setDisplayName(user.displayName || "");
       setEmail(user.email || "");
       setBaxusWallet(user.baxusWallet || "");
+      setEmailConsent(user.emailConsent || false);
     }
   }, [user]);
+
+  const handleSendTestEmail = async () => {
+    if (!hasEmail) {
+      toast({
+        title: "Email required",
+        description: "Please add an email address first",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setSendingTestEmail(true);
+    try {
+      const response = await fetch("/api/notifications/test-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to send test email");
+      }
+
+      setTestEmailSent(true);
+      toast({
+        title: "Test email sent!",
+        description: "Check your inbox (and spam folder) for an email from alerts@baxpro.xyz",
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to send",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    } finally {
+      setSendingTestEmail(false);
+    }
+  };
+
+  const handleSaveNotifications = async () => {
+    if (!hasEmail) {
+      toast({
+        title: "Email required",
+        description: "Please add an email address first to enable notifications",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setSavingNotifications(true);
+    try {
+      const response = await fetch("/api/user/notifications", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ emailConsent }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update notification settings");
+      }
+
+      await refreshUser();
+
+      toast({
+        title: "Notification settings saved",
+        description: "Your preferences have been updated",
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to save",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingNotifications(false);
+    }
+  };
 
   const isValidBase58 = (address: string) => {
     const base58Regex = /^[1-9A-HJ-NP-Za-km-z]+$/;
@@ -339,7 +425,90 @@ export default function AccountSettings() {
             className="w-full"
             data-testid="button-save-account-settings"
           >
-            {saving ? "Saving..." : "Save Settings"}
+            {saving ? "Saving..." : "Save Account Settings"}
+          </Button>
+
+          <div className="pt-6 border-t border-border">
+            <h2 className="text-2xl font-bold mb-2">Notification Settings</h2>
+            <p className="text-muted-foreground mb-6">
+              Choose how you want to be notified when matching products are found
+            </p>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="w-5 h-5" />
+                Email Notifications
+              </CardTitle>
+              <CardDescription>
+                {hasEmail 
+                  ? `Receive alerts at ${user?.email}` 
+                  : "Add an email address above to receive notifications"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className={`flex items-start space-x-3 p-4 border rounded-lg ${hasEmail ? 'bg-muted/50' : 'bg-muted/20 opacity-60'}`}>
+                <Checkbox
+                  id="email-consent"
+                  checked={emailConsent}
+                  onCheckedChange={(checked) => setEmailConsent(checked === true)}
+                  disabled={!hasEmail}
+                  data-testid="checkbox-email-consent"
+                />
+                <div className="grid gap-1.5 leading-none">
+                  <Label
+                    htmlFor="email-consent"
+                    className={`text-sm font-medium leading-none ${hasEmail ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+                  >
+                    Send me email notifications
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    {hasEmail 
+                      ? "You'll receive an email when products matching your alerts become available on Baxus. You can unsubscribe at any time."
+                      : "Please add an email address in the Profile section above to enable email notifications."}
+                  </p>
+                </div>
+              </div>
+
+              <div className={`flex items-start gap-3 p-4 rounded-lg border ${hasEmail ? 'bg-amber-500/10 border-amber-500/20' : 'bg-muted/20 border-muted opacity-60'}`}>
+                <AlertCircle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${hasEmail ? 'text-amber-600 dark:text-amber-500' : 'text-muted-foreground'}`} />
+                <div className="text-sm">
+                  <p className="font-medium text-foreground mb-1">
+                    {hasEmail ? 'Heads up about spam filters' : 'Email required'}
+                  </p>
+                  <p className="text-muted-foreground mb-3">
+                    {hasEmail 
+                      ? <>Emails from <span className="font-mono text-xs">alerts@baxpro.xyz</span> may land in your spam folder. Send a test email, then mark it as "Not Spam" or star it - and you're all set!</>
+                      : 'Add an email address in the Profile section above to send a test email.'}
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSendTestEmail}
+                    disabled={!hasEmail || sendingTestEmail || testEmailSent}
+                    data-testid="button-send-test-email"
+                  >
+                    {testEmailSent ? (
+                      <Check className="w-4 h-4 mr-2" />
+                    ) : (
+                      <Mail className="w-4 h-4 mr-2" />
+                    )}
+                    {sendingTestEmail ? "Sending..." : testEmailSent ? "Sent!" : "Send Test Email"}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Button 
+            onClick={handleSaveNotifications} 
+            disabled={savingNotifications || !hasEmail}
+            className="w-full"
+            data-testid="button-save-notification-settings"
+          >
+            {savingNotifications ? "Saving..." : "Save Notification Settings"}
           </Button>
 
           <div className="pt-8 border-t border-border">

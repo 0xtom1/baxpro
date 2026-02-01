@@ -84,7 +84,7 @@ export default function Unsubscribe() {
                 </p>
                 <div className="flex flex-col gap-2">
                   <Button 
-                    onClick={() => setLocation("/notification-settings")}
+                    onClick={() => setLocation("/account-settings")}
                     className="w-full"
                     data-testid="button-resubscribe"
                   >
@@ -116,7 +116,7 @@ export default function Unsubscribe() {
               <CardContent>
                 <div className="flex flex-col gap-2">
                   <Button 
-                    onClick={() => setLocation("/notification-settings")}
+                    onClick={() => setLocation("/account-settings")}
                     className="w-full"
                     data-testid="button-manage-settings"
                   >

@@ -77,10 +77,9 @@ export default function Login() {
         throw new Error("No Solana address found");
       }
       
-      const { needsSetup } = await loginWithPhantomSDK(solanaAddress);
-      if (needsSetup) {
-        setLocation("/notification-setup");
-      } else if (returnTo) {
+      await loginWithPhantomSDK(solanaAddress);
+      // Skip notification setup for Phantom wallet users - go directly to dashboard
+      if (returnTo) {
         setLocation(returnTo);
       } else {
         setLocation("/dashboard");

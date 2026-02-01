@@ -19,7 +19,6 @@ function ThemeInitializer() {
 import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
 import NotificationSetup from "@/pages/NotificationSetup";
-import NotificationSettings from "@/pages/NotificationSettings";
 import AccountSettings from "@/pages/AccountSettings";
 import Alerts from "@/pages/Alerts";
 import Dashboard from "@/pages/Dashboard";
@@ -43,7 +42,7 @@ function Router() {
       <Route path="/" component={Landing} />
       <Route path="/login" component={Login} />
       <Route path="/notification-setup" component={NotificationSetup} />
-      <Route path="/notification-settings" component={NotificationSettings} />
+      <Route path="/notification-settings">{() => <Redirect to="/account-settings" />}</Route>
       <Route path="/account-settings" component={AccountSettings} />
       <Route path="/alerts" component={Alerts} />
       <Route path="/dashboard" component={Dashboard} />
