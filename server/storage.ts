@@ -632,7 +632,8 @@ export class DbStorage implements IStorage {
         SELECT brand_name, producer, asset_count, listed_count, floor_price, image_url,
                volume_7d, volume_30d, distinct_owners_count, max_activity_date
         FROM baxus.mv_brands_list
-        ORDER BY max_activity_date DESC NULLS LAST, volume_30d DESC NULLS LAST
+        ORDER BY CASE WHEN COALESCE(listed_count, 0) = 0 THEN 1 ELSE 0 END,
+                 max_activity_date DESC NULLS LAST, volume_30d DESC NULLS LAST
         LIMIT $1 OFFSET $2
       `, [limit, offset]);
 
