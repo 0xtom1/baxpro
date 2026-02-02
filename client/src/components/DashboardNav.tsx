@@ -52,8 +52,9 @@ export default function DashboardNav({ onNewAlert, alertCount = 0, search, onSea
   };
 
   const getInitials = () => {
-    if (!user?.name) return "U";
-    return user.name
+    const displayText = user?.displayName || user?.name;
+    if (!displayText) return "U";
+    return displayText
       .split(" ")
       .map((n) => n[0])
       .join("")
@@ -139,7 +140,7 @@ export default function DashboardNav({ onNewAlert, alertCount = 0, search, onSea
               <div className="flex items-center justify-start gap-2 p-2">
                 <div className="flex flex-col space-y-1">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium">{user?.name || "User"}</p>
+                    <p className="text-sm font-medium">{user?.displayName || user?.name || "User"}</p>
                     {user?.isVip && (
                       <Badge 
                         variant="secondary"
