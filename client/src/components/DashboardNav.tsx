@@ -151,7 +151,13 @@ export default function DashboardNav({ onNewAlert, alertCount = 0, search, onSea
                       </Badge>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground">{user?.email}</p>
+                  <p className="text-xs text-muted-foreground truncate max-w-[200px]">
+                    {user?.provider === 'phantom' 
+                      ? (user?.phantomWallet 
+                          ? `${user.phantomWallet.slice(0, 4)}...${user.phantomWallet.slice(-4)}`
+                          : 'Phantom Wallet')
+                      : user?.email}
+                  </p>
                 </div>
               </div>
               <DropdownMenuSeparator />
