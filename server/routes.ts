@@ -878,13 +878,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // My NFTs endpoints - fetch user's wallet NFTs matched to Baxus assets
+  // My Bottles endpoints - fetch user's wallet NFTs matched to Baxus assets
   app.get("/api/my-bottles", requireAuth, apiLimiter, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const user = await storage.getUser(userId);
       
-      if (!user?.phantomWallet) {
+      // Use phantomWallet first, then baxusWallet as fallback
+      const walletAddress = user?.phantomWallet || user?.baxusWallet;
+      
+      if (!walletAddress) {
         return res.json({ assets: [], hasWallet: false });
       }
 
@@ -904,7 +907,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: 'my-bottles',
           method: 'getAssetsByOwner',
           params: {
-            ownerAddress: user.phantomWallet,
+            ownerAddress: walletAddress,
             page: 1,
             limit: 1000,
             displayOptions: {
@@ -943,7 +946,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.session.userId!;
       const user = await storage.getUser(userId);
 
-      if (!user?.phantomWallet) {
+      // Use phantomWallet first, then baxusWallet as fallback
+      const walletAddress = user?.phantomWallet || user?.baxusWallet;
+
+      if (!walletAddress) {
         return res.status(403).json({ error: "No wallet connected" });
       }
 
@@ -962,7 +968,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: 'verify-ownership',
           method: 'getAssetsByOwner',
           params: {
-            ownerAddress: user.phantomWallet,
+            ownerAddress: walletAddress,
             page: 1,
             limit: 1000,
             displayOptions: { showFungible: true, showNativeBalance: false }

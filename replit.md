@@ -106,11 +106,16 @@ The Brand page (`/brand?name=<brand_name>`) displays detailed information about 
 
 ### My Bottles Page
 
-The My Bottles page (`/my-bottles`) displays Baxus bottles owned by the user's connected Phantom wallet:
+The My Bottles page (`/my-bottles`) displays Baxus bottles owned by the user's wallet:
 
 **API Endpoints**:
 - `GET /api/my-bottles` - Fetches user's wallet bottles from Helius API and matches to baxus.assets
 - `GET /api/my-bottles/:assetId` - Returns asset details with metadata and activity (ownership verified)
+
+**Wallet Resolution**:
+- Uses `phantomWallet` first (for Phantom-authenticated users)
+- Falls back to `baxusWallet` (for Gmail users who added wallet in Account Settings)
+- Navigation button visible when either wallet field is populated
 
 **Features**:
 - Card grid display of matched bottles with images, prices, and age
@@ -124,6 +129,7 @@ The My Bottles page (`/my-bottles`) displays Baxus bottles owned by the user's c
 
 **Dependencies**:
 - Helius API for wallet data (`HELIUS_API_KEY` environment variable)
+- Queries mainnet Solana with `showFungible: true` to include Token 2022 assets
 
 ### VIP Features
 

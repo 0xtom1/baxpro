@@ -95,7 +95,7 @@ export default function DashboardNav({ onNewAlert, alertCount = 0, search, onSea
         )}
         
         <div className="flex items-center gap-3 flex-shrink-0">
-          {user?.phantomWallet && (
+          {(user?.phantomWallet || user?.baxusWallet) && (
             <Button
               variant="ghost"
               onClick={() => setLocation("/my-bottles")}
