@@ -186,12 +186,12 @@ export default function Dashboard() {
               data-testid={`card-brand-${brand.brandName}`}
             >
               {/* Bottle Image */}
-              <div className="h-40 bg-muted/30 relative overflow-hidden flex items-end justify-center">
+              <div className="aspect-square bg-muted/30 relative overflow-hidden flex items-center justify-center">
                 {brand.imageUrl ? (
                   <img
                     src={brand.imageUrl}
                     alt={brand.brandName}
-                    className="max-h-full object-contain"
+                    className="w-full h-full object-cover"
                     loading="lazy"
                   />
                 ) : (
