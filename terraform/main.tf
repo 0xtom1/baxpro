@@ -568,7 +568,7 @@ resource "google_cloud_run_v2_service" "baxpro" {
 
       # Helius API key for My Bottles feature (wallet NFT lookup)
       dynamic "env" {
-        for_each = var.helius_api_key != "" ? [1] : []
+        for_each = var.helius_api_key != "" ? toset(["helius"]) : toset([])
         content {
           name = "HELIUS_API_KEY"
           value_source {
