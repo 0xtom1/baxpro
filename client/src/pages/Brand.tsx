@@ -23,6 +23,7 @@ import {
   Users
 } from "lucide-react";
 import GlencairnLogo from "@/components/GlencairnLogo";
+import DashboardNav from "@/components/DashboardNav";
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import type { ActivityFeedWithDetails } from "@shared/schema";
 
@@ -401,7 +402,8 @@ export default function Brand() {
     <>
     {/* Desktop Layout */}
     <div className="hidden lg:flex flex-col h-screen bg-background">
-      {/* Desktop Header */}
+      <DashboardNav />
+      {/* Desktop Brand Header */}
       <header className="border-b border-border">
         <div className="flex items-center justify-between h-12 px-4">
           <div className="flex items-center gap-4">
@@ -433,7 +435,6 @@ export default function Brand() {
               <div className="font-mono">{formatPrice(data?.stats.avgMarketPrice || null)}</div>
             </div>
           </div>
-          <Button variant="outline" size="sm" data-testid="desktop-button-connect">CONNECT</Button>
         </div>
       </header>
 
@@ -523,6 +524,7 @@ export default function Brand() {
 
     {/* Mobile Layout */}
     <div className="lg:hidden min-h-screen bg-background flex flex-col">
+      <DashboardNav />
       <header className="sticky top-0 z-50 bg-background border-b border-border">
         <div className="flex items-center justify-between h-14 px-4">
           <div className="flex items-center gap-3">
@@ -543,10 +545,6 @@ export default function Brand() {
             <span className="font-semibold text-lg" data-testid="text-brand-name">{brandName}</span>
             <ChevronDown className="w-4 h-4 text-muted-foreground" />
           </div>
-          
-          <Button variant="outline" size="sm" data-testid="button-connect">
-            CONNECT
-          </Button>
         </div>
       </header>
 
