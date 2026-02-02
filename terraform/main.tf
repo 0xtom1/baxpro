@@ -566,6 +566,20 @@ resource "google_cloud_run_v2_service" "baxpro" {
         value = var.custom_domain
       }
 
+      # Helius API key for My Bottles feature (wallet NFT lookup)
+      dynamic "env" {
+        for_each = var.helius_api_key != "" ? [1] : []
+        content {
+          name = "HELIUS_API_KEY"
+          value_source {
+            secret_key_ref {
+              secret  = google_secret_manager_secret.helius_api_key[0].secret_id
+              version = "latest"
+            }
+          }
+        }
+      }
+
       # Pub/Sub topic for test email functionality (only set if alert processor is enabled)
       dynamic "env" {
         for_each = var.enable_alert_processor ? [1] : []
