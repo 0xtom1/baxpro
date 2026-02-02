@@ -78,6 +78,13 @@
       "when": 1738551600000,
       "tag": "0010_phantom_wallet_unique",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1738554000000,
+      "tag": "0011_mv_brands_list_no_producer_group",
+      "breakpoints": true
     }
   ]
 }
