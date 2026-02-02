@@ -927,7 +927,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ownerAddress: walletAddress,
             page: 1,
             limit: 1000,
-            displayOptions: {
+            options: {
               showFungible: true,
               showNativeBalance: false,
             }
@@ -988,7 +988,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ownerAddress: walletAddress,
             page: 1,
             limit: 1000,
-            displayOptions: { showFungible: true, showNativeBalance: false }
+            options: { showFungible: true, showNativeBalance: false }
           }
         })
       });
