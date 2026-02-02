@@ -23,7 +23,7 @@ export default function Login() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   // Phantom SDK hooks - safe wrapper that returns no-ops when Phantom is not enabled
-  const { isConnected, user: phantomUser, openModal: openPhantomModal } = usePhantomSafe();
+  const { isConnected, user: phantomUser, openModal: openPhantomModal, signMessage } = usePhantomSafe();
 
   // Parse returnTo from query string
   const returnTo = useMemo(() => {
@@ -77,7 +77,7 @@ export default function Login() {
         throw new Error("No Solana address found");
       }
       
-      await loginWithPhantomSDK(solanaAddress);
+      await loginWithPhantomSDK(solanaAddress, signMessage);
       // Skip notification setup for Phantom wallet users - go directly to dashboard
       if (returnTo) {
         setLocation(returnTo);

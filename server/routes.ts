@@ -367,14 +367,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Phantom SDK authentication - simplified flow where SDK handles wallet verification
+  // Phantom SDK authentication - requires signature verification for security
   app.post("/api/auth/phantom/sdk-login", authLimiter, async (req, res) => {
     try {
       const sdkLoginSchema = z.object({
         publicKey: z.string().min(32).max(44),
+        signature: z.string(),
+        message: z.string(),
       });
 
-      const { publicKey } = sdkLoginSchema.parse(req.body);
+      const { publicKey, signature, message } = sdkLoginSchema.parse(req.body);
+
+      // Verify the signature to prove wallet ownership
+      const messageBytes = new TextEncoder().encode(message);
+      const signatureBytes = bs58.decode(signature);
+      const publicKeyBytes = bs58.decode(publicKey);
+
+      const isValid = nacl.sign.detached.verify(
+        messageBytes,
+        signatureBytes,
+        publicKeyBytes
+      );
+
+      if (!isValid) {
+        return res.status(401).json({ error: "Invalid signature" });
+      }
 
       // Check if user exists by phantom wallet
       let user = await storage.getUserByPhantomWallet(publicKey);
