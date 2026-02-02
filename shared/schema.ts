@@ -11,7 +11,7 @@ export const users = pgTable("users", {
   name: text("name"),
   displayName: text("display_name"),
   baxusWallet: varchar("baxus_wallet", { length: 44 }),
-  phantomWallet: varchar("phantom_wallet", { length: 44 }),
+  phantomWallet: varchar("phantom_wallet", { length: 44 }).unique(),
   smsConsent: boolean("sms_consent").default(false).notNull(),
   emailConsent: boolean("email_consent").default(false).notNull(),
   seenNotificationSetup: boolean("seen_notification_setup").default(false).notNull(),
