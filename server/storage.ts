@@ -78,6 +78,9 @@ export interface IStorage {
   getBrandStats(brandName: string): Promise<BrandStats>;
   getBrandTraits(brandName: string): Promise<BrandTrait[]>;
   getBrandActivity(brandName: string, limit?: number): Promise<ActivityFeedWithDetails[]>;
+  getAssetsByAssetIds(assetIds: string[]): Promise<BrandAsset[]>;
+  getAssetSummaryByAssetId(assetId: string): Promise<BrandAsset | null>;
+  getAssetActivityByAssetIdx(assetIdx: number, limit?: number): Promise<ActivityFeedWithDetails[]>;
 }
 
 export class DbStorage implements IStorage {
@@ -629,7 +632,8 @@ export class DbStorage implements IStorage {
         SELECT brand_name, producer, asset_count, listed_count, floor_price, image_url,
                volume_7d, volume_30d, distinct_owners_count, max_activity_date
         FROM baxus.mv_brands_list
-        ORDER BY max_activity_date DESC NULLS LAST, volume_30d DESC NULLS LAST
+        ORDER BY CASE WHEN COALESCE(listed_count, 0) = 0 THEN 1 ELSE 0 END,
+                 max_activity_date DESC NULLS LAST, volume_30d DESC NULLS LAST
         LIMIT $1 OFFSET $2
       `, [limit, offset]);
 
@@ -804,6 +808,117 @@ export class DbStorage implements IStorage {
         ORDER BY af.activity_date DESC
         LIMIT $2
       `, [brandName, limit]);
+
+      return result.rows.map((r: any) => ({
+        activityIdx: r.activity_idx,
+        activityTypeIdx: r.activity_type_idx,
+        assetIdx: r.asset_idx,
+        price: r.price,
+        activityDate: r.activity_date,
+        signature: r.signature,
+        activityTypeCode: r.activity_type_code,
+        activityTypeName: r.activity_type_name,
+        assetId: r.asset_id?.trim() ?? '',
+        assetName: r.asset_name ?? 'Unknown',
+        producer: r.producer,
+        isListed: r.is_listed,
+      }));
+    } finally {
+      client.release();
+    }
+  }
+
+  async getAssetsByAssetIds(assetIds: string[]): Promise<BrandAsset[]> {
+    if (assetIds.length === 0) return [];
+    
+    const client = await pool.connect();
+    try {
+      const placeholders = assetIds.map((_, i) => `$${i + 1}`).join(', ');
+      const result = await client.query(`
+        SELECT 
+          asset_idx, asset_id, name, brand_name, is_listed, listed_date, 
+          price, age, bottled_year, market_price, producer, image_url
+        FROM baxus.v_asset_summary
+        WHERE TRIM(asset_id) IN (${placeholders})
+      `, assetIds);
+
+      return result.rows.map((r: any) => ({
+        assetIdx: r.asset_idx,
+        assetId: r.asset_id?.trim() ?? '',
+        name: r.name,
+        brandName: r.brand_name,
+        isListed: r.is_listed,
+        listedDate: r.listed_date,
+        price: r.price ? parseFloat(r.price) : null,
+        age: r.age,
+        bottledYear: r.bottled_year,
+        marketPrice: r.market_price ? parseFloat(r.market_price) : null,
+        producer: r.producer,
+        imageUrl: r.image_url,
+      }));
+    } finally {
+      client.release();
+    }
+  }
+
+  async getAssetSummaryByAssetId(assetId: string): Promise<BrandAsset | null> {
+    const client = await pool.connect();
+    try {
+      const result = await client.query(`
+        SELECT 
+          asset_idx, asset_id, name, brand_name, is_listed, listed_date, 
+          price, age, bottled_year, market_price, producer, image_url
+        FROM baxus.v_asset_summary
+        WHERE TRIM(asset_id) = $1
+      `, [assetId]);
+
+      if (result.rows.length === 0) return null;
+
+      const r = result.rows[0];
+      return {
+        assetIdx: r.asset_idx,
+        assetId: r.asset_id?.trim() ?? '',
+        name: r.name,
+        brandName: r.brand_name,
+        isListed: r.is_listed,
+        listedDate: r.listed_date,
+        price: r.price ? parseFloat(r.price) : null,
+        age: r.age,
+        bottledYear: r.bottled_year,
+        marketPrice: r.market_price ? parseFloat(r.market_price) : null,
+        producer: r.producer,
+        imageUrl: r.image_url,
+      };
+    } finally {
+      client.release();
+    }
+  }
+
+  async getAssetActivityByAssetIdx(assetIdx: number, limit: number = 50): Promise<ActivityFeedWithDetails[]> {
+    const client = await pool.connect();
+    try {
+      const result = await client.query(`
+        SELECT 
+          af.activity_idx,
+          af.activity_type_idx,
+          af.asset_idx,
+          af.price,
+          af.activity_date,
+          af.signature,
+          dat.activity_type_code,
+          dat.activity_type_name,
+          a.asset_id,
+          a.name AS asset_name,
+          v.producer,
+          a.is_listed
+        FROM baxus.activity_feed af
+        INNER JOIN baxus.dim_activity_types dat ON af.activity_type_idx = dat.activity_type_idx
+        INNER JOIN baxus.assets a ON af.asset_idx = a.asset_idx
+        INNER JOIN baxus.v_asset_summary v ON v.asset_idx = a.asset_idx
+        WHERE af.asset_idx = $1
+        ORDER BY af.activity_date DESC
+        LIMIT $2
+      `, [assetIdx, limit]);
 
       return result.rows.map((r: any) => ({
         activityIdx: r.activity_idx,

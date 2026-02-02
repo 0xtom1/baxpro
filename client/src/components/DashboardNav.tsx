@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Moon, Sun, LogOut, User, Crown, AlertCircle, Search } from "lucide-react";
+import { Plus, Moon, Sun, LogOut, User, Crown, AlertCircle, Search, Wallet } from "lucide-react";
 import GlencairnLogo from "./GlencairnLogo";
 import {
   DropdownMenu,
@@ -52,8 +52,9 @@ export default function DashboardNav({ onNewAlert, alertCount = 0, search, onSea
   };
 
   const getInitials = () => {
-    if (!user?.name) return "U";
-    return user.name
+    const displayText = user?.displayName || user?.name;
+    if (!displayText) return "U";
+    return displayText
       .split(" ")
       .map((n) => n[0])
       .join("")
@@ -95,6 +96,17 @@ export default function DashboardNav({ onNewAlert, alertCount = 0, search, onSea
         )}
         
         <div className="flex items-center gap-3 flex-shrink-0">
+          {(user?.phantomWallet || user?.baxusWallet) && (
+            <Button
+              variant="ghost"
+              onClick={() => setLocation("/my-bottles")}
+              data-testid="button-my-bottles"
+            >
+              <Wallet className="w-4 h-4 mr-1" />
+              <span className="hidden sm:inline">My Bottles</span>
+            </Button>
+          )}
+          
           {onNewAlert && (
             <Button 
               onClick={onNewAlert}
@@ -128,7 +140,7 @@ export default function DashboardNav({ onNewAlert, alertCount = 0, search, onSea
               <div className="flex items-center justify-start gap-2 p-2">
                 <div className="flex flex-col space-y-1">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium">{user?.name || "User"}</p>
+                    <p className="text-sm font-medium">{user?.displayName || user?.name || "User"}</p>
                     {user?.isVip && (
                       <Badge 
                         variant="secondary"
@@ -140,7 +152,13 @@ export default function DashboardNav({ onNewAlert, alertCount = 0, search, onSea
                       </Badge>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground">{user?.email}</p>
+                  <p className="text-xs text-muted-foreground truncate max-w-[200px]">
+                    {user?.provider === 'phantom' 
+                      ? (user?.phantomWallet 
+                          ? `${user.phantomWallet.slice(0, 4)}...${user.phantomWallet.slice(-4)}`
+                          : 'Phantom Wallet')
+                      : user?.email}
+                  </p>
                 </div>
               </div>
               <DropdownMenuSeparator />

@@ -50,6 +50,8 @@ expertMode = true
 
 [userenv.development]
 VITE_PHANTOM_APP_ID = "f2232260-fe61-4cb7-a551-316fc1ed4346"
+HELIUS_API_KEY = "cfe55fd7-9aa3-4f75-b318-71a12c78683b"
 
 [userenv.production]
 VITE_PHANTOM_APP_ID = "725e984c-f944-4ba4-931b-e7203c9b792a"
+HELIUS_API_KEY = "8cb5370c-d72a-4036-8087-34dbacc25e84"

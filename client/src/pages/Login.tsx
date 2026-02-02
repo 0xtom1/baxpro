@@ -23,7 +23,7 @@ export default function Login() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   // Phantom SDK hooks - safe wrapper that returns no-ops when Phantom is not enabled
-  const { isConnected, user: phantomUser, openModal: openPhantomModal } = usePhantomSafe();
+  const { isConnected, user: phantomUser, openModal: openPhantomModal, signMessage } = usePhantomSafe();
 
   // Parse returnTo from query string
   const returnTo = useMemo(() => {
@@ -77,7 +77,7 @@ export default function Login() {
         throw new Error("No Solana address found");
       }
       
-      await loginWithPhantomSDK(solanaAddress);
+      await loginWithPhantomSDK(solanaAddress, signMessage);
       // Skip notification setup for Phantom wallet users - go directly to dashboard
       if (returnTo) {
         setLocation(returnTo);
@@ -153,6 +153,33 @@ export default function Login() {
     } catch (error) {
       toast({
         title: "Demo login failed",
+        description: "Please try again",
+        variant: "destructive",
+      });
+      setLoggingIn(false);
+    }
+  };
+
+  const handlePhantomDemoLogin = async () => {
+    setLoggingIn(true);
+    try {
+      const response = await fetch("/api/auth/phantom-demo-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (response.ok) {
+        await refreshUser();
+        if (returnTo) {
+          setLocation(returnTo);
+        } else {
+          setLocation("/dashboard");
+        }
+      } else {
+        throw new Error("Phantom demo login failed");
+      }
+    } catch (error) {
+      toast({
+        title: "Phantom demo login failed",
         description: "Please try again",
         variant: "destructive",
       });
@@ -236,17 +263,30 @@ export default function Login() {
             )}
 
             {isDev && (
-              <Button 
-                variant="outline"
-                size="lg"
-                className="w-full"
-                onClick={handleDemoLogin}
-                disabled={loggingIn || !agreedToTerms}
-                data-testid="button-demo-login"
-              >
-                <User className="w-5 h-5 mr-2" />
-                Demo Login (Dev Only)
-              </Button>
+              <>
+                <Button 
+                  variant="outline"
+                  size="lg"
+                  className="w-full"
+                  onClick={handleDemoLogin}
+                  disabled={loggingIn || !agreedToTerms}
+                  data-testid="button-demo-login"
+                >
+                  <User className="w-5 h-5 mr-2" />
+                  Demo Login (Dev Only)
+                </Button>
+                <Button 
+                  variant="outline"
+                  size="lg"
+                  className="w-full"
+                  onClick={handlePhantomDemoLogin}
+                  disabled={loggingIn || !agreedToTerms}
+                  data-testid="button-phantom-demo-login"
+                >
+                  <PhantomLogo className="w-5 h-5 mr-2" />
+                  Phantom Demo (Dev Only)
+                </Button>
+              </>
             )}
           </div>
         </div>

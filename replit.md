@@ -55,6 +55,8 @@ Baxus API → baxus-monitor → Pub/Sub → alert-processor → Pub/Sub → aler
 - `/dashboard` - Main landing page after sign-in with tabbed interface (Brands/Activity)
 - `/alerts` - User's alert management page
 - `/brand?name=<brand_name>` - Individual brand detail page
+- `/my-bottles` - User's wallet bottles matched to Baxus assets
+- `/my-bottles/:assetId` - Bottle detail page with image, traits, and activity
 
 ### Dashboard Page
 
@@ -102,6 +104,33 @@ The Brand page (`/brand?name=<brand_name>`) displays detailed information about 
 - Trait filters normalized from ParsedQs objects to plain strings to prevent SQL injection
 - Mobile-responsive with slide-out filters drawer
 
+### My Bottles Page
+
+The My Bottles page (`/my-bottles`) displays Baxus bottles owned by the user's wallet:
+
+**API Endpoints**:
+- `GET /api/my-bottles` - Fetches user's wallet bottles from Helius API and matches to baxus.assets
+- `GET /api/my-bottles/:assetId` - Returns asset details with metadata and activity (ownership verified)
+
+**Wallet Resolution**:
+- Uses `phantomWallet` first (for Phantom-authenticated users)
+- Falls back to `baxusWallet` (for Gmail users who added wallet in Account Settings)
+- Navigation button visible when either wallet field is populated
+
+**Features**:
+- Card grid display of matched bottles with images, prices, and age
+- Empty state when no wallet connected or no matching Baxus bottles
+- Click card to view detailed bottle information
+- Activity history for each bottle
+
+**Security**:
+- Both endpoints verify user authentication
+- Detail endpoint verifies the asset is in the user's wallet before returning data
+
+**Dependencies**:
+- Helius API for wallet data (`HELIUS_API_KEY` environment variable)
+- Queries mainnet Solana with `showFungible: true` to include Token 2022 assets
+
 ### VIP Features
 
 Users with `isVip: true` can access:
@@ -140,3 +169,4 @@ Users with `isVip: true` can access:
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
 - `SESSION_SECRET`
 - `CUSTOM_DOMAIN` (optional, for OAuth redirect)
+- `HELIUS_API_KEY` (for wallet NFT data)
