@@ -7,10 +7,11 @@ export const baxusSchema = pgSchema("baxus");
 
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: text("email").notNull().unique(),
+  email: text("email").unique(),
   name: text("name"),
   displayName: text("display_name"),
   baxusWallet: varchar("baxus_wallet", { length: 44 }),
+  phantomWallet: varchar("phantom_wallet", { length: 44 }),
   smsConsent: boolean("sms_consent").default(false).notNull(),
   emailConsent: boolean("email_consent").default(false).notNull(),
   seenNotificationSetup: boolean("seen_notification_setup").default(false).notNull(),

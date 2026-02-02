@@ -5,6 +5,8 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "./lib/auth";
+import { PhantomProvider, darkTheme } from "@phantom/react-sdk";
+import { AddressType } from "@phantom/browser-sdk";
 
 function ThemeInitializer() {
   useEffect(() => {
@@ -17,7 +19,6 @@ function ThemeInitializer() {
 import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
 import NotificationSetup from "@/pages/NotificationSetup";
-import NotificationSettings from "@/pages/NotificationSettings";
 import AccountSettings from "@/pages/AccountSettings";
 import Alerts from "@/pages/Alerts";
 import Dashboard from "@/pages/Dashboard";
@@ -41,7 +42,7 @@ function Router() {
       <Route path="/" component={Landing} />
       <Route path="/login" component={Login} />
       <Route path="/notification-setup" component={NotificationSetup} />
-      <Route path="/notification-settings" component={NotificationSettings} />
+      <Route path="/notification-settings">{() => <Redirect to="/account-settings" />}</Route>
       <Route path="/account-settings" component={AccountSettings} />
       <Route path="/alerts" component={Alerts} />
       <Route path="/dashboard" component={Dashboard} />
@@ -62,7 +63,7 @@ function Router() {
   );
 }
 
-function App() {
+function AppContent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -73,6 +74,31 @@ function App() {
         </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>
+  );
+}
+
+function App() {
+  const phantomAppId = import.meta.env.VITE_PHANTOM_APP_ID || "";
+
+  // If no Phantom App ID is configured, render without PhantomProvider
+  // This prevents the app from crashing in environments where the SDK isn't configured
+  if (!phantomAppId) {
+    console.warn("VITE_PHANTOM_APP_ID not configured - Phantom wallet login disabled");
+    return <AppContent />;
+  }
+
+  return (
+    <PhantomProvider
+      config={{
+        providers: ["injected", "deeplink"],
+        appId: phantomAppId,
+        addressTypes: [AddressType.solana],
+      }}
+      theme={darkTheme}
+      appName="BaxPro"
+    >
+      <AppContent />
+    </PhantomProvider>
   );
 }
 

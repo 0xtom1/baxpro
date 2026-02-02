@@ -50,6 +50,27 @@
       "when": 1736121600000,
       "tag": "0006_brands_list_materialized_view",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1738370400000,
+      "tag": "0007_add_phantom_wallet",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1738443600000,
+      "tag": "0008_make_email_nullable",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1738530000000,
+      "tag": "0009_add_max_activity_date",
+      "breakpoints": true
     }
   ]
 }

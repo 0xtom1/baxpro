@@ -16,7 +16,11 @@ Preferred communication style: Simple, everyday language.
 
 **Frontend**: React 18 with TypeScript, using Wouter for routing and TanStack Query for server state. UI built with shadcn/ui components and Tailwind CSS. Supports dark/light themes with localStorage persistence.
 
-**Backend**: Express.js server with session-based authentication. Google OAuth is the primary auth method. Sessions stored in PostgreSQL using connect-pg-simple.
+**Backend**: Express.js server with session-based authentication. Supports Google OAuth and Phantom wallet authentication. Sessions stored in PostgreSQL using connect-pg-simple.
+
+**Authentication Methods**:
+- Google OAuth 2.0: Users sign in with Google, email managed by OAuth
+- Phantom Wallet: Users sign in by signing a challenge message with their Solana wallet. Wallet users can add/edit their email in account settings for notifications.
 
 **Database**: PostgreSQL accessed via Drizzle ORM. Schema defined in `shared/schema.ts`. Supports two connection modes:
 - Replit/Neon: Uses `DATABASE_URL` environment variable

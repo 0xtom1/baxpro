@@ -151,98 +151,92 @@ export default function Dashboard() {
     { id: "activity" as TabType, label: "ACTIVITY", icon: Activity },
   ];
 
-  const BrandsTable = () => (
-    <div className="flex-1 overflow-hidden">
-      <div className="overflow-x-auto h-full scrollbar-hide">
-        <table className="w-full text-sm min-w-[900px]">
-          <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur-sm">
-            <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
-              <th className="text-left py-3 px-4 font-medium sticky left-0 bg-muted/80 backdrop-blur-sm z-20 min-w-[200px]">Brand</th>
-              <th className="text-left py-3 px-2 font-medium min-w-[120px]">Producer</th>
-              <th className="text-right py-3 px-2 font-medium w-24">Floor</th>
-              <th className="text-right py-3 px-2 font-medium w-24">7D Vol</th>
-              <th className="text-right py-3 px-2 font-medium w-24">30D Vol</th>
-              <th className="text-right py-3 px-2 font-medium w-20">Owners</th>
-              <th className="text-right py-3 px-2 font-medium w-20">Supply</th>
-              <th className="text-right py-3 px-2 font-medium w-20">Listed</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {isLoading ? (
-              Array.from({ length: 10 }).map((_, i) => (
-                <tr key={i}>
-                  <td className="py-3 px-4 sticky left-0 bg-background"><Skeleton className="h-10 w-full" /></td>
-                  <td className="py-3 px-2"><Skeleton className="h-4 w-24" /></td>
-                  <td className="py-3 px-2"><Skeleton className="h-4 w-16 ml-auto" /></td>
-                  <td className="py-3 px-2"><Skeleton className="h-4 w-16 ml-auto" /></td>
-                  <td className="py-3 px-2"><Skeleton className="h-4 w-16 ml-auto" /></td>
-                  <td className="py-3 px-2"><Skeleton className="h-4 w-12 ml-auto" /></td>
-                  <td className="py-3 px-2"><Skeleton className="h-4 w-12 ml-auto" /></td>
-                  <td className="py-3 px-2"><Skeleton className="h-4 w-12 ml-auto" /></td>
-                </tr>
-              ))
-            ) : (
-              filteredBrands.map((brand) => (
-                <tr 
-                  key={brand.brandName} 
-                  className="hover-elevate cursor-pointer"
-                  onClick={() => setLocation(`/brand?name=${encodeURIComponent(brand.brandName)}`)}
-                  data-testid={`row-brand-${brand.brandName}`}
+  const BrandsCards = () => (
+    <div className="flex-1 overflow-y-auto scrollbar-hide">
+      {isLoading ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-4">
+          {Array.from({ length: 14 }).map((_, i) => (
+            <div key={i} className="bg-card rounded-lg border border-border overflow-hidden">
+              <Skeleton className="h-40 w-full" />
+              <div className="p-2 space-y-1">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-1/2" />
+                <div className="grid grid-cols-2 gap-1 pt-1">
+                  <Skeleton className="h-4" />
+                  <Skeleton className="h-4" />
+                  <Skeleton className="h-4" />
+                  <Skeleton className="h-4" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : filteredBrands.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+          <Package className="w-12 h-12 mb-4" />
+          <p>No brands found</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-4">
+          {filteredBrands.map((brand) => (
+            <div
+              key={brand.brandName}
+              className="bg-card rounded-lg border border-border overflow-hidden hover-elevate cursor-pointer transition-all flex flex-col"
+              onClick={() => setLocation(`/brand?name=${encodeURIComponent(brand.brandName)}`)}
+              data-testid={`card-brand-${brand.brandName}`}
+            >
+              {/* Bottle Image */}
+              <div className="h-40 bg-muted/30 relative overflow-hidden flex items-end justify-center">
+                {brand.imageUrl ? (
+                  <img
+                    src={brand.imageUrl}
+                    alt={brand.brandName}
+                    className="max-h-full object-contain"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="h-full flex items-center justify-center">
+                    <GlencairnLogo className="w-12 h-12 opacity-20" />
+                  </div>
+                )}
+              </div>
+              
+              {/* Brand Info */}
+              <div className="p-2 flex flex-col gap-1">
+                <h3 
+                  className="font-medium text-sm truncate leading-tight"
+                  data-testid={`text-brand-name-${brand.brandName}`}
                 >
-                  <td className="py-3 px-4 sticky left-0 bg-background z-10">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-muted flex-shrink-0 overflow-hidden">
-                        {brand.imageUrl ? (
-                          <img
-                            src={brand.imageUrl}
-                            alt={brand.brandName}
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <GlencairnLogo className="w-5 h-5 opacity-30" />
-                          </div>
-                        )}
-                      </div>
-                      <span className="font-medium truncate max-w-[150px]" data-testid={`text-brand-name-${brand.brandName}`}>
-                        {brand.brandName}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="py-3 px-2 text-muted-foreground truncate max-w-[120px]">
-                    {brand.producer || "-"}
-                  </td>
-                  <td className="py-3 px-2 text-right tabular-nums font-medium text-green-500">
-                    {formatPrice(brand.floorPrice)}
-                  </td>
-                  <td className="py-3 px-2 text-right tabular-nums">
-                    {formatVolume(brand.volume7d)}
-                  </td>
-                  <td className="py-3 px-2 text-right tabular-nums">
-                    {formatVolume(brand.volume30d)}
-                  </td>
-                  <td className="py-3 px-2 text-right tabular-nums text-muted-foreground">
-                    {brand.distinctOwnersCount.toLocaleString()}
-                  </td>
-                  <td className="py-3 px-2 text-right tabular-nums text-muted-foreground">
-                    {brand.assetCount.toLocaleString()}
-                  </td>
-                  <td className="py-3 px-2 text-right tabular-nums text-muted-foreground">
-                    {brand.listedCount.toLocaleString()}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-        {filteredBrands.length === 0 && !isLoading && (
-          <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-            <Package className="w-12 h-12 mb-4" />
-            <p>No brands found</p>
-          </div>
-        )}
-      </div>
+                  {brand.brandName}
+                </h3>
+                <p className="text-xs text-muted-foreground truncate leading-tight">
+                  {brand.producer || "Unknown Producer"}
+                </p>
+                
+                {/* Metrics Grid */}
+                <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-xs mt-1">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Floor</span>
+                    <span className="font-medium text-green-500 tabular-nums">{formatPrice(brand.floorPrice)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">30D Vol</span>
+                    <span className="font-medium tabular-nums">{formatVolume(brand.volume30d)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Listed</span>
+                    <span className="font-medium tabular-nums">{brand.listedCount.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Supply</span>
+                    <span className="font-medium tabular-nums text-muted-foreground">{brand.assetCount.toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 
@@ -418,7 +412,7 @@ export default function Dashboard() {
                   </Button>
                 </div>
               </div>
-              <BrandsTable />
+              <BrandsCards />
             </>
           )}
           {activeTab === "activity" && (
@@ -563,8 +557,8 @@ export default function Dashboard() {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto">
-          {activeTab === "brands" && <BrandsTable />}
+        <div className="flex-1 overflow-auto px-4 py-4">
+          {activeTab === "brands" && <BrandsCards />}
           {activeTab === "activity" && <ActivityTable />}
         </div>
 

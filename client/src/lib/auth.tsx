@@ -5,6 +5,8 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   loginWithGoogle: (returnTo?: string) => Promise<void>;
+  loginWithPhantom: () => Promise<{ user: User; needsSetup: boolean }>;
+  loginWithPhantomSDK: (publicKey: string) => Promise<{ user: User; needsSetup: boolean }>;
   loginDemo: (provider: string, email: string, name?: string) => Promise<User>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -46,6 +48,91 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.location.href = data.url;
   };
 
+  const loginWithPhantom = async (): Promise<{ user: User; needsSetup: boolean }> => {
+    // Check if Phantom is installed
+    const phantom = (window as any).phantom?.solana;
+    if (!phantom?.isPhantom) {
+      throw new Error("Phantom wallet not found. Please install it from phantom.app");
+    }
+
+    // Connect to Phantom
+    const connectResponse = await phantom.connect();
+    const publicKey = connectResponse.publicKey.toString();
+
+    // Get challenge message from server
+    const challengeResponse = await fetch("/api/auth/phantom/challenge");
+    if (!challengeResponse.ok) {
+      throw new Error("Failed to get challenge");
+    }
+    const { message } = await challengeResponse.json();
+
+    // Sign the message
+    const encodedMessage = new TextEncoder().encode(message);
+    const signedMessage = await phantom.signMessage(encodedMessage, "utf8");
+    
+    // Convert signature to base58
+    const toBase58 = (bytes: Uint8Array): string => {
+      const chars = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+      const byteArray = Array.from(bytes);
+      let num = BigInt(0);
+      for (let i = 0; i < byteArray.length; i++) {
+        num = num * BigInt(256) + BigInt(byteArray[i]);
+      }
+      let result = "";
+      while (num > 0) {
+        result = chars[Number(num % BigInt(58))] + result;
+        num = num / BigInt(58);
+      }
+      // Handle leading zeros
+      for (let i = 0; i < byteArray.length; i++) {
+        if (byteArray[i] === 0) result = "1" + result;
+        else break;
+      }
+      return result || "1";
+    };
+
+    const signature = toBase58(signedMessage.signature);
+    
+    // Verify with server
+    const verifyResponse = await fetch("/api/auth/phantom/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        publicKey,
+        signature,
+        message,
+      }),
+    });
+
+    if (!verifyResponse.ok) {
+      const error = await verifyResponse.json();
+      throw new Error(error.error || "Authentication failed");
+    }
+
+    const data = await verifyResponse.json();
+    setUser(data.user);
+    return { user: data.user, needsSetup: data.needsSetup };
+  };
+
+  // Login with Phantom SDK - uses SDK's connection, then verifies with backend
+  const loginWithPhantomSDK = async (publicKey: string): Promise<{ user: User; needsSetup: boolean }> => {
+    // Register/login user with our backend using the public key from Phantom SDK
+    const response = await fetch("/api/auth/phantom/sdk-login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ publicKey }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Authentication failed");
+    }
+
+    const data = await response.json();
+    setUser(data.user);
+    return { user: data.user, needsSetup: data.needsSetup };
+  };
+
   const loginDemo = async (provider: string, email: string, name?: string) => {
     const response = await fetch("/api/auth/demo-login", {
       method: "POST",
@@ -80,7 +167,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, loginWithGoogle, loginDemo, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, loginWithGoogle, loginWithPhantom, loginWithPhantomSDK, loginDemo, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
