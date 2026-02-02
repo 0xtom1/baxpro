@@ -908,7 +908,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             page: 1,
             limit: 1000,
             displayOptions: {
-              showFungible: false,
+              showFungible: true,
               showNativeBalance: false,
             }
           }
@@ -965,7 +965,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ownerAddress: user.phantomWallet,
             page: 1,
             limit: 1000,
-            displayOptions: { showFungible: false, showNativeBalance: false }
+            displayOptions: { showFungible: true, showNativeBalance: false }
           }
         })
       });
