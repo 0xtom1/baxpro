@@ -10,7 +10,7 @@ import DashboardNav from "@/components/DashboardNav";
 import GlencairnLogo from "@/components/GlencairnLogo";
 import type { ActivityFeedWithDetails } from "@shared/schema";
 
-interface NftAsset {
+interface BottleAsset {
   assetIdx: number;
   assetId: string;
   name: string;
@@ -38,8 +38,8 @@ interface NftAsset {
   };
 }
 
-interface NftDetailResponse {
-  asset: NftAsset;
+interface BottleDetailResponse {
+  asset: BottleAsset;
   activity: ActivityFeedWithDetails[];
 }
 
@@ -63,15 +63,15 @@ function formatDateTime(date: string | Date | null) {
   });
 }
 
-export default function NftDetail() {
+export default function BottleDetail() {
   const { assetId } = useParams<{ assetId: string }>();
   const { user, loading: authLoading } = useRequireAuth();
 
-  const { data, isLoading, error } = useQuery<NftDetailResponse>({
-    queryKey: ["/api/my-nfts", assetId],
+  const { data, isLoading, error } = useQuery<BottleDetailResponse>({
+    queryKey: ["/api/my-bottles", assetId],
     queryFn: async () => {
-      const res = await fetch(`/api/my-nfts/${encodeURIComponent(assetId)}`);
-      if (!res.ok) throw new Error("Failed to fetch NFT details");
+      const res = await fetch(`/api/my-bottles/${encodeURIComponent(assetId)}`);
+      if (!res.ok) throw new Error("Failed to fetch bottle details");
       return res.json();
     },
     enabled: !!user && !!assetId,
@@ -94,10 +94,10 @@ export default function NftDetail() {
       <DashboardNav />
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Link href="/my-nfts">
-          <Button variant="ghost" size="sm" className="mb-6" data-testid="button-back-to-nfts">
+        <Link href="/my-bottles">
+          <Button variant="ghost" size="sm" className="mb-6" data-testid="button-back-to-bottles">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to My NFTs
+            Back to My Bottles
           </Button>
         </Link>
 
@@ -112,10 +112,10 @@ export default function NftDetail() {
           </div>
         ) : error || !asset ? (
           <Card className="p-8 text-center">
-            <p className="text-muted-foreground">Failed to load NFT details</p>
-            <Link href="/my-nfts">
+            <p className="text-muted-foreground">Failed to load bottle details</p>
+            <Link href="/my-bottles">
               <Button variant="outline" className="mt-4">
-                Return to My NFTs
+                Return to My Bottles
               </Button>
             </Link>
           </Card>

@@ -55,8 +55,8 @@ Baxus API → baxus-monitor → Pub/Sub → alert-processor → Pub/Sub → aler
 - `/dashboard` - Main landing page after sign-in with tabbed interface (Brands/Activity)
 - `/alerts` - User's alert management page
 - `/brand?name=<brand_name>` - Individual brand detail page
-- `/my-nfts` - User's wallet NFTs matched to Baxus assets
-- `/my-nfts/:assetId` - NFT detail page with image, traits, and activity
+- `/my-bottles` - User's wallet bottles matched to Baxus assets
+- `/my-bottles/:assetId` - Bottle detail page with image, traits, and activity
 
 ### Dashboard Page
 
@@ -104,26 +104,26 @@ The Brand page (`/brand?name=<brand_name>`) displays detailed information about 
 - Trait filters normalized from ParsedQs objects to plain strings to prevent SQL injection
 - Mobile-responsive with slide-out filters drawer
 
-### My NFTs Page
+### My Bottles Page
 
-The My NFTs page (`/my-nfts`) displays Baxus bottles owned by the user's connected Phantom wallet:
+The My Bottles page (`/my-bottles`) displays Baxus bottles owned by the user's connected Phantom wallet:
 
 **API Endpoints**:
-- `GET /api/my-nfts` - Fetches user's wallet NFTs from Helius API and matches to baxus.assets
-- `GET /api/my-nfts/:assetId` - Returns asset details with metadata and activity (ownership verified)
+- `GET /api/my-bottles` - Fetches user's wallet bottles from Helius API and matches to baxus.assets
+- `GET /api/my-bottles/:assetId` - Returns asset details with metadata and activity (ownership verified)
 
 **Features**:
-- Card grid display of matched NFTs with images, prices, and age
+- Card grid display of matched bottles with images, prices, and age
 - Empty state when no wallet connected or no matching Baxus bottles
-- Click card to view detailed NFT information
-- Activity history for each NFT
+- Click card to view detailed bottle information
+- Activity history for each bottle
 
 **Security**:
 - Both endpoints verify user authentication
 - Detail endpoint verifies the asset is in the user's wallet before returning data
 
 **Dependencies**:
-- Helius API for wallet NFT data (`HELIUS_API_KEY` environment variable)
+- Helius API for wallet data (`HELIUS_API_KEY` environment variable)
 
 ### VIP Features
 

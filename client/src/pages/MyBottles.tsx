@@ -7,7 +7,7 @@ import { useRequireAuth } from "@/hooks/use-require-auth";
 import DashboardNav from "@/components/DashboardNav";
 import GlencairnLogo from "@/components/GlencairnLogo";
 
-interface NftAsset {
+interface BottleAsset {
   assetIdx: number;
   assetId: string;
   name: string;
@@ -22,19 +22,19 @@ interface NftAsset {
   imageUrl: string | null;
 }
 
-interface MyNftsResponse {
-  assets: NftAsset[];
+interface MyBottlesResponse {
+  assets: BottleAsset[];
   hasWallet: boolean;
 }
 
-export default function MyNfts() {
+export default function MyBottles() {
   const { user, loading: authLoading } = useRequireAuth();
 
-  const { data, isLoading, error } = useQuery<MyNftsResponse>({
-    queryKey: ["/api/my-nfts"],
+  const { data, isLoading, error } = useQuery<MyBottlesResponse>({
+    queryKey: ["/api/my-bottles"],
     queryFn: async () => {
-      const res = await fetch("/api/my-nfts");
-      if (!res.ok) throw new Error("Failed to fetch NFTs");
+      const res = await fetch("/api/my-bottles");
+      if (!res.ok) throw new Error("Failed to fetch bottles");
       return res.json();
     },
     enabled: !!user,
@@ -58,7 +58,7 @@ export default function MyNfts() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">My NFTs</h1>
+            <h1 className="text-2xl font-bold text-foreground">My Bottles</h1>
             <p className="text-muted-foreground mt-1">
               Baxus bottles in your connected wallet
             </p>
@@ -81,7 +81,7 @@ export default function MyNfts() {
           <Card className="p-8">
             <div className="text-center text-muted-foreground">
               <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>Failed to load your NFTs</p>
+              <p>Failed to load your bottles</p>
               <p className="text-sm mt-2">Please try again later</p>
             </div>
           </Card>
@@ -95,7 +95,7 @@ export default function MyNfts() {
                 <Link href="/account-settings" className="text-primary hover:underline">
                   Account Settings
                 </Link>{" "}
-                to view your Baxus NFTs.
+                to view your Baxus bottles.
               </p>
             </div>
           </Card>
@@ -122,10 +122,10 @@ export default function MyNfts() {
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {assets.map((asset) => (
-              <Link key={asset.assetId} href={`/my-nfts/${encodeURIComponent(asset.assetId)}`}>
+              <Link key={asset.assetId} href={`/my-bottles/${encodeURIComponent(asset.assetId)}`}>
                 <Card 
                   className="overflow-hidden hover-elevate cursor-pointer transition-all"
-                  data-testid={`card-nft-${asset.assetIdx}`}
+                  data-testid={`card-bottle-${asset.assetIdx}`}
                 >
                   <div className="aspect-square bg-muted relative">
                     {asset.imageUrl ? (

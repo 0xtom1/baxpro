@@ -841,7 +841,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // My NFTs endpoints - fetch user's wallet NFTs matched to Baxus assets
-  app.get("/api/my-nfts", requireAuth, apiLimiter, async (req, res) => {
+  app.get("/api/my-bottles", requireAuth, apiLimiter, async (req, res) => {
     try {
       const userId = req.session.userId!;
       const user = await storage.getUser(userId);
@@ -863,7 +863,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           jsonrpc: '2.0',
-          id: 'my-nfts',
+          id: 'my-bottles',
           method: 'getAssetsByOwner',
           params: {
             ownerAddress: user.phantomWallet,
@@ -899,7 +899,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/my-nfts/:assetId", requireAuth, apiLimiter, async (req, res) => {
+  app.get("/api/my-bottles/:assetId", requireAuth, apiLimiter, async (req, res) => {
     try {
       const { assetId } = req.params;
       const userId = req.session.userId!;
