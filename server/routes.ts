@@ -258,6 +258,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Phantom Demo auth route - DISABLED ON ALL DEPLOYMENTS for security
+  // This endpoint allows Phantom wallet login without actual wallet verification
+  // Only works in local Replit development environment
+  app.post("/api/auth/phantom-demo-login", authLimiter, async (req, res) => {
+    // Only allow in local Replit development (not deployed anywhere - dev or prod)
+    if (process.env.REPLIT_DEPLOYMENT) {
+      return res.status(403).json({ error: "Phantom demo login is only available in local development" });
+    }
+
+    try {
+      const phantomWallet = "bTQNircppiYgRwauQn8h2YMMBgoLBnRPankwMaPtyFB";
+      
+      // Check if user exists with this wallet
+      let user = await storage.getUserByPhantomWallet(phantomWallet);
+      
+      if (!user) {
+        // Create new user with phantom wallet
+        user = await storage.createUser({
+          email: null,
+          name: "Phantom Demo User",
+          displayName: generateDisplayName(),
+          provider: "phantom",
+          providerId: `phantom-demo-${phantomWallet}`,
+          phantomWallet,
+        });
+      }
+
+      // Update last login timestamp
+      user = await storage.updateUser(user.id, { lastLoginAt: new Date() }) || user;
+
+      req.session.userId = user.id;
+      res.json({ user });
+    } catch (error) {
+      console.error("Phantom demo login error:", error);
+      res.status(500).json({ error: "Phantom demo login failed" });
+    }
+  });
+
   // Phantom Wallet authentication
   // Step 1: Get a challenge message to sign
   app.get("/api/auth/phantom/challenge", authLimiter, (req, res) => {
