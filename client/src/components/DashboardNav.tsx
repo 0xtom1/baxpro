@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Moon, Sun, LogOut, User, Crown, AlertCircle, Search } from "lucide-react";
+import { Plus, Moon, Sun, LogOut, User, Crown, AlertCircle, Search, Wallet } from "lucide-react";
 import GlencairnLogo from "./GlencairnLogo";
 import {
   DropdownMenu,
@@ -95,6 +95,17 @@ export default function DashboardNav({ onNewAlert, alertCount = 0, search, onSea
         )}
         
         <div className="flex items-center gap-3 flex-shrink-0">
+          {user?.phantomWallet && (
+            <Button
+              variant="ghost"
+              onClick={() => setLocation("/my-nfts")}
+              data-testid="button-my-nfts"
+            >
+              <Wallet className="w-4 h-4 mr-1" />
+              <span className="hidden sm:inline">My NFTs</span>
+            </Button>
+          )}
+          
           {onNewAlert && (
             <Button 
               onClick={onNewAlert}

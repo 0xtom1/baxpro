@@ -840,6 +840,132 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // My NFTs endpoints - fetch user's wallet NFTs matched to Baxus assets
+  app.get("/api/my-nfts", requireAuth, apiLimiter, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.phantomWallet) {
+        return res.json({ assets: [], hasWallet: false });
+      }
+
+      const heliusApiKey = process.env.HELIUS_API_KEY;
+      if (!heliusApiKey) {
+        console.error("HELIUS_API_KEY not configured");
+        return res.status(500).json({ error: "NFT service not configured" });
+      }
+
+      // Fetch NFTs from Helius API
+      const heliusUrl = `https://mainnet.helius-rpc.com/?api-key=${heliusApiKey}`;
+      const heliusResponse = await fetch(heliusUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 'my-nfts',
+          method: 'getAssetsByOwner',
+          params: {
+            ownerAddress: user.phantomWallet,
+            page: 1,
+            limit: 1000,
+            displayOptions: {
+              showFungible: false,
+              showNativeBalance: false,
+            }
+          }
+        })
+      });
+
+      if (!heliusResponse.ok) {
+        console.error("Helius API error:", heliusResponse.status);
+        return res.status(500).json({ error: "Failed to fetch wallet NFTs" });
+      }
+
+      const heliusData = await heliusResponse.json();
+      const walletAssetIds = (heliusData.result?.items || []).map((item: any) => item.id);
+
+      if (walletAssetIds.length === 0) {
+        return res.json({ assets: [], hasWallet: true });
+      }
+
+      // Match wallet NFTs to Baxus assets
+      const matchedAssets = await storage.getAssetsByAssetIds(walletAssetIds);
+      
+      res.json({ assets: matchedAssets, hasWallet: true });
+    } catch (error) {
+      console.error("Get my NFTs error:", error);
+      res.status(500).json({ error: "Failed to fetch your NFTs" });
+    }
+  });
+
+  app.get("/api/my-nfts/:assetId", requireAuth, apiLimiter, async (req, res) => {
+    try {
+      const { assetId } = req.params;
+      const userId = req.session.userId!;
+      const user = await storage.getUser(userId);
+
+      if (!user?.phantomWallet) {
+        return res.status(403).json({ error: "No wallet connected" });
+      }
+
+      // Verify ownership: check that this asset is in the user's wallet
+      const heliusApiKey = process.env.HELIUS_API_KEY;
+      if (!heliusApiKey) {
+        return res.status(500).json({ error: "NFT service not configured" });
+      }
+
+      const heliusUrl = `https://mainnet.helius-rpc.com/?api-key=${heliusApiKey}`;
+      const heliusResponse = await fetch(heliusUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 'verify-ownership',
+          method: 'getAssetsByOwner',
+          params: {
+            ownerAddress: user.phantomWallet,
+            page: 1,
+            limit: 1000,
+            displayOptions: { showFungible: false, showNativeBalance: false }
+          }
+        })
+      });
+
+      if (!heliusResponse.ok) {
+        return res.status(500).json({ error: "Failed to verify ownership" });
+      }
+
+      const heliusData = await heliusResponse.json();
+      const walletAssetIds = (heliusData.result?.items || []).map((item: any) => item.id);
+
+      if (!walletAssetIds.includes(assetId)) {
+        return res.status(404).json({ error: "Asset not found in your wallet" });
+      }
+      
+      const asset = await storage.getAssetSummaryByAssetId(assetId);
+      if (!asset) {
+        return res.status(404).json({ error: "Asset not found in Baxus" });
+      }
+
+      // Get full asset data including metadata
+      const fullAsset = await storage.getAssetByAssetId(assetId);
+      const activity = await storage.getAssetActivityByAssetIdx(asset.assetIdx, 50);
+
+      res.json({ 
+        asset: {
+          ...asset,
+          metadataJson: fullAsset?.metadataJson,
+          assetJson: fullAsset?.assetJson,
+        }, 
+        activity 
+      });
+    } catch (error) {
+      console.error("Get NFT detail error:", error);
+      res.status(500).json({ error: "Failed to fetch NFT details" });
+    }
+  });
+
   // Product hierarchy endpoints (VIP only)
   app.get("/api/producers", requireVip, apiLimiter, async (req, res) => {
     try {

@@ -55,6 +55,8 @@ Baxus API → baxus-monitor → Pub/Sub → alert-processor → Pub/Sub → aler
 - `/dashboard` - Main landing page after sign-in with tabbed interface (Brands/Activity)
 - `/alerts` - User's alert management page
 - `/brand?name=<brand_name>` - Individual brand detail page
+- `/my-nfts` - User's wallet NFTs matched to Baxus assets
+- `/my-nfts/:assetId` - NFT detail page with image, traits, and activity
 
 ### Dashboard Page
 
@@ -102,6 +104,27 @@ The Brand page (`/brand?name=<brand_name>`) displays detailed information about 
 - Trait filters normalized from ParsedQs objects to plain strings to prevent SQL injection
 - Mobile-responsive with slide-out filters drawer
 
+### My NFTs Page
+
+The My NFTs page (`/my-nfts`) displays Baxus bottles owned by the user's connected Phantom wallet:
+
+**API Endpoints**:
+- `GET /api/my-nfts` - Fetches user's wallet NFTs from Helius API and matches to baxus.assets
+- `GET /api/my-nfts/:assetId` - Returns asset details with metadata and activity (ownership verified)
+
+**Features**:
+- Card grid display of matched NFTs with images, prices, and age
+- Empty state when no wallet connected or no matching Baxus bottles
+- Click card to view detailed NFT information
+- Activity history for each NFT
+
+**Security**:
+- Both endpoints verify user authentication
+- Detail endpoint verifies the asset is in the user's wallet before returning data
+
+**Dependencies**:
+- Helius API for wallet NFT data (`HELIUS_API_KEY` environment variable)
+
 ### VIP Features
 
 Users with `isVip: true` can access:
@@ -140,3 +163,4 @@ Users with `isVip: true` can access:
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
 - `SESSION_SECRET`
 - `CUSTOM_DOMAIN` (optional, for OAuth redirect)
+- `HELIUS_API_KEY` (for wallet NFT data)

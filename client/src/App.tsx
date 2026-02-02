@@ -34,6 +34,8 @@ import BrandSubBrands from "@/pages/ProductHierarchy-BrandSubBrands";
 import SubBrandAssets from "@/pages/ProductHierarchy-SubBrandAssets";
 import Unsubscribe from "@/pages/Unsubscribe";
 import Brand from "@/pages/Brand";
+import MyNfts from "@/pages/MyNfts";
+import NftDetail from "@/pages/NftDetail";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -58,6 +60,8 @@ function Router() {
       <Route path="/product-hierarchy-editor/sub-brand/:subBrandIdx/assets" component={SubBrandAssets} />
       <Route path="/unsubscribe" component={Unsubscribe} />
       <Route path="/brand" component={Brand} />
+      <Route path="/my-nfts" component={MyNfts} />
+      <Route path="/my-nfts/:assetId" component={NftDetail} />
       <Route component={NotFound} />
     </Switch>
   );
