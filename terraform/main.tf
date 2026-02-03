@@ -319,8 +319,9 @@ resource "google_secret_manager_secret_version" "gemini_api_key" {
   secret_data = var.gemini_api_key
 }
 
-# Helius API key for Solana blockchain activity tracking
+# Helius API key for Solana blockchain activity tracking in Baxus Monitor
 resource "google_secret_manager_secret" "helius_api_key" {
+  count     = var.enable_baxus_monitor ? 1 : 0
   secret_id = "baxpro-helius-api-key-${var.environment}"
   replication {
     auto {}
@@ -329,7 +330,8 @@ resource "google_secret_manager_secret" "helius_api_key" {
 }
 
 resource "google_secret_manager_secret_version" "helius_api_key" {
-  secret      = google_secret_manager_secret.helius_api_key.id
+  count       = var.enable_baxus_monitor ? 1 : 0
+  secret      = google_secret_manager_secret.helius_api_key[0].id
   secret_data = var.helius_api_key
 }
 
@@ -563,18 +565,15 @@ resource "google_cloud_run_v2_service" "baxpro" {
         name  = "CUSTOM_DOMAIN"
         value = var.custom_domain
       }
-
-      # Helius API key for My Bottles feature (wallet NFT lookup)
       env {
         name = "HELIUS_API_KEY"
         value_source {
           secret_key_ref {
-            secret  = google_secret_manager_secret.helius_api_key.secret_id
+            secret  = google_secret_manager_secret.helius_api_key[0].secret_id
             version = "latest"
           }
         }
       }
-
       # Pub/Sub topic for test email functionality (only set if alert processor is enabled)
       dynamic "env" {
         for_each = var.enable_alert_processor ? [1] : []
@@ -869,7 +868,7 @@ resource "google_cloud_run_v2_service" "baxus_monitor" {
         name = "HELIUS_API_KEY"
         value_source {
           secret_key_ref {
-            secret  = google_secret_manager_secret.helius_api_key.secret_id
+            secret  = google_secret_manager_secret.helius_api_key[0].secret_id
             version = "latest"
           }
         }
