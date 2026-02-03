@@ -406,6 +406,7 @@ locals {
     "baxpro-db-pass-${var.environment}",
     "baxpro-db-name-${var.environment}",
     "baxpro-instance-unix-socket-${var.environment}",
+    "baxpro-helius-api-key-${var.environment}",
   ]
 
   # Baxus Monitor polling interval: 5 min (300s) for dev, 30s for production
@@ -423,6 +424,7 @@ resource "google_secret_manager_secret_iam_member" "secret_access" {
     google_secret_manager_secret.session_secret,
     google_secret_manager_secret.google_client_id,
     google_secret_manager_secret.google_client_secret,
+    google_secret_manager_secret.helius_api_key,
     google_secret_manager_secret_version.db_user,
     google_secret_manager_secret_version.db_pass,
     google_secret_manager_secret_version.db_name,
