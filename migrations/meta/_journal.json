@@ -85,6 +85,13 @@
       "when": 1738554000000,
       "tag": "0011_mv_brands_list_no_producer_group",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1738600800000,
+      "tag": "0012_add_is_dummy",
+      "breakpoints": true
     }
   ]
 }
