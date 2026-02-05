@@ -52,7 +52,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   // Session middleware - use PostgreSQL store for persistence
-  const isProduction = process.env.NODE_ENV === "production";
+  // Require secure cookies for both production and dev deployments (both use HTTPS)
+  const isProduction = process.env.NODE_ENV === "production" || process.env.NODE_ENV === "dev";
   const PgSession = connectPgSimple(session);
   
   app.use(
