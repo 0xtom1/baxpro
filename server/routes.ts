@@ -914,8 +914,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "NFT service not configured" });
       }
 
-      // Fetch NFTs from Helius API
-      const heliusUrl = `https://mainnet.helius-rpc.com/?api-key=${heliusApiKey}`;
+      // Fetch NFTs from Helius API (devnet for dev, mainnet for production)
+      const heliusNetwork = process.env.NODE_ENV === 'production' ? 'mainnet' : 'devnet';
+      const heliusUrl = `https://${heliusNetwork}.helius-rpc.com/?api-key=${heliusApiKey}`;
       const heliusResponse = await fetch(heliusUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -976,7 +977,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "NFT service not configured" });
       }
 
-      const heliusUrl = `https://mainnet.helius-rpc.com/?api-key=${heliusApiKey}`;
+      // Use devnet for dev, mainnet for production
+      const heliusNetwork = process.env.NODE_ENV === 'production' ? 'mainnet' : 'devnet';
+      const heliusUrl = `https://${heliusNetwork}.helius-rpc.com/?api-key=${heliusApiKey}`;
       const heliusResponse = await fetch(heliusUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
