@@ -521,7 +521,7 @@ resource "google_cloud_run_v2_service" "baxpro" {
       }
       env {
         name  = "NODE_ENV"
-        value = "production"
+        value = var.environment
       }
       env {
         name  = "DEPLOY_VERSION"
