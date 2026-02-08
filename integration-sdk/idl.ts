@@ -9,12 +9,28 @@ export type NftLending = {
         { name: "authority"; isMut: true; isSigner: true },
         { name: "systemProgram"; isMut: false; isSigner: false }
       ];
-      args: [];
+      args: [
+        { name: "feeWallet"; type: "publicKey" },
+        { name: "feeBps"; type: "u16" }
+      ];
     },
     {
-      name: "createLoanListing";
+      name: "createLoan";
       accounts: [
-        { name: "lendingPool"; isMut: true; isSigner: false },
+        { name: "loan"; isMut: true; isSigner: false },
+        { name: "borrower"; isMut: true; isSigner: true },
+        { name: "systemProgram"; isMut: false; isSigner: false }
+      ];
+      args: [
+        { name: "loanId"; type: "u64" },
+        { name: "loanAmount"; type: "u64" },
+        { name: "interestRateBps"; type: "u16" },
+        { name: "durationSeconds"; type: "i64" }
+      ];
+    },
+    {
+      name: "addCollateral";
+      accounts: [
         { name: "loan"; isMut: true; isSigner: false },
         { name: "nftMint"; isMut: false; isSigner: false },
         { name: "borrowerNftAccount"; isMut: true; isSigner: false },
@@ -23,11 +39,16 @@ export type NftLending = {
         { name: "tokenProgram"; isMut: false; isSigner: false },
         { name: "systemProgram"; isMut: false; isSigner: false }
       ];
-      args: [
-        { name: "loanAmount"; type: "u64" },
-        { name: "interestRateBps"; type: "u16" },
-        { name: "durationSeconds"; type: "i64" }
+      args: [];
+    },
+    {
+      name: "activateListing";
+      accounts: [
+        { name: "lendingPool"; isMut: true; isSigner: false },
+        { name: "loan"; isMut: true; isSigner: false },
+        { name: "borrower"; isMut: false; isSigner: true }
       ];
+      args: [];
     },
     {
       name: "fundLoan";
@@ -45,11 +66,9 @@ export type NftLending = {
       accounts: [
         { name: "lendingPool"; isMut: true; isSigner: false },
         { name: "loan"; isMut: true; isSigner: false },
-        { name: "nftMint"; isMut: false; isSigner: false },
-        { name: "nftEscrow"; isMut: true; isSigner: false },
-        { name: "borrowerNftAccount"; isMut: true; isSigner: false },
         { name: "borrower"; isMut: true; isSigner: true },
         { name: "lender"; isMut: true; isSigner: false },
+        { name: "feeWallet"; isMut: true; isSigner: false },
         { name: "tokenProgram"; isMut: false; isSigner: false },
         { name: "systemProgram"; isMut: false; isSigner: false }
       ];
@@ -60,9 +79,6 @@ export type NftLending = {
       accounts: [
         { name: "lendingPool"; isMut: true; isSigner: false },
         { name: "loan"; isMut: true; isSigner: false },
-        { name: "nftMint"; isMut: false; isSigner: false },
-        { name: "nftEscrow"; isMut: true; isSigner: false },
-        { name: "lenderNftAccount"; isMut: true; isSigner: false },
         { name: "lender"; isMut: true; isSigner: true },
         { name: "tokenProgram"; isMut: false; isSigner: false },
         { name: "systemProgram"; isMut: false; isSigner: false }
@@ -73,9 +89,6 @@ export type NftLending = {
       name: "cancelListing";
       accounts: [
         { name: "loan"; isMut: true; isSigner: false },
-        { name: "nftMint"; isMut: false; isSigner: false },
-        { name: "nftEscrow"; isMut: true; isSigner: false },
-        { name: "borrowerNftAccount"; isMut: true; isSigner: false },
         { name: "borrower"; isMut: true; isSigner: true },
         { name: "tokenProgram"; isMut: false; isSigner: false },
         { name: "systemProgram"; isMut: false; isSigner: false }
@@ -91,6 +104,8 @@ export type NftLending = {
         fields: [
           { name: "authority"; type: "publicKey" },
           { name: "nftVault"; type: "publicKey" },
+          { name: "feeWallet"; type: "publicKey" },
+          { name: "feeBps"; type: "u16" },
           { name: "totalLoansCreated"; type: "u64" },
           { name: "totalLoansFunded"; type: "u64" },
           { name: "totalLoansRepaid"; type: "u64" },
@@ -106,8 +121,10 @@ export type NftLending = {
         fields: [
           { name: "borrower"; type: "publicKey" },
           { name: "lender"; type: "publicKey" },
-          { name: "nftMint"; type: "publicKey" },
-          { name: "nftEscrow"; type: "publicKey" },
+          { name: "loanId"; type: "u64" },
+          { name: "nftMints"; type: { array: ["publicKey", 5] } },
+          { name: "nftEscrows"; type: { array: ["publicKey", 5] } },
+          { name: "collateralCount"; type: "u8" },
           { name: "loanAmount"; type: "u64" },
           { name: "interestRateBps"; type: "u16" },
           { name: "durationSeconds"; type: "i64" },
@@ -124,6 +141,7 @@ export type NftLending = {
       type: {
         kind: "enum";
         variants: [
+          { name: "Draft" },
           { name: "Listed" },
           { name: "Active" },
           { name: "Repaid" },
@@ -142,7 +160,13 @@ export type NftLending = {
     { code: 6005; name: "UnauthorizedBorrower"; msg: "Unauthorized: Only the borrower can perform this action" },
     { code: 6006; name: "UnauthorizedLender"; msg: "Unauthorized: Only the lender can perform this action" },
     { code: 6007; name: "MathOverflow"; msg: "Arithmetic overflow occurred" },
-    { code: 6008; name: "InvalidNft"; msg: "Invalid NFT: Must be a Token-2022 NFT with 0 decimals and supply of 1" }
+    { code: 6008; name: "InvalidNft"; msg: "Invalid NFT: Must be a Token-2022 NFT with 0 decimals and supply of 1" },
+    { code: 6009; name: "TooManyCollateral"; msg: "Maximum collateral count (5) reached" },
+    { code: 6010; name: "NoCollateral"; msg: "Loan must have at least one collateral NFT before listing" },
+    { code: 6011; name: "InvalidRemainingAccounts"; msg: "Invalid remaining accounts: must provide groups of 3 (mint, escrow, token_account) per collateral" },
+    { code: 6012; name: "CollateralMintMismatch"; msg: "Collateral mint does not match loan records" },
+    { code: 6013; name: "CollateralEscrowMismatch"; msg: "Collateral escrow does not match loan records" },
+    { code: 6014; name: "InvalidFeeWallet"; msg: "Fee wallet does not match the lending pool configuration" }
   ];
 };
 
@@ -157,12 +181,28 @@ export const IDL: NftLending = {
         { name: "authority", isMut: true, isSigner: true },
         { name: "systemProgram", isMut: false, isSigner: false }
       ],
-      args: []
+      args: [
+        { name: "feeWallet", type: "publicKey" },
+        { name: "feeBps", type: "u16" }
+      ]
     },
     {
-      name: "createLoanListing",
+      name: "createLoan",
       accounts: [
-        { name: "lendingPool", isMut: true, isSigner: false },
+        { name: "loan", isMut: true, isSigner: false },
+        { name: "borrower", isMut: true, isSigner: true },
+        { name: "systemProgram", isMut: false, isSigner: false }
+      ],
+      args: [
+        { name: "loanId", type: "u64" },
+        { name: "loanAmount", type: "u64" },
+        { name: "interestRateBps", type: "u16" },
+        { name: "durationSeconds", type: "i64" }
+      ]
+    },
+    {
+      name: "addCollateral",
+      accounts: [
         { name: "loan", isMut: true, isSigner: false },
         { name: "nftMint", isMut: false, isSigner: false },
         { name: "borrowerNftAccount", isMut: true, isSigner: false },
@@ -171,11 +211,16 @@ export const IDL: NftLending = {
         { name: "tokenProgram", isMut: false, isSigner: false },
         { name: "systemProgram", isMut: false, isSigner: false }
       ],
-      args: [
-        { name: "loanAmount", type: "u64" },
-        { name: "interestRateBps", type: "u16" },
-        { name: "durationSeconds", type: "i64" }
-      ]
+      args: []
+    },
+    {
+      name: "activateListing",
+      accounts: [
+        { name: "lendingPool", isMut: true, isSigner: false },
+        { name: "loan", isMut: true, isSigner: false },
+        { name: "borrower", isMut: false, isSigner: true }
+      ],
+      args: []
     },
     {
       name: "fundLoan",
@@ -193,11 +238,9 @@ export const IDL: NftLending = {
       accounts: [
         { name: "lendingPool", isMut: true, isSigner: false },
         { name: "loan", isMut: true, isSigner: false },
-        { name: "nftMint", isMut: false, isSigner: false },
-        { name: "nftEscrow", isMut: true, isSigner: false },
-        { name: "borrowerNftAccount", isMut: true, isSigner: false },
         { name: "borrower", isMut: true, isSigner: true },
         { name: "lender", isMut: true, isSigner: false },
+        { name: "feeWallet", isMut: true, isSigner: false },
         { name: "tokenProgram", isMut: false, isSigner: false },
         { name: "systemProgram", isMut: false, isSigner: false }
       ],
@@ -208,9 +251,6 @@ export const IDL: NftLending = {
       accounts: [
         { name: "lendingPool", isMut: true, isSigner: false },
         { name: "loan", isMut: true, isSigner: false },
-        { name: "nftMint", isMut: false, isSigner: false },
-        { name: "nftEscrow", isMut: true, isSigner: false },
-        { name: "lenderNftAccount", isMut: true, isSigner: false },
         { name: "lender", isMut: true, isSigner: true },
         { name: "tokenProgram", isMut: false, isSigner: false },
         { name: "systemProgram", isMut: false, isSigner: false }
@@ -221,9 +261,6 @@ export const IDL: NftLending = {
       name: "cancelListing",
       accounts: [
         { name: "loan", isMut: true, isSigner: false },
-        { name: "nftMint", isMut: false, isSigner: false },
-        { name: "nftEscrow", isMut: true, isSigner: false },
-        { name: "borrowerNftAccount", isMut: true, isSigner: false },
         { name: "borrower", isMut: true, isSigner: true },
         { name: "tokenProgram", isMut: false, isSigner: false },
         { name: "systemProgram", isMut: false, isSigner: false }
@@ -239,6 +276,8 @@ export const IDL: NftLending = {
         fields: [
           { name: "authority", type: "publicKey" },
           { name: "nftVault", type: "publicKey" },
+          { name: "feeWallet", type: "publicKey" },
+          { name: "feeBps", type: "u16" },
           { name: "totalLoansCreated", type: "u64" },
           { name: "totalLoansFunded", type: "u64" },
           { name: "totalLoansRepaid", type: "u64" },
@@ -254,8 +293,10 @@ export const IDL: NftLending = {
         fields: [
           { name: "borrower", type: "publicKey" },
           { name: "lender", type: "publicKey" },
-          { name: "nftMint", type: "publicKey" },
-          { name: "nftEscrow", type: "publicKey" },
+          { name: "loanId", type: "u64" },
+          { name: "nftMints", type: { array: ["publicKey", 5] } },
+          { name: "nftEscrows", type: { array: ["publicKey", 5] } },
+          { name: "collateralCount", type: "u8" },
           { name: "loanAmount", type: "u64" },
           { name: "interestRateBps", type: "u16" },
           { name: "durationSeconds", type: "i64" },
@@ -272,6 +313,7 @@ export const IDL: NftLending = {
       type: {
         kind: "enum",
         variants: [
+          { name: "Draft" },
           { name: "Listed" },
           { name: "Active" },
           { name: "Repaid" },
@@ -290,6 +332,12 @@ export const IDL: NftLending = {
     { code: 6005, name: "UnauthorizedBorrower", msg: "Unauthorized: Only the borrower can perform this action" },
     { code: 6006, name: "UnauthorizedLender", msg: "Unauthorized: Only the lender can perform this action" },
     { code: 6007, name: "MathOverflow", msg: "Arithmetic overflow occurred" },
-    { code: 6008, name: "InvalidNft", msg: "Invalid NFT: Must be a Token-2022 NFT with 0 decimals and supply of 1" }
+    { code: 6008, name: "InvalidNft", msg: "Invalid NFT: Must be a Token-2022 NFT with 0 decimals and supply of 1" },
+    { code: 6009, name: "TooManyCollateral", msg: "Maximum collateral count (5) reached" },
+    { code: 6010, name: "NoCollateral", msg: "Loan must have at least one collateral NFT before listing" },
+    { code: 6011, name: "InvalidRemainingAccounts", msg: "Invalid remaining accounts: must provide groups of 3 (mint, escrow, token_account) per collateral" },
+    { code: 6012, name: "CollateralMintMismatch", msg: "Collateral mint does not match loan records" },
+    { code: 6013, name: "CollateralEscrowMismatch", msg: "Collateral escrow does not match loan records" },
+    { code: 6014, name: "InvalidFeeWallet", msg: "Fee wallet does not match the lending pool configuration" }
   ]
 };
