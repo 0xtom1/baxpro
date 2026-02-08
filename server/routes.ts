@@ -896,6 +896,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/assets-by-mints", apiLimiter, async (req, res) => {
+    try {
+      const mintsParam = req.query.mints as string;
+      if (!mintsParam) {
+        return res.json({});
+      }
+      const mints = mintsParam.split(',').filter(m => m.trim().length > 0).slice(0, 25);
+      if (mints.length === 0) {
+        return res.json({});
+      }
+      const assets = await storage.getAssetsByAssetIds(mints);
+      const result: Record<string, any> = {};
+      for (const asset of assets) {
+        result[asset.assetId] = asset;
+      }
+      res.json(result);
+    } catch (error) {
+      console.error("Get assets by mints error:", error);
+      res.status(500).json({ error: "Failed to fetch assets" });
+    }
+  });
+
   // My Bottles endpoints - fetch user's wallet NFTs matched to Baxus assets
   app.get("/api/my-bottles", requireAuth, apiLimiter, async (req, res) => {
     try {
@@ -1189,6 +1211,135 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get sub-brand assets error:", error);
       res.status(500).json({ error: "Failed to fetch sub-brand assets" });
+    }
+  });
+
+  // ── Loan endpoints ──
+
+  app.get("/api/loans", apiLimiter, async (_req, res) => {
+    try {
+      const { fetchLoans } = await import("./sdk/loanService");
+      const status = typeof _req.query.status === 'string' ? _req.query.status : undefined;
+      const loans = await fetchLoans(status);
+      res.json(loans);
+    } catch (error: any) {
+      console.error("Fetch loans error:", error);
+      res.status(500).json({ error: "Failed to fetch loans" });
+    }
+  });
+
+  app.get("/api/loans/my", async (req, res) => {
+    if (!req.session?.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const user = await storage.getUser(req.session.userId);
+      if (!user?.phantomWallet) return res.json([]);
+      const { fetchLoansByWallet } = await import("./sdk/loanService");
+      const loans = await fetchLoansByWallet(user.phantomWallet);
+      res.json(loans);
+    } catch (error: any) {
+      console.error("Fetch my loans error:", error);
+      res.status(500).json({ error: "Failed to fetch user loans" });
+    }
+  });
+
+  app.get("/api/loans/pool", apiLimiter, async (_req, res) => {
+    try {
+      const { fetchLendingPool } = await import("./sdk/loanService");
+      const pool = await fetchLendingPool();
+      res.json(pool);
+    } catch (error: any) {
+      console.error("Fetch lending pool error:", error);
+      res.status(500).json({ error: "Failed to fetch lending pool" });
+    }
+  });
+
+  app.post("/api/loans/build-create", async (req, res) => {
+    if (!req.session?.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const user = await storage.getUser(req.session.userId);
+      if (!user?.phantomWallet) return res.status(400).json({ error: "Phantom wallet required" });
+
+      const schema = z.object({
+        nftMints: z.array(z.string()).min(1),
+        loanAmountLamports: z.number().positive(),
+        interestRateBps: z.number().min(0).max(10000),
+        durationSeconds: z.number().positive(),
+      });
+      const data = schema.parse(req.body);
+
+      const { buildCreateLoanTx, fetchLendingPool } = await import("./sdk/loanService");
+      const pool = await fetchLendingPool();
+      const loanIdNum = pool ? parseInt(pool.totalLoansCreated) + 1 : 1;
+
+      const txs = await buildCreateLoanTx(
+        user.phantomWallet,
+        loanIdNum,
+        data.nftMints,
+        data.loanAmountLamports,
+        data.interestRateBps,
+        data.durationSeconds
+      );
+      res.json({ transactions: txs });
+    } catch (error: any) {
+      console.error("Build create loan tx error:", error);
+      res.status(500).json({ error: error.message || "Failed to build transaction" });
+    }
+  });
+
+  app.post("/api/loans/build-fund", async (req, res) => {
+    if (!req.session?.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const user = await storage.getUser(req.session.userId);
+      if (!user?.phantomWallet) return res.status(400).json({ error: "Phantom wallet required" });
+
+      const schema = z.object({
+        borrower: z.string(),
+        loanId: z.string(),
+      });
+      const data = schema.parse(req.body);
+
+      const { buildFundLoanTx } = await import("./sdk/loanService");
+      const tx = await buildFundLoanTx(user.phantomWallet, data.borrower, data.loanId);
+      res.json({ transaction: tx });
+    } catch (error: any) {
+      console.error("Build fund loan tx error:", error);
+      res.status(500).json({ error: error.message || "Failed to build transaction" });
+    }
+  });
+
+  app.post("/api/loans/build-repay", async (req, res) => {
+    if (!req.session?.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const user = await storage.getUser(req.session.userId);
+      if (!user?.phantomWallet) return res.status(400).json({ error: "Phantom wallet required" });
+
+      const schema = z.object({ loanId: z.string() });
+      const data = schema.parse(req.body);
+
+      const { buildRepayLoanTx } = await import("./sdk/loanService");
+      const tx = await buildRepayLoanTx(user.phantomWallet, data.loanId);
+      res.json({ transaction: tx });
+    } catch (error: any) {
+      console.error("Build repay loan tx error:", error);
+      res.status(500).json({ error: error.message || "Failed to build transaction" });
+    }
+  });
+
+  app.post("/api/loans/build-cancel", async (req, res) => {
+    if (!req.session?.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const user = await storage.getUser(req.session.userId);
+      if (!user?.phantomWallet) return res.status(400).json({ error: "Phantom wallet required" });
+
+      const schema = z.object({ loanId: z.string() });
+      const data = schema.parse(req.body);
+
+      const { buildCancelLoanTx } = await import("./sdk/loanService");
+      const tx = await buildCancelLoanTx(user.phantomWallet, data.loanId);
+      res.json({ transaction: tx });
+    } catch (error: any) {
+      console.error("Build cancel loan tx error:", error);
+      res.status(500).json({ error: error.message || "Failed to build transaction" });
     }
   });
 

@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import GlencairnLogo from "@/components/GlencairnLogo";
 import DashboardNav from "@/components/DashboardNav";
+import LoansTab from "@/components/LoansTab";
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import type { ActivityFeedWithDetails } from "@shared/schema";
 
@@ -488,8 +489,8 @@ export default function Brand() {
             </div>
           )}
           {activeTab === "loans" && (
-            <div className="flex-1 flex items-center justify-center text-muted-foreground">
-              <div className="text-center"><Clock className="w-12 h-12 mx-auto mb-4 opacity-30" /><p>Loans Coming Soon</p></div>
+            <div className="flex-1 overflow-y-auto">
+              <LoansTab filterByBrand={brandName} />
             </div>
           )}
           {activeTab === "holders" && (
@@ -665,11 +666,8 @@ export default function Brand() {
         )}
 
         {activeTab === "loans" && (
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center text-muted-foreground">
-              <Clock className="w-12 h-12 mx-auto mb-4 opacity-30" />
-              <p className="font-medium">Loans Coming Soon</p>
-            </div>
+          <div className="px-4 py-4">
+            <LoansTab filterByBrand={brandName} />
           </div>
         )}
 

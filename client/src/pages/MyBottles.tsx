@@ -2,10 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
-import { Package, Wallet, ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Package, Wallet, ExternalLink, Landmark } from "lucide-react";
+import { useState } from "react";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import DashboardNav from "@/components/DashboardNav";
 import GlencairnLogo from "@/components/GlencairnLogo";
+import CreateLoanModal from "@/components/CreateLoanModal";
 
 interface BottleAsset {
   assetIdx: number;
@@ -29,6 +32,7 @@ interface MyBottlesResponse {
 
 export default function MyBottles() {
   const { user, loading: authLoading } = useRequireAuth();
+  const [createLoanOpen, setCreateLoanOpen] = useState(false);
 
   const { data, isLoading, error } = useQuery<MyBottlesResponse>({
     queryKey: ["/api/my-bottles"],
@@ -56,13 +60,19 @@ export default function MyBottles() {
       <DashboardNav />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between gap-4 flex-wrap mb-8">
           <div>
             <h1 className="text-2xl font-bold text-foreground">My Bottles</h1>
             <p className="text-muted-foreground mt-1">
               Baxus bottles in your connected wallet
             </p>
           </div>
+          {hasWallet && assets.length > 0 && user?.phantomWallet && (
+            <Button onClick={() => setCreateLoanOpen(true)} data-testid="button-create-loan">
+              <Landmark className="w-4 h-4 mr-2" />
+              Create Loan
+            </Button>
+          )}
         </div>
 
         {isLoading ? (
@@ -182,6 +192,12 @@ export default function MyBottles() {
           </div>
         )}
       </main>
+
+      <CreateLoanModal
+        open={createLoanOpen}
+        onOpenChange={setCreateLoanOpen}
+        bottles={assets}
+      />
     </div>
   );
 }

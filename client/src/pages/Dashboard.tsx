@@ -7,10 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { Search, ChevronLeft, ChevronRight, Package, Activity, LayoutGrid, ExternalLink, Filter } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Package, Activity, LayoutGrid, ExternalLink, Filter, Landmark } from "lucide-react";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import DashboardNav from "@/components/DashboardNav";
 import GlencairnLogo from "@/components/GlencairnLogo";
+import LoansTab from "@/components/LoansTab";
 import type { ActivityFeedWithDetails } from "@shared/schema";
 
 type BrandListItem = {
@@ -46,7 +47,7 @@ interface ActivityType {
   activityTypeName: string;
 }
 
-type TabType = "brands" | "activity";
+type TabType = "brands" | "activity" | "loans";
 
 const ITEMS_PER_PAGE = 30;
 
@@ -148,6 +149,7 @@ export default function Dashboard() {
 
   const tabs = [
     { id: "brands" as TabType, label: "BRANDS", icon: LayoutGrid },
+    { id: "loans" as TabType, label: "LOANS", icon: Landmark },
     { id: "activity" as TabType, label: "ACTIVITY", icon: Activity },
   ];
 
@@ -415,6 +417,11 @@ export default function Dashboard() {
               <BrandsCards />
             </>
           )}
+          {activeTab === "loans" && (
+            <div className="flex-1 overflow-y-auto">
+              <LoansTab />
+            </div>
+          )}
           {activeTab === "activity" && (
             <>
               <div className="flex items-center justify-between mb-4">
@@ -559,6 +566,7 @@ export default function Dashboard() {
         {/* Content */}
         <div className="flex-1 overflow-auto px-4 py-4">
           {activeTab === "brands" && <BrandsCards />}
+          {activeTab === "loans" && <LoansTab />}
           {activeTab === "activity" && <ActivityTable />}
         </div>
 
