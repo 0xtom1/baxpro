@@ -130,7 +130,7 @@ export async function buildCreateLoanTx(
 
   const createIx = await program.methods
     .createLoan(loanId, new anchor.BN(loanAmountLamports), interestRateBps, new anchor.BN(durationSeconds))
-    .accounts({
+    .accountsStrict({
       loan,
       borrower,
       systemProgram: SystemProgram.programId,
@@ -145,7 +145,7 @@ export async function buildCreateLoanTx(
 
     const ix = await program.methods
       .addCollateral()
-      .accounts({
+      .accountsStrict({
         loan,
         nftMint,
         borrowerNftAccount,
@@ -160,7 +160,7 @@ export async function buildCreateLoanTx(
 
   const activateIx = await program.methods
     .activateListing()
-    .accounts({
+    .accountsStrict({
       lendingPool,
       loan,
       borrower,
@@ -202,7 +202,7 @@ export async function buildFundLoanTx(
 
   const ix = await program.methods
     .fundLoan()
-    .accounts({
+    .accountsStrict({
       lendingPool,
       loan,
       borrower,
@@ -248,7 +248,7 @@ export async function buildRepayLoanTx(
 
   const ix = await program.methods
     .repayLoan()
-    .accounts({
+    .accountsStrict({
       lendingPool,
       loan,
       borrower,
@@ -295,7 +295,7 @@ export async function buildCancelLoanTx(
 
   const ix = await program.methods
     .cancelListing()
-    .accounts({
+    .accountsStrict({
       loan,
       borrower,
       tokenProgram: TOKEN_2022_PROGRAM_ID,
