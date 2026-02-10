@@ -624,11 +624,14 @@ export class DbStorage implements IStorage {
       const offset = (page - 1) * limit;
       const searchTerm = search?.trim() || '';
       const hasSearch = searchTerm.length > 0;
-      const searchPattern = `%${searchTerm}%`;
+      const normalizedSearch = searchTerm.replace(/[^a-zA-Z0-9 ]/g, '').toLowerCase();
+      const searchPattern = `%${normalizedSearch}%`;
+
+      const norm = (col: string) => `LOWER(REGEXP_REPLACE(${col}, '[^a-zA-Z0-9 ]', '', 'g'))`;
 
       const countResult = await client.query(
         hasSearch
-          ? `SELECT COUNT(*) as total FROM baxus.mv_brands_list WHERE LOWER(brand_name) LIKE LOWER($1) OR LOWER(COALESCE(producer,'')) LIKE LOWER($1)`
+          ? `SELECT COUNT(*) as total FROM baxus.mv_brands_list WHERE ${norm('brand_name')} LIKE $1 OR ${norm("COALESCE(producer,'')")} LIKE $1`
           : `SELECT COUNT(*) as total FROM baxus.mv_brands_list`,
         hasSearch ? [searchPattern] : []
       );
@@ -636,7 +639,7 @@ export class DbStorage implements IStorage {
 
       const params: any[] = hasSearch ? [searchPattern, limit, offset] : [limit, offset];
       const whereClause = hasSearch
-        ? `WHERE LOWER(brand_name) LIKE LOWER($1) OR LOWER(COALESCE(producer,'')) LIKE LOWER($1)`
+        ? `WHERE ${norm('brand_name')} LIKE $1 OR ${norm("COALESCE(producer,'')")} LIKE $1`
         : '';
       const limitParam = hasSearch ? '$2' : '$1';
       const offsetParam = hasSearch ? '$3' : '$2';
