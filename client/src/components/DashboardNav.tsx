@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Lightbulb, LightbulbOff, LogOut, User, Crown, AlertCircle, Search, Wallet } from "lucide-react";
+import { Plus, Moon, Sun, LogOut, User, Crown, AlertCircle, Search, Wallet } from "lucide-react";
 import GlencairnLogo from "./GlencairnLogo";
 import {
   DropdownMenu,
@@ -125,7 +125,7 @@ export default function DashboardNav({ onNewAlert, alertCount = 0, search, onSea
             onClick={toggleTheme}
             data-testid="button-toggle-theme"
           >
-            {isDark ? <Lightbulb className="w-5 h-5" /> : <LightbulbOff className="w-5 h-5" />}
+            {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
           </Button>
           
           <DropdownMenu>
