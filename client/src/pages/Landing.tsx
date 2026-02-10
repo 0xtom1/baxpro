@@ -192,7 +192,7 @@ export default function Landing() {
               BaxPro is not affiliated with, endorsed by, or connected to baxus.co
             </p>
 
-            <div className="mt-6 w-screen relative left-1/2 -translate-x-1/2">
+            <div className="mt-6 w-full max-w-[100vw] overflow-hidden">
               <ActivityTicker />
             </div>
           </div>
