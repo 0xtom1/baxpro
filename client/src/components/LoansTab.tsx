@@ -19,8 +19,6 @@ export default function LoansTab({ filterByBrand }: LoansTabProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [fundingLoanId, setFundingLoanId] = useState<string | null>(null);
-  const [cancellingLoanId, setCancellingLoanId] = useState<string | null>(null);
-  const [repayingLoanId, setRepayingLoanId] = useState<string | null>(null);
 
   const { data: loans, isLoading, error, refetch } = useQuery<SerializedLoan[]>({
     queryKey: ['solana-loans'],
@@ -52,17 +50,6 @@ export default function LoansTab({ filterByBrand }: LoansTabProps) {
     enabled: allMints.length > 0,
   });
 
-  const { data: myLoans, refetch: refetchMyLoans } = useQuery<SerializedLoan[]>({
-    queryKey: ['solana-my-loans', user?.phantomWallet],
-    queryFn: async () => {
-      const res = await fetch('/api/loans/my');
-      if (!res.ok) return [];
-      return res.json();
-    },
-    enabled: !!user?.phantomWallet,
-    refetchInterval: 30000,
-  });
-
   const handleFundLoan = async (loan: SerializedLoan) => {
     if (!user?.phantomWallet) {
       toast({ title: "Wallet required", description: "Connect your Phantom wallet to fund loans", variant: "destructive" });
@@ -78,45 +65,11 @@ export default function LoansTab({ filterByBrand }: LoansTabProps) {
       await signAndSendTransaction(transaction);
       toast({ title: "Loan funded", description: `You funded ${formatLamports(loan.loanAmount)} SOL` });
       refetch();
-      refetchMyLoans();
+      queryClient.invalidateQueries({ queryKey: ['solana-my-loans'] });
     } catch (err: any) {
       toast({ title: "Transaction failed", description: err.message || "Failed to fund loan", variant: "destructive" });
     } finally {
       setFundingLoanId(null);
-    }
-  };
-
-  const handleCancelLoan = async (loan: SerializedLoan) => {
-    if (!user?.phantomWallet) return;
-    setCancellingLoanId(loan.publicKey);
-    try {
-      const res = await apiRequest('POST', '/api/loans/build-cancel', { loanId: loan.loanId });
-      const { transaction } = await res.json();
-      await signAndSendTransaction(transaction);
-      toast({ title: "Listing cancelled", description: "Your loan listing has been cancelled and collateral returned" });
-      refetch();
-      refetchMyLoans();
-    } catch (err: any) {
-      toast({ title: "Transaction failed", description: err.message || "Failed to cancel listing", variant: "destructive" });
-    } finally {
-      setCancellingLoanId(null);
-    }
-  };
-
-  const handleRepayLoan = async (loan: SerializedLoan) => {
-    if (!user?.phantomWallet) return;
-    setRepayingLoanId(loan.publicKey);
-    try {
-      const res = await apiRequest('POST', '/api/loans/build-repay', { loanId: loan.loanId });
-      const { transaction } = await res.json();
-      await signAndSendTransaction(transaction);
-      toast({ title: "Loan repaid", description: "Your loan has been repaid and collateral returned" });
-      refetch();
-      refetchMyLoans();
-    } catch (err: any) {
-      toast({ title: "Transaction failed", description: err.message || "Failed to repay loan", variant: "destructive" });
-    } finally {
-      setRepayingLoanId(null);
     }
   };
 
@@ -143,6 +96,12 @@ export default function LoansTab({ filterByBrand }: LoansTabProps) {
     const interest = Math.floor(amount * loan.interestRateBps / 10000);
     return amount + interest;
   };
+
+  const sortedLoans = [...filteredLoans].sort((a, b) => {
+    const timeA = parseInt(a.startTime) || parseInt(a.loanId);
+    const timeB = parseInt(b.startTime) || parseInt(b.loanId);
+    return timeB - timeA;
+  });
 
   const LoanCard = ({ loan }: { loan: SerializedLoan }) => {
     const assets = getCollateralImages(loan.nftMints);
@@ -240,33 +199,14 @@ export default function LoansTab({ filterByBrand }: LoansTabProps) {
             </Button>
           )}
           {listed && isMine && (
-            <Button
-              variant="outline"
-              className="flex-1"
-              onClick={() => handleCancelLoan(loan)}
-              disabled={cancellingLoanId === loan.publicKey}
-              data-testid={`button-cancel-loan-${loan.publicKey}`}
-            >
-              {cancellingLoanId === loan.publicKey ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Cancelling...</>
-              ) : (
-                'Cancel Listing'
-              )}
-            </Button>
+            <p className="text-xs text-muted-foreground text-center w-full py-1">
+              Your listing &middot; Manage in My Loans tab
+            </p>
           )}
-          {active && isMine && (
-            <Button
-              className="flex-1"
-              onClick={() => handleRepayLoan(loan)}
-              disabled={repayingLoanId === loan.publicKey}
-              data-testid={`button-repay-loan-${loan.publicKey}`}
-            >
-              {repayingLoanId === loan.publicKey ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Repaying...</>
-              ) : (
-                `Repay ${formatLamports(totalRepayment)} SOL`
-              )}
-            </Button>
+          {active && (
+            <p className="text-xs text-muted-foreground text-center w-full py-1">
+              Active loan &middot; {isMine ? 'Manage in My Loans tab' : `Funded by ${truncateAddress(loan.lender)}`}
+            </p>
           )}
         </div>
       </Card>
@@ -310,39 +250,21 @@ export default function LoansTab({ filterByBrand }: LoansTabProps) {
     );
   }
 
-  return (
-    <div className="space-y-6">
-      {myLoans && myLoans.length > 0 && !filterByBrand && (
-        <div>
-          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">Your Loans</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {myLoans.map(loan => (
-              <LoanCard key={loan.publicKey} loan={loan} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div>
-        {!filterByBrand && myLoans && myLoans.length > 0 && (
-          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">Marketplace</h3>
-        )}
-        {filteredLoans.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-            <Landmark className="w-12 h-12 mb-4 opacity-30" />
-            <p className="font-medium text-foreground mb-1">No loan listings</p>
-            <p className="text-sm">No bottles are currently listed as collateral for loans</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredLoans
-              .filter(l => !isMyLoan(l))
-              .map(loan => (
-                <LoanCard key={loan.publicKey} loan={loan} />
-              ))}
-          </div>
-        )}
+  if (sortedLoans.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+        <Landmark className="w-12 h-12 mb-4 opacity-30" />
+        <p className="font-medium text-foreground mb-1">No loan listings</p>
+        <p className="text-sm">No bottles are currently listed as collateral for loans</p>
       </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      {sortedLoans.map(loan => (
+        <LoanCard key={loan.publicKey} loan={loan} />
+      ))}
     </div>
   );
 }
