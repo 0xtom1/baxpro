@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Moon, Sun, LogOut, User, Crown, AlertCircle, Search, Wallet } from "lucide-react";
+import { Plus, Moon, Sun, LogOut, User, Crown, AlertCircle, Search } from "lucide-react";
 import GlencairnLogo from "./GlencairnLogo";
 import {
   DropdownMenu,
@@ -96,17 +96,6 @@ export default function DashboardNav({ onNewAlert, alertCount = 0, search, onSea
         )}
         
         <div className="flex items-center gap-3 flex-shrink-0">
-          {(user?.phantomWallet || user?.baxusWallet) && (
-            <Button
-              variant="ghost"
-              onClick={() => setLocation("/my-vault")}
-              data-testid="button-my-vault"
-            >
-              <Wallet className="w-4 h-4 mr-1" />
-              My Vault
-            </Button>
-          )}
-          
           {onNewAlert && (
             <Button 
               onClick={onNewAlert}

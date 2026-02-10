@@ -54,21 +54,20 @@ Baxus API → baxus-monitor → Pub/Sub → alert-processor → Pub/Sub → aler
 
 ### Route Structure
 
-- `/dashboard` - Main landing page after sign-in with tabbed interface (Brands/Activity)
+- `/dashboard` - Main landing page after sign-in with tabbed interface (Brands, Activity, Loans, My Vault, My Loans)
 - `/alerts` - User's alert management page
 - `/brand?name=<brand_name>` - Individual brand detail page
-- `/my-vault` - User's vault page with two tabs: My Bottles and My Loans
 - `/my-vault/:assetId` - Bottle detail page with image, traits, and activity
-- `/my-bottles` - Redirects to `/my-vault` (legacy)
+- `/my-vault` - Redirects to `/dashboard` (legacy)
+- `/my-bottles` - Redirects to `/dashboard` (legacy)
 
 ### Dashboard Page
 
-The Dashboard page (`/dashboard`) is a Blur NFT marketplace-inspired interface with two tabs:
+The Dashboard page (`/dashboard`) is a Blur NFT marketplace-inspired interface with five tabs:
 
 **Brands Tab**:
-- Horizontal scrollable table with sticky first column on mobile
-- Columns: Brand (with image), Producer, Floor Price, 7D Volume, 30D Volume, Owners, Supply, Listed
-- Search filter for brands and producers
+- Card grid display of brands with images and metrics
+- Search filter for brands and producers (300ms debounce, server-side, punctuation-agnostic)
 - Click to navigate to individual brand page
 - Pagination controls
 
@@ -78,14 +77,35 @@ The Dashboard page (`/dashboard`) is a Blur NFT marketplace-inspired interface w
 - Columns: Asset name, Type badge, Producer, Price, External link, Date
 - Delisted items shown with strikethrough styling
 
+**Loans Tab**:
+- Marketplace of listed loans available for funding
+- Fund, cancel, and repay actions
+
+**My Vault Tab** (formerly My Bottles):
+- Card grid display of Baxus bottles owned by the user's wallet
+- Portfolio value summary, bottle count, listed count stats
+- Empty state when no wallet connected or no matching Baxus bottles
+- Click card to view detailed bottle information at `/my-vault/:assetId`
+- "Create Loan" button when wallet and bottles are available
+
+**My Loans Tab** (Phantom wallet users only):
+- Shows all loans created by or funded by the user (all statuses)
+- Role-based actions: borrower can cancel/repay, lender can liquidate expired loans
+- Borrower/Lender badge on active loans, expiry countdown
+- Collateral images from matched Baxus assets
+- Empty state with link to create first loan
+
 **API Endpoints**:
 - `GET /api/brands-list` - Returns brands with producer, asset count, listed count, floor price, volume_7d, volume_30d, distinct_owners_count
 - `GET /api/activity` - Paginated activity feed with optional type filter
 - `GET /api/activity-types` - List of activity type options for filtering
+- `GET /api/my-bottles` - Fetches user's wallet bottles from Helius API and matches to baxus.assets
+- `GET /api/loans/my` - Returns user's loans from Solana devnet
 
 **Design Features**:
-- Desktop: Top tabs, horizontal scroll table
-- Mobile: Bottom tab bar navigation, sticky first column
+- Desktop: Top tabs, horizontal scroll content
+- Mobile: Bottom tab bar navigation
+- My Loans tab hidden for non-Phantom wallet users
 
 ### Brand Page
 
@@ -107,32 +127,16 @@ The Brand page (`/brand?name=<brand_name>`) displays detailed information about 
 - Trait filters normalized from ParsedQs objects to plain strings to prevent SQL injection
 - Mobile-responsive with slide-out filters drawer
 
-### My Vault Page
+### Bottle Detail Page
 
-The My Vault page (`/my-vault`) has two tabs:
-
-**My Bottles Tab**:
-- Card grid display of Baxus bottles owned by the user's wallet
-- Portfolio value summary, bottle count, listed count stats
-- Empty state when no wallet connected or no matching Baxus bottles
-- Click card to view detailed bottle information at `/my-vault/:assetId`
-- "Create Loan" button when wallet and bottles are available
-
-**My Loans Tab**:
-- Shows all loans created by the user (all statuses)
-- Cancel listing and repay loan actions
-- Collateral images from matched Baxus assets
-- Empty state with link to create first loan
+The Bottle Detail page (`/my-vault/:assetId`) displays detailed information about a specific bottle:
 
 **API Endpoints**:
-- `GET /api/my-bottles` - Fetches user's wallet bottles from Helius API and matches to baxus.assets
 - `GET /api/my-bottles/:assetId` - Returns asset details with metadata and activity (ownership verified)
-- `GET /api/loans/my` - Returns user's loans from Solana devnet
 
 **Wallet Resolution**:
 - Uses `phantomWallet` first (for Phantom-authenticated users)
 - Falls back to `baxusWallet` (for Gmail users who added wallet in Account Settings)
-- Navigation button visible when either wallet field is populated
 
 **Security**:
 - All endpoints verify user authentication

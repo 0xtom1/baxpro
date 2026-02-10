@@ -96,10 +96,10 @@ export default function BottleDetail() {
       <DashboardNav />
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Link href="/my-vault">
+        <Link href="/dashboard">
           <Button variant="ghost" size="sm" className="mb-6" data-testid="button-back-to-vault">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to My Vault
+            Back to Dashboard
           </Button>
         </Link>
 
@@ -115,9 +115,9 @@ export default function BottleDetail() {
         ) : error || !asset ? (
           <Card className="p-8 text-center">
             <p className="text-muted-foreground">Failed to load bottle details</p>
-            <Link href="/my-vault">
+            <Link href="/dashboard">
               <Button variant="outline" className="mt-4">
-                Return to My Vault
+                Return to Dashboard
               </Button>
             </Link>
           </Card>

@@ -141,7 +141,7 @@ export default function CreateLoan() {
       toast({ title: "Loan listed", description: `Your loan for ${loanAmount} SOL has been listed on the marketplace` });
       queryClient.invalidateQueries({ queryKey: ['solana-loans'] });
       queryClient.invalidateQueries({ queryKey: ['solana-my-loans'] });
-      setLocation('/my-vault');
+      setLocation('/dashboard');
     } catch (err: any) {
       console.error('Create loan error:', err);
       setStep('confirm');
@@ -163,7 +163,7 @@ export default function CreateLoan() {
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center gap-3 mb-6">
-          <Link href="/my-vault">
+          <Link href="/dashboard">
             <Button variant="ghost" size="icon" data-testid="button-back-vault">
               <ArrowLeft className="w-5 h-5" />
             </Button>
