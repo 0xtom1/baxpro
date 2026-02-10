@@ -1,7 +1,7 @@
 import { PublicKey, Connection, Transaction, SystemProgram } from '@solana/web3.js';
 import { TOKEN_2022_PROGRAM_ID, getAssociatedTokenAddressSync } from '@solana/spl-token';
 import * as anchor from '@coral-xyz/anchor';
-import { IDL } from './idl';
+import { IDL } from '../../integration-sdk/idl';
 
 const PROGRAM_ID = new PublicKey('DR1NKAAitegi5hzbrTbj2bLD7EueL56girTwdGDCDJxW');
 const SOLANA_RPC = 'https://api.devnet.solana.com';
