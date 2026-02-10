@@ -200,7 +200,7 @@ export default function Landing() {
 
         <button
           onClick={scrollToFeatures}
-          className="relative z-10 mx-auto -mt-4 -mb-5 w-10 h-10 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center animate-bounce cursor-pointer"
+          className="relative z-10 mx-auto -mt-14 -mb-5 w-10 h-10 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center animate-bounce cursor-pointer"
           aria-label="Scroll to features"
           data-testid="button-scroll-features"
         >
