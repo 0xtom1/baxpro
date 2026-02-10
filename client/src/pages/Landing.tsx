@@ -191,11 +191,11 @@ export default function Landing() {
             <p className="text-xs text-white/30 mt-6">
               BaxPro is not affiliated with, endorsed by, or connected to baxus.co
             </p>
-          </div>
-        </div>
 
-        <div className="relative z-10 mt-auto mb-14">
-          <ActivityTicker />
+            <div className="mt-6 w-screen relative left-1/2 -translate-x-1/2">
+              <ActivityTicker />
+            </div>
+          </div>
         </div>
 
         <button

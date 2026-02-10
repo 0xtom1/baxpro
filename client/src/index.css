@@ -300,7 +300,7 @@
     100% { transform: translateX(-50%); }
   }
   .animate-ticker {
-    animation: ticker 40s linear infinite;
+    animation: ticker 25s linear infinite;
   }
   .animate-ticker:hover {
     animation-play-state: paused;
