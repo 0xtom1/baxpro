@@ -72,16 +72,16 @@ function ActivityTicker() {
 function FeatureRow() {
   const features = [
     {
-      icon: BarChart3,
-      label: "Track",
-      tagline: "Know your collection's worth",
-      description: "Portfolio value, brand analytics, and real-time market data",
-    },
-    {
       icon: Bell,
-      label: "Trade",
+      label: "Track",
       tagline: "Never miss your perfect pour",
       description: "Custom alerts when bottles matching your criteria hit the market",
+    },
+    {
+      icon: BarChart3,
+      label: "Trade",
+      tagline: "Know your collection's worth",
+      description: "Portfolio value, brand analytics, and real-time market data",
     },
     {
       icon: Landmark,
