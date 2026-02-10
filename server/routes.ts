@@ -1389,6 +1389,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/loans/build-liquidate", async (req, res) => {
+    if (!req.session?.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const user = await storage.getUser(req.session.userId);
+      if (!user?.phantomWallet) return res.status(400).json({ error: "Phantom wallet required" });
+
+      const schema = z.object({ loanId: z.string(), borrower: z.string() });
+      const data = schema.parse(req.body);
+
+      const { buildLiquidateLoanTx } = await import("./sdk/loanService");
+      const tx = await buildLiquidateLoanTx(user.phantomWallet, data.borrower, data.loanId);
+      res.json({ transaction: tx });
+    } catch (error: any) {
+      console.error("Build liquidate loan tx error:", error);
+      res.status(500).json({ error: error.message || "Failed to build transaction" });
+    }
+  });
+
   app.post("/api/loans/build-cancel", async (req, res) => {
     if (!req.session?.userId) return res.status(401).json({ error: "Not authenticated" });
     try {

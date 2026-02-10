@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Landmark, Clock, Percent, Coins, AlertCircle, Loader2, Wallet } from "lucide-react";
+import { Landmark, Clock, Percent, Coins, AlertCircle, Loader2, Wallet, Gavel } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { formatLamports, formatDuration, formatBps, signAndSendTransaction, isLoanStatus, getLoanStatusLabel } from "@/hooks/use-lending";
@@ -12,11 +12,36 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Link } from "wouter";
 
+function isLoanExpired(loan: SerializedLoan): boolean {
+  const startTime = parseInt(loan.startTime);
+  const duration = parseInt(loan.durationSeconds);
+  if (startTime === 0 || duration === 0) return false;
+  const expiryTime = (startTime + duration) * 1000;
+  return Date.now() > expiryTime;
+}
+
+function getTimeRemaining(loan: SerializedLoan): string {
+  const startTime = parseInt(loan.startTime);
+  const duration = parseInt(loan.durationSeconds);
+  if (startTime === 0 || duration === 0) return "";
+  const expiryMs = (startTime + duration) * 1000;
+  const remaining = expiryMs - Date.now();
+  if (remaining <= 0) return "Expired";
+  const hours = Math.floor(remaining / (1000 * 60 * 60));
+  const mins = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+  if (hours > 24) {
+    const days = Math.floor(hours / 24);
+    return `${days}d ${hours % 24}h left`;
+  }
+  return hours > 0 ? `${hours}h ${mins}m left` : `${mins}m left`;
+}
+
 export default function MyLoansTab() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [cancellingLoanId, setCancellingLoanId] = useState<string | null>(null);
   const [repayingLoanId, setRepayingLoanId] = useState<string | null>(null);
+  const [liquidatingLoanId, setLiquidatingLoanId] = useState<string | null>(null);
 
   const { data: myLoans, isLoading, error, refetch } = useQuery<SerializedLoan[]>({
     queryKey: ['solana-my-loans', user?.phantomWallet],
@@ -76,6 +101,23 @@ export default function MyLoansTab() {
       toast({ title: "Transaction failed", description: err.message || "Failed to repay loan", variant: "destructive" });
     } finally {
       setRepayingLoanId(null);
+    }
+  };
+
+  const handleLiquidateLoan = async (loan: SerializedLoan) => {
+    if (!user?.phantomWallet) return;
+    setLiquidatingLoanId(loan.publicKey);
+    try {
+      const res = await apiRequest('POST', '/api/loans/build-liquidate', { loanId: loan.loanId, borrower: loan.borrower });
+      const { transaction } = await res.json();
+      await signAndSendTransaction(transaction);
+      toast({ title: "Loan liquidated", description: "The collateral has been transferred to your wallet" });
+      refetch();
+      queryClient.invalidateQueries({ queryKey: ['solana-loans'] });
+    } catch (err: any) {
+      toast({ title: "Transaction failed", description: err.message || "Failed to liquidate loan", variant: "destructive" });
+    } finally {
+      setLiquidatingLoanId(null);
     }
   };
 
@@ -168,6 +210,8 @@ export default function MyLoansTab() {
     );
   }
 
+  const wallet = user.phantomWallet;
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {myLoans.map((loan) => {
@@ -175,6 +219,10 @@ export default function MyLoansTab() {
         const listed = isLoanStatus(loan.status, 'listed');
         const active = isLoanStatus(loan.status, 'active');
         const totalRepayment = computeRepayment(loan);
+        const isBorrower = loan.borrower === wallet;
+        const isLender = loan.lender === wallet;
+        const expired = isLoanExpired(loan);
+        const timeLeft = active ? getTimeRemaining(loan) : '';
 
         return (
           <Card
@@ -214,9 +262,16 @@ export default function MyLoansTab() {
                   )}
                 </div>
               </div>
-              <Badge variant={getStatusVariant(loan.status)}>
-                {getLoanStatusLabel(loan.status)}
-              </Badge>
+              <div className="flex flex-col items-end gap-1">
+                <Badge variant={getStatusVariant(loan.status)}>
+                  {getLoanStatusLabel(loan.status)}
+                </Badge>
+                {active && (
+                  <Badge variant="secondary" className="text-[10px]">
+                    {isBorrower ? "Borrower" : "Lender"}
+                  </Badge>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
@@ -234,9 +289,11 @@ export default function MyLoansTab() {
 
               <div className="flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                <span className="text-muted-foreground">Duration</span>
+                <span className="text-muted-foreground">{active ? "Time Left" : "Duration"}</span>
               </div>
-              <span className="text-right font-medium tabular-nums">{formatDuration(loan.durationSeconds)}</span>
+              <span className={`text-right font-medium tabular-nums ${active && expired ? 'text-destructive' : ''}`}>
+                {active ? timeLeft : formatDuration(loan.durationSeconds)}
+              </span>
 
               <div className="flex items-center gap-1.5">
                 <Landmark className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
@@ -246,7 +303,7 @@ export default function MyLoansTab() {
             </div>
 
             <div className="flex gap-2 mt-1">
-              {listed && (
+              {listed && isBorrower && (
                 <Button
                   variant="outline"
                   className="flex-1"
@@ -261,7 +318,7 @@ export default function MyLoansTab() {
                   )}
                 </Button>
               )}
-              {active && (
+              {active && isBorrower && !expired && (
                 <Button
                   className="flex-1"
                   onClick={() => handleRepayLoan(loan)}
@@ -274,6 +331,31 @@ export default function MyLoansTab() {
                     `Repay ${formatLamports(totalRepayment)} SOL`
                   )}
                 </Button>
+              )}
+              {active && isLender && expired && (
+                <Button
+                  variant="destructive"
+                  className="flex-1"
+                  onClick={() => handleLiquidateLoan(loan)}
+                  disabled={liquidatingLoanId === loan.publicKey}
+                  data-testid={`button-liquidate-my-loan-${loan.publicKey}`}
+                >
+                  {liquidatingLoanId === loan.publicKey ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Liquidating...</>
+                  ) : (
+                    <><Gavel className="w-4 h-4 mr-2" />Liquidate Collateral</>
+                  )}
+                </Button>
+              )}
+              {active && isLender && !expired && (
+                <p className="text-xs text-muted-foreground text-center w-full py-1">
+                  Awaiting borrower repayment &middot; {timeLeft}
+                </p>
+              )}
+              {active && isBorrower && expired && (
+                <p className="text-xs text-destructive text-center w-full py-1">
+                  Loan expired &middot; Collateral may be liquidated by lender
+                </p>
               )}
             </div>
           </Card>

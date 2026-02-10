@@ -269,6 +269,54 @@ export async function buildRepayLoanTx(
   return Buffer.from(serialized).toString('base64');
 }
 
+export async function buildLiquidateLoanTx(
+  lenderAddress: string,
+  borrowerAddress: string,
+  loanIdStr: string
+): Promise<string> {
+  const connection = getConnection();
+  const program = getProgram(connection);
+  const lender = new PublicKey(lenderAddress);
+  const borrower = new PublicKey(borrowerAddress);
+  const loanId = new BN(loanIdStr);
+
+  const [lendingPool] = getLendingPoolPDA();
+  const [loan] = getLoanPDA(borrower, loanId);
+
+  const loanAccount = await (program.account as any).loan.fetch(loan);
+
+  const remainingAccounts: anchor.web3.AccountMeta[] = [];
+  for (let i = 0; i < loanAccount.collateralCount; i++) {
+    const mint = loanAccount.nftMints[i];
+    const escrow = loanAccount.nftEscrows[i];
+    const recipient = getAssociatedTokenAddressSync(mint, lender, false, TOKEN_2022_PROGRAM_ID);
+    remainingAccounts.push(
+      { pubkey: mint, isSigner: false, isWritable: false },
+      { pubkey: escrow, isSigner: false, isWritable: true },
+      { pubkey: recipient, isSigner: false, isWritable: true },
+    );
+  }
+
+  const ix = await program.methods
+    .liquidateLoan()
+    .accountsStrict({
+      lendingPool,
+      loan,
+      lender,
+      tokenProgram: TOKEN_2022_PROGRAM_ID,
+      systemProgram: SystemProgram.programId,
+    })
+    .remainingAccounts(remainingAccounts)
+    .instruction();
+
+  const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+  const tx = new Transaction({ blockhash, lastValidBlockHeight, feePayer: lender });
+  tx.add(ix);
+
+  const serialized = tx.serialize({ requireAllSignatures: false, verifySignatures: false });
+  return Buffer.from(serialized).toString('base64');
+}
+
 export async function buildCancelLoanTx(
   borrowerAddress: string,
   loanIdStr: string
