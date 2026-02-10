@@ -2,7 +2,9 @@
 
 ## Overview
 
-BaxPro is a product availability alert platform for Baxus.co. Users create custom alerts with search criteria (name matches, price limits, age/year filters) and receive email notifications when matching products become available.
+BaxPro is a spirits collection platform for Baxus.co collectors. Core features: real-time marketplace data and brand analytics (Track), custom alerts for new listings (Trade), and on-chain bottle-backed lending via Solana (Borrow).
+
+Tagline: "Track, Trade & Borrow Your Spirits Collection"
 
 The system consists of a main TypeScript/React web application and Python microservices that poll the Baxus API, match listings to alerts, and send notifications.
 
