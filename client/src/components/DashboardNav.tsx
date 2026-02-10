@@ -103,7 +103,7 @@ export default function DashboardNav({ onNewAlert, alertCount = 0, search, onSea
               data-testid="button-my-vault"
             >
               <Wallet className="w-4 h-4 mr-1" />
-              <span className="hidden sm:inline">My Vault</span>
+              My Vault
             </Button>
           )}
           
@@ -118,15 +118,6 @@ export default function DashboardNav({ onNewAlert, alertCount = 0, search, onSea
               New Alert
             </Button>
           )}
-          
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={toggleTheme}
-            data-testid="button-toggle-theme"
-          >
-            {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </Button>
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -176,6 +167,11 @@ export default function DashboardNav({ onNewAlert, alertCount = 0, search, onSea
                 <User className="w-4 h-4 mr-2" />
                 Account Settings
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={toggleTheme} data-testid="button-toggle-theme">
+                {isDark ? <Sun className="w-4 h-4 mr-2" /> : <Moon className="w-4 h-4 mr-2" />}
+                {isDark ? "Light Mode" : "Dark Mode"}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout} data-testid="button-logout">
                 <LogOut className="w-4 h-4 mr-2" />
                 Logout
