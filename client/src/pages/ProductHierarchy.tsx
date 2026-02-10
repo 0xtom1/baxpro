@@ -11,6 +11,7 @@ import { ChevronLeft, Crown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 interface Producer {
   producerIdx: number;
@@ -41,6 +42,7 @@ interface HierarchyRow {
 export default function ProductHierarchy() {
   const [, setLocation] = useLocation();
   const { user, loading: authLoading } = useRequireVip();
+  usePageTitle("Product Hierarchy");
   const [selectedProducerIdx, setSelectedProducerIdx] = useState<string>("");
   const [selectedBrandIdx, setSelectedBrandIdx] = useState<string>("");
   const [selectedSubBrandIdx, setSelectedSubBrandIdx] = useState<string>("");

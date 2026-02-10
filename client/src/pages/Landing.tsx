@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { BarChart3, Bell, Landmark, ArrowRight, ChevronDown } from "lucide-react";
 import GlencairnLogo from "@/components/GlencairnLogo";
 import heroImage from "@assets/stock_images/bourbon_whiskey_barr_576f6f69.jpg";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 interface ActivityItem {
   assetName: string;
@@ -114,6 +115,7 @@ function FeatureRow() {
 }
 
 export default function Landing() {
+  usePageTitle();
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {

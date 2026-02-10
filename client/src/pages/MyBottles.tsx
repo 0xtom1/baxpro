@@ -7,6 +7,7 @@ import { Package, Wallet, ExternalLink, Landmark } from "lucide-react";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import DashboardNav from "@/components/DashboardNav";
 import GlencairnLogo from "@/components/GlencairnLogo";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 interface BottleAsset {
   assetIdx: number;
@@ -30,6 +31,7 @@ interface MyBottlesResponse {
 
 export default function MyBottles() {
   const { user, loading: authLoading } = useRequireAuth();
+  usePageTitle("My Bottles");
   const [, setLocation] = useLocation();
 
   const { data, isLoading, error } = useQuery<MyBottlesResponse>({

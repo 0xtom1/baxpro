@@ -9,6 +9,7 @@ import { useRequireAuth } from "@/hooks/use-require-auth";
 import DashboardNav from "@/components/DashboardNav";
 import GlencairnLogo from "@/components/GlencairnLogo";
 import type { ActivityFeedWithDetails } from "@shared/schema";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 interface BottleAsset {
   assetIdx: number;
@@ -66,6 +67,7 @@ function formatDateTime(date: string | Date | null) {
 export default function BottleDetail() {
   const { assetId } = useParams<{ assetId: string }>();
   const { user, loading: authLoading } = useRequireAuth();
+  usePageTitle("Bottle Detail");
 
   const { data, isLoading, error } = useQuery<BottleDetailResponse>({
     queryKey: ["/api/my-bottles", assetId],

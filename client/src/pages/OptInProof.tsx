@@ -8,8 +8,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Phone } from "lucide-react";
 import GlencairnLogo from "@/components/GlencairnLogo";
 import notificationSettingsImage from "@assets/notificationsettings_1764650196345.png";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 export default function OptInProof() {
+  usePageTitle("Opt-In Proof");
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);

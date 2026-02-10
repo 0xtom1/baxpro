@@ -13,6 +13,7 @@ import DashboardNav from "@/components/DashboardNav";
 import GlencairnLogo from "@/components/GlencairnLogo";
 import LoansTab from "@/components/LoansTab";
 import type { ActivityFeedWithDetails } from "@shared/schema";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 type BrandListItem = {
   brandName: string;
@@ -53,6 +54,7 @@ const ITEMS_PER_PAGE = 30;
 
 export default function Dashboard() {
   const { user, loading: authLoading } = useRequireAuth();
+  usePageTitle("Dashboard");
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);

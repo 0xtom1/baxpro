@@ -22,10 +22,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ArrowLeft, User, Wallet, Trash2, Bell, Mail, AlertCircle, Check } from "lucide-react";
 import GlencairnLogo from "@/components/GlencairnLogo";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 export default function AccountSettings() {
   const [, setLocation] = useLocation();
   const { user, loading: authLoading } = useRequireAuth();
+  usePageTitle("Account Settings");
   const { refreshUser } = useAuth();
   const { toast } = useToast();
   

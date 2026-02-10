@@ -10,11 +10,13 @@ import { useToast } from "@/hooks/use-toast";
 import GlencairnLogo from "@/components/GlencairnLogo";
 import PhantomLogo from "@/components/PhantomLogo";
 import { usePhantomSafe } from "@/hooks/use-phantom-safe";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 const isDev = import.meta.env.DEV;
 const phantomEnabled = !!import.meta.env.VITE_PHANTOM_APP_ID;
 
 export default function Login() {
+  usePageTitle("Sign In");
   const [, setLocation] = useLocation();
   const search = useSearch();
   const { user, loading, loginWithGoogle, loginWithPhantomSDK, refreshUser } = useAuth();

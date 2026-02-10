@@ -8,9 +8,11 @@ import AlertCard from "@/components/AlertCard";
 import AlertModal from "@/components/AlertModal";
 import EmptyState from "@/components/EmptyState";
 import { formatDistanceToNow } from "date-fns";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 export default function Dashboard() {
   const { user, loading: authLoading } = useRequireAuth();
+  usePageTitle("Alerts");
   const { toast } = useToast();
   
   const [modalOpen, setModalOpen] = useState(false);

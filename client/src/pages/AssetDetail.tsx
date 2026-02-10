@@ -8,12 +8,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Package, User, DollarSign, Calendar, Clock, ExternalLink } from "lucide-react";
 import GlencairnLogo from "@/components/GlencairnLogo";
 import type { Asset } from "@shared/schema";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 export default function AssetDetail() {
   const [, setLocation] = useLocation();
   const [, params] = useRoute("/b/:assetId");
   const assetId = params?.assetId;
   const { user, loading: authLoading } = useRequireAuth();
+  usePageTitle("Asset Detail");
 
   const { data: asset, isLoading, error } = useQuery<Asset>({
     queryKey: ['/api/assets', assetId],

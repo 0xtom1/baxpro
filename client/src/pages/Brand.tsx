@@ -27,6 +27,7 @@ import DashboardNav from "@/components/DashboardNav";
 import LoansTab from "@/components/LoansTab";
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import type { ActivityFeedWithDetails } from "@shared/schema";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 interface BrandAsset {
   assetIdx: number;
@@ -77,6 +78,7 @@ export default function Brand() {
   const brandName = params.get("name") || "";
   
   const { user, loading: authLoading } = useRequireAuth();
+  usePageTitle("Brand");
   const [activeTab, setActiveTab] = useState<TabType>("items");
   const [selectedTraits, setSelectedTraits] = useState<Record<string, string[]>>({});
   const [openTraits, setOpenTraits] = useState<Record<string, boolean>>({});

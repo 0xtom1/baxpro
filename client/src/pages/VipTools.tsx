@@ -7,10 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Crown, RefreshCw, Layers, ExternalLink, Github } from "lucide-react";
 import GlencairnLogo from "@/components/GlencairnLogo";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 export default function VipTools() {
   const [, setLocation] = useLocation();
   const { user, loading: authLoading } = useRequireVip();
+  usePageTitle("VIP Tools");
   const { toast } = useToast();
   
   const [refreshingMatches, setRefreshingMatches] = useState(false);

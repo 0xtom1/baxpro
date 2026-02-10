@@ -14,6 +14,7 @@ import { formatLamports, signAndSendTransaction, MAX_COLLATERAL } from "@/hooks/
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import DashboardNav from "@/components/DashboardNav";
 import GlencairnLogo from "@/components/GlencairnLogo";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 interface BottleAsset {
   assetIdx: number;
@@ -45,6 +46,7 @@ function formatUsd(value: number): string {
 
 export default function CreateLoan() {
   const { user, loading: authLoading } = useRequireAuth();
+  usePageTitle("Create Loan");
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 

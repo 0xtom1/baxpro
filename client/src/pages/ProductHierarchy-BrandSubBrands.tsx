@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 interface Brand {
   brandIdx: number;
@@ -41,6 +42,7 @@ export default function BrandSubBrands() {
   const { brandIdx } = useParams<{ brandIdx: string }>();
   const [, setLocation] = useLocation();
   const { user, loading: authLoading } = useRequireVip();
+  usePageTitle("Brand Sub-Brands");
   const { toast } = useToast();
   
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);

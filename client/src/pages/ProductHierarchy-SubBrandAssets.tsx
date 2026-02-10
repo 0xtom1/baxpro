@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 interface SubBrand {
   subBrandIdx: number;
@@ -34,6 +35,7 @@ export default function SubBrandAssets() {
   const { subBrandIdx } = useParams<{ subBrandIdx: string }>();
   const [, setLocation] = useLocation();
   const { user, loading: authLoading } = useRequireVip();
+  usePageTitle("Sub-Brand Assets");
 
   const { data, isLoading, error } = useQuery<SubBrandAssetsData>({
     queryKey: ["/api/sub-brand-assets", subBrandIdx],
