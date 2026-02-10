@@ -49,6 +49,12 @@ export function isLoanStatus(status: string, expected: string): boolean {
   return status.toLowerCase() === expected.toLowerCase();
 }
 
+let _phantomSdkSolana: any = null;
+
+export function setPhantomSdkSolana(solana: any) {
+  _phantomSdkSolana = solana;
+}
+
 function getPhantomProvider(): any | null {
   const phantom = (window as any).phantom?.solana;
   if (phantom?.isPhantom) return phantom;
@@ -56,13 +62,23 @@ function getPhantomProvider(): any | null {
 }
 
 export async function signAndSendTransaction(serializedTxBase64: string): Promise<string> {
-  const phantom = getPhantomProvider();
-  if (!phantom) throw new Error('Phantom wallet not found');
-
-  const { Transaction } = await import('@solana/web3.js');
+  const { Transaction, VersionedTransaction } = await import('@solana/web3.js');
   const txBytes = Uint8Array.from(atob(serializedTxBase64), c => c.charCodeAt(0));
-  const transaction = Transaction.from(txBytes);
 
+  if (_phantomSdkSolana?.signAndSendTransaction) {
+    try {
+      const transaction = Transaction.from(txBytes);
+      const result = await _phantomSdkSolana.signAndSendTransaction(transaction);
+      return result.signature || result.hash || '';
+    } catch (sdkErr: any) {
+      console.warn('Phantom SDK signAndSendTransaction failed, trying extension provider:', sdkErr.message);
+    }
+  }
+
+  const phantom = getPhantomProvider();
+  if (!phantom) throw new Error('Phantom wallet not found. Please ensure Phantom is connected.');
+
+  const transaction = Transaction.from(txBytes);
   const { signature } = await phantom.signAndSendTransaction(transaction);
   return signature;
 }

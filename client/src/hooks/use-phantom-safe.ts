@@ -12,7 +12,6 @@ export function usePhantomSafe() {
     };
   }
   
-  // These hooks are only called when phantomEnabled is true
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const { isConnected, user } = usePhantom();
   // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -20,7 +19,6 @@ export function usePhantomSafe() {
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const { solana } = useSolana();
   
-  // Wrapper for signMessage that takes Uint8Array and returns signature
   const signMessage = async (message: Uint8Array): Promise<{ signature: Uint8Array }> => {
     const result = await solana.signMessage(message);
     return { signature: result.signature };

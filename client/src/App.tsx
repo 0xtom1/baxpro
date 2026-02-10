@@ -5,8 +5,9 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "./lib/auth";
-import { PhantomProvider, darkTheme } from "@phantom/react-sdk";
+import { PhantomProvider, darkTheme, useSolana } from "@phantom/react-sdk";
 import { AddressType } from "@phantom/browser-sdk";
+import { setPhantomSdkSolana } from "@/hooks/use-lending";
 
 function ThemeInitializer() {
   useEffect(() => {
@@ -14,6 +15,17 @@ function ThemeInitializer() {
     const isDark = saved ? saved === 'dark' : true;
     document.documentElement.classList.toggle('dark', isDark);
   }, []);
+  return null;
+}
+
+function PhantomSolanaSync() {
+  const { solana } = useSolana();
+  useEffect(() => {
+    if (solana) {
+      setPhantomSdkSolana(solana);
+    }
+    return () => setPhantomSdkSolana(null);
+  }, [solana]);
   return null;
 }
 import Landing from "@/pages/Landing";
@@ -104,6 +116,7 @@ function App() {
       theme={darkTheme}
       appName="BaxPro"
     >
+      <PhantomSolanaSync />
       <AppContent />
     </PhantomProvider>
   );
