@@ -57,8 +57,9 @@ Baxus API → baxus-monitor → Pub/Sub → alert-processor → Pub/Sub → aler
 - `/dashboard` - Main landing page after sign-in with tabbed interface (Brands/Activity)
 - `/alerts` - User's alert management page
 - `/brand?name=<brand_name>` - Individual brand detail page
-- `/my-bottles` - User's wallet bottles matched to Baxus assets
-- `/my-bottles/:assetId` - Bottle detail page with image, traits, and activity
+- `/my-vault` - User's vault page with two tabs: My Bottles and My Loans
+- `/my-vault/:assetId` - Bottle detail page with image, traits, and activity
+- `/my-bottles` - Redirects to `/my-vault` (legacy)
 
 ### Dashboard Page
 
@@ -106,27 +107,35 @@ The Brand page (`/brand?name=<brand_name>`) displays detailed information about 
 - Trait filters normalized from ParsedQs objects to plain strings to prevent SQL injection
 - Mobile-responsive with slide-out filters drawer
 
-### My Bottles Page
+### My Vault Page
 
-The My Bottles page (`/my-bottles`) displays Baxus bottles owned by the user's wallet:
+The My Vault page (`/my-vault`) has two tabs:
+
+**My Bottles Tab**:
+- Card grid display of Baxus bottles owned by the user's wallet
+- Portfolio value summary, bottle count, listed count stats
+- Empty state when no wallet connected or no matching Baxus bottles
+- Click card to view detailed bottle information at `/my-vault/:assetId`
+- "Create Loan" button when wallet and bottles are available
+
+**My Loans Tab**:
+- Shows all loans created by the user (all statuses)
+- Cancel listing and repay loan actions
+- Collateral images from matched Baxus assets
+- Empty state with link to create first loan
 
 **API Endpoints**:
 - `GET /api/my-bottles` - Fetches user's wallet bottles from Helius API and matches to baxus.assets
 - `GET /api/my-bottles/:assetId` - Returns asset details with metadata and activity (ownership verified)
+- `GET /api/loans/my` - Returns user's loans from Solana devnet
 
 **Wallet Resolution**:
 - Uses `phantomWallet` first (for Phantom-authenticated users)
 - Falls back to `baxusWallet` (for Gmail users who added wallet in Account Settings)
 - Navigation button visible when either wallet field is populated
 
-**Features**:
-- Card grid display of matched bottles with images, prices, and age
-- Empty state when no wallet connected or no matching Baxus bottles
-- Click card to view detailed bottle information
-- Activity history for each bottle
-
 **Security**:
-- Both endpoints verify user authentication
+- All endpoints verify user authentication
 - Detail endpoint verifies the asset is in the user's wallet before returning data
 
 **Dependencies**:

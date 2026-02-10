@@ -34,7 +34,7 @@ import BrandSubBrands from "@/pages/ProductHierarchy-BrandSubBrands";
 import SubBrandAssets from "@/pages/ProductHierarchy-SubBrandAssets";
 import Unsubscribe from "@/pages/Unsubscribe";
 import Brand from "@/pages/Brand";
-import MyBottles from "@/pages/MyBottles";
+import MyVault from "@/pages/MyVault";
 import BottleDetail from "@/pages/BottleDetail";
 import CreateLoan from "@/pages/CreateLoan";
 import NotFound from "@/pages/not-found";
@@ -61,7 +61,9 @@ function Router() {
       <Route path="/product-hierarchy-editor/sub-brand/:subBrandIdx/assets" component={SubBrandAssets} />
       <Route path="/unsubscribe" component={Unsubscribe} />
       <Route path="/brand" component={Brand} />
-      <Route path="/my-bottles" component={MyBottles} />
+      <Route path="/my-vault" component={MyVault} />
+      <Route path="/my-vault/:assetId" component={BottleDetail} />
+      <Route path="/my-bottles">{() => <Redirect to="/my-vault" />}</Route>
       <Route path="/my-bottles/:assetId" component={BottleDetail} />
       <Route path="/create-loan" component={CreateLoan} />
       <Route component={NotFound} />

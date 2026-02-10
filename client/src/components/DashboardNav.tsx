@@ -99,11 +99,11 @@ export default function DashboardNav({ onNewAlert, alertCount = 0, search, onSea
           {(user?.phantomWallet || user?.baxusWallet) && (
             <Button
               variant="ghost"
-              onClick={() => setLocation("/my-bottles")}
-              data-testid="button-my-bottles"
+              onClick={() => setLocation("/my-vault")}
+              data-testid="button-my-vault"
             >
               <Wallet className="w-4 h-4 mr-1" />
-              <span className="hidden sm:inline">My Bottles</span>
+              <span className="hidden sm:inline">My Vault</span>
             </Button>
           )}
           
