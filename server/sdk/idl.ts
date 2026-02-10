@@ -4,6 +4,7 @@ export type NftLending = {
   instructions: [
     {
       name: "initializeLendingPool";
+      discriminator: [236, 76, 136, 68, 196, 14, 9, 177];
       accounts: [
         { name: "lendingPool"; isMut: true; isSigner: false },
         { name: "authority"; isMut: true; isSigner: true },
@@ -16,6 +17,7 @@ export type NftLending = {
     },
     {
       name: "createLoan";
+      discriminator: [166, 131, 118, 219, 138, 218, 206, 140];
       accounts: [
         { name: "loan"; isMut: true; isSigner: false },
         { name: "borrower"; isMut: true; isSigner: true },
@@ -30,6 +32,7 @@ export type NftLending = {
     },
     {
       name: "addCollateral";
+      discriminator: [127, 82, 121, 42, 161, 176, 249, 206];
       accounts: [
         { name: "loan"; isMut: true; isSigner: false },
         { name: "nftMint"; isMut: false; isSigner: false },
@@ -43,6 +46,7 @@ export type NftLending = {
     },
     {
       name: "activateListing";
+      discriminator: [186, 120, 180, 124, 2, 197, 186, 231];
       accounts: [
         { name: "lendingPool"; isMut: true; isSigner: false },
         { name: "loan"; isMut: true; isSigner: false },
@@ -52,6 +56,7 @@ export type NftLending = {
     },
     {
       name: "fundLoan";
+      discriminator: [50, 221, 51, 13, 3, 142, 116, 215];
       accounts: [
         { name: "lendingPool"; isMut: true; isSigner: false },
         { name: "loan"; isMut: true; isSigner: false },
@@ -63,6 +68,7 @@ export type NftLending = {
     },
     {
       name: "repayLoan";
+      discriminator: [224, 93, 144, 77, 61, 17, 137, 54];
       accounts: [
         { name: "lendingPool"; isMut: true; isSigner: false },
         { name: "loan"; isMut: true; isSigner: false },
@@ -76,6 +82,7 @@ export type NftLending = {
     },
     {
       name: "liquidateLoan";
+      discriminator: [111, 249, 185, 54, 161, 147, 178, 24];
       accounts: [
         { name: "lendingPool"; isMut: true; isSigner: false },
         { name: "loan"; isMut: true; isSigner: false },
@@ -87,6 +94,7 @@ export type NftLending = {
     },
     {
       name: "cancelListing";
+      discriminator: [41, 183, 50, 232, 230, 233, 157, 70];
       accounts: [
         { name: "loan"; isMut: true; isSigner: false },
         { name: "borrower"; isMut: true; isSigner: true },
@@ -97,6 +105,10 @@ export type NftLending = {
     }
   ];
   accounts: [
+    { name: "lendingPool"; discriminator: [208, 40, 242, 82, 186, 18, 75, 36] },
+    { name: "loan"; discriminator: [20, 195, 70, 117, 165, 227, 182, 1] }
+  ];
+  types: [
     {
       name: "lendingPool";
       type: {
@@ -129,13 +141,11 @@ export type NftLending = {
           { name: "interestRateBps"; type: "u16" },
           { name: "durationSeconds"; type: "i64" },
           { name: "startTime"; type: "i64" },
-          { name: "status"; type: { defined: "LoanStatus" } },
+          { name: "status"; type: { defined: { name: "LoanStatus" } } },
           { name: "bump"; type: "u8" }
         ];
       };
-    }
-  ];
-  types: [
+    },
     {
       name: "LoanStatus";
       type: {
@@ -176,6 +186,7 @@ export const IDL: NftLending = {
   instructions: [
     {
       name: "initializeLendingPool",
+      discriminator: [236, 76, 136, 68, 196, 14, 9, 177],
       accounts: [
         { name: "lendingPool", isMut: true, isSigner: false },
         { name: "authority", isMut: true, isSigner: true },
@@ -188,6 +199,7 @@ export const IDL: NftLending = {
     },
     {
       name: "createLoan",
+      discriminator: [166, 131, 118, 219, 138, 218, 206, 140],
       accounts: [
         { name: "loan", isMut: true, isSigner: false },
         { name: "borrower", isMut: true, isSigner: true },
@@ -202,6 +214,7 @@ export const IDL: NftLending = {
     },
     {
       name: "addCollateral",
+      discriminator: [127, 82, 121, 42, 161, 176, 249, 206],
       accounts: [
         { name: "loan", isMut: true, isSigner: false },
         { name: "nftMint", isMut: false, isSigner: false },
@@ -215,6 +228,7 @@ export const IDL: NftLending = {
     },
     {
       name: "activateListing",
+      discriminator: [186, 120, 180, 124, 2, 197, 186, 231],
       accounts: [
         { name: "lendingPool", isMut: true, isSigner: false },
         { name: "loan", isMut: true, isSigner: false },
@@ -224,6 +238,7 @@ export const IDL: NftLending = {
     },
     {
       name: "fundLoan",
+      discriminator: [50, 221, 51, 13, 3, 142, 116, 215],
       accounts: [
         { name: "lendingPool", isMut: true, isSigner: false },
         { name: "loan", isMut: true, isSigner: false },
@@ -235,6 +250,7 @@ export const IDL: NftLending = {
     },
     {
       name: "repayLoan",
+      discriminator: [224, 93, 144, 77, 61, 17, 137, 54],
       accounts: [
         { name: "lendingPool", isMut: true, isSigner: false },
         { name: "loan", isMut: true, isSigner: false },
@@ -248,6 +264,7 @@ export const IDL: NftLending = {
     },
     {
       name: "liquidateLoan",
+      discriminator: [111, 249, 185, 54, 161, 147, 178, 24],
       accounts: [
         { name: "lendingPool", isMut: true, isSigner: false },
         { name: "loan", isMut: true, isSigner: false },
@@ -259,6 +276,7 @@ export const IDL: NftLending = {
     },
     {
       name: "cancelListing",
+      discriminator: [41, 183, 50, 232, 230, 233, 157, 70],
       accounts: [
         { name: "loan", isMut: true, isSigner: false },
         { name: "borrower", isMut: true, isSigner: true },
@@ -269,6 +287,10 @@ export const IDL: NftLending = {
     }
   ],
   accounts: [
+    { name: "lendingPool", discriminator: [208, 40, 242, 82, 186, 18, 75, 36] },
+    { name: "loan", discriminator: [20, 195, 70, 117, 165, 227, 182, 1] }
+  ],
+  types: [
     {
       name: "lendingPool",
       type: {
@@ -301,13 +323,11 @@ export const IDL: NftLending = {
           { name: "interestRateBps", type: "u16" },
           { name: "durationSeconds", type: "i64" },
           { name: "startTime", type: "i64" },
-          { name: "status", type: { defined: "LoanStatus" } },
+          { name: "status", type: { defined: { name: "LoanStatus" } } },
           { name: "bump", type: "u8" }
         ]
       }
-    }
-  ],
-  types: [
+    },
     {
       name: "LoanStatus",
       type: {
