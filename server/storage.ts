@@ -673,7 +673,7 @@ export class DbStorage implements IStorage {
           v.asset_idx, v.asset_id, v.name, v.brand_name,
           v.is_listed, v.listed_date, v.price, v.age, v.bottled_year,
           v.market_price, v.producer,
-          a.asset_json -> 'bottle_release' ->> 'image_url' as image_url,
+          v.image_url,
           a.metadata_json
         FROM baxus.v_asset_summary v
         JOIN baxus.assets a ON v.asset_idx = a.asset_idx

@@ -92,6 +92,13 @@
       "when": 1738600800000,
       "tag": "0012_add_is_dummy",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1739181600000,
+      "tag": "0013_image_url_fallback",
+      "breakpoints": true
     }
   ]
 }
