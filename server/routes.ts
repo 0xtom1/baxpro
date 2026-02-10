@@ -799,6 +799,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/public/activity", apiLimiter, async (req, res) => {
+    try {
+      const activities = await storage.getActivityFeed(15, 0);
+      res.json(activities.map(a => ({
+        assetName: a.assetName,
+        activityTypeName: a.activityTypeName,
+        activityTypeCode: a.activityTypeCode,
+        price: a.price,
+        producer: a.producer,
+        activityDate: a.activityDate,
+      })));
+    } catch (error) {
+      console.error("Public activity error:", error);
+      res.json([]);
+    }
+  });
+
   // Asset details by index route (requires authentication) - must come before :assetId route
   app.get("/api/assets/idx/:assetIdx", requireAuth, apiLimiter, async (req, res) => {
     try {
