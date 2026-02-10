@@ -3,10 +3,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Landmark, Clock, Percent, Coins, AlertCircle, Loader2, Wallet, Gavel } from "lucide-react";
-import { useState } from "react";
+import { Landmark, Clock, Percent, Coins, User, AlertCircle, Loader2, Wallet, Gavel } from "lucide-react";
+import { useState, useCallback } from "react";
 import { useAuth } from "@/lib/auth";
-import { formatLamports, formatDuration, formatBps, signAndSendTransaction, isLoanStatus, getLoanStatusLabel } from "@/hooks/use-lending";
+import { formatLamports, formatDuration, formatBps, truncateAddress, signAndSendTransaction, isLoanStatus, getLoanStatusLabel } from "@/hooks/use-lending";
 import type { SerializedLoan } from "@/hooks/use-lending";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -69,6 +69,28 @@ export default function MyLoansTab() {
     },
     enabled: allMints.length > 0,
   });
+
+  const allAddresses = myLoans ? Array.from(new Set(myLoans.flatMap(l => [l.borrower, l.lender].filter(Boolean)))) : [];
+  const { data: walletNames } = useQuery<Record<string, string>>({
+    queryKey: ['resolve-wallets-my', allAddresses.join(',')],
+    queryFn: async () => {
+      if (allAddresses.length === 0) return {};
+      const res = await fetch(`/api/resolve-wallets?addresses=${allAddresses.join(',')}`);
+      if (!res.ok) return {};
+      return res.json();
+    },
+    enabled: allAddresses.length > 0,
+  });
+
+  const [revealedAddresses, setRevealedAddresses] = useState<Set<string>>(new Set());
+  const toggleReveal = useCallback((address: string) => {
+    setRevealedAddresses(prev => {
+      const next = new Set(prev);
+      if (next.has(address)) next.delete(address);
+      else next.add(address);
+      return next;
+    });
+  }, []);
 
   const handleCancelLoan = async (loan: SerializedLoan) => {
     if (!user?.phantomWallet) return;
@@ -301,6 +323,80 @@ export default function MyLoansTab() {
               </div>
               <span className="text-right font-medium tabular-nums text-primary">{formatLamports(totalRepayment)} SOL</span>
             </div>
+
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <User className="w-3 h-3 flex-shrink-0" />
+              <span>Borrower: </span>
+              {isBorrower ? (
+                <span>You</span>
+              ) : (() => {
+                const displayName = walletNames?.[loan.borrower];
+                const isRevealed = revealedAddresses.has(loan.borrower);
+                if (displayName && !isRevealed) {
+                  return (
+                    <button
+                      className="hover:text-foreground transition-colors cursor-pointer underline decoration-dotted underline-offset-2"
+                      onClick={() => toggleReveal(loan.borrower)}
+                      title="Click to show wallet address"
+                      data-testid={`button-reveal-borrower-my-${loan.publicKey}`}
+                    >
+                      {displayName}
+                    </button>
+                  );
+                }
+                if (displayName && isRevealed) {
+                  return (
+                    <button
+                      className="hover:text-foreground transition-colors cursor-pointer font-mono"
+                      onClick={() => toggleReveal(loan.borrower)}
+                      title="Click to show display name"
+                      data-testid={`button-reveal-borrower-my-${loan.publicKey}`}
+                    >
+                      {truncateAddress(loan.borrower)}
+                    </button>
+                  );
+                }
+                return <span className="font-mono">{truncateAddress(loan.borrower)}</span>;
+              })()}
+            </div>
+
+            {active && loan.lender && (
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Coins className="w-3 h-3 flex-shrink-0" />
+                <span>Funded by: </span>
+                {isLender ? (
+                  <span>You</span>
+                ) : (() => {
+                  const displayName = walletNames?.[loan.lender];
+                  const isRevealed = revealedAddresses.has(loan.lender);
+                  if (displayName && !isRevealed) {
+                    return (
+                      <button
+                        className="hover:text-foreground transition-colors cursor-pointer underline decoration-dotted underline-offset-2"
+                        onClick={() => toggleReveal(loan.lender)}
+                        title="Click to show wallet address"
+                        data-testid={`button-reveal-lender-my-${loan.publicKey}`}
+                      >
+                        {displayName}
+                      </button>
+                    );
+                  }
+                  if (displayName && isRevealed) {
+                    return (
+                      <button
+                        className="hover:text-foreground transition-colors cursor-pointer font-mono"
+                        onClick={() => toggleReveal(loan.lender)}
+                        title="Click to show display name"
+                        data-testid={`button-reveal-lender-my-${loan.publicKey}`}
+                      >
+                        {truncateAddress(loan.lender)}
+                      </button>
+                    );
+                  }
+                  return <span className="font-mono">{truncateAddress(loan.lender)}</span>;
+                })()}
+              </div>
+            )}
 
             <div className="flex gap-2 mt-1">
               {listed && isBorrower && (

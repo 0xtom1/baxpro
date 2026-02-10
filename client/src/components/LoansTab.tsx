@@ -258,7 +258,40 @@ export default function LoansTab({ filterByBrand }: LoansTabProps) {
           )}
           {active && (
             <p className="text-xs text-muted-foreground text-center w-full py-1">
-              Active loan &middot; {isMine ? 'Manage in My Loans tab' : `Funded by ${truncateAddress(loan.lender)}`}
+              Active loan &middot; {isMine ? 'Manage in My Loans tab' : (
+                <>
+                  Funded by{' '}
+                  {(() => {
+                    const lenderName = walletNames?.[loan.lender];
+                    const isRevealed = revealedAddresses.has(loan.lender);
+                    if (lenderName && !isRevealed) {
+                      return (
+                        <button
+                          className="hover:text-foreground transition-colors cursor-pointer underline decoration-dotted underline-offset-2"
+                          onClick={() => toggleReveal(loan.lender)}
+                          title="Click to show wallet address"
+                          data-testid={`button-reveal-lender-${loan.publicKey}`}
+                        >
+                          {lenderName}
+                        </button>
+                      );
+                    }
+                    if (lenderName && isRevealed) {
+                      return (
+                        <button
+                          className="hover:text-foreground transition-colors cursor-pointer font-mono"
+                          onClick={() => toggleReveal(loan.lender)}
+                          title="Click to show display name"
+                          data-testid={`button-reveal-lender-${loan.publicKey}`}
+                        >
+                          {truncateAddress(loan.lender)}
+                        </button>
+                      );
+                    }
+                    return <span className="font-mono">{truncateAddress(loan.lender)}</span>;
+                  })()}
+                </>
+              )}
             </p>
           )}
         </div>
