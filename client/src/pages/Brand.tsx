@@ -526,7 +526,7 @@ export default function Brand() {
     </div>
 
     {/* Mobile Layout */}
-    <div className="lg:hidden min-h-screen bg-background flex flex-col">
+    <div className="lg:hidden min-h-screen bg-background flex flex-col" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom, 0px))' }}>
       <DashboardNav />
       <header className="sticky top-0 z-50 bg-background border-b border-border">
         <div className="flex items-center justify-between h-14 px-4">
@@ -845,7 +845,7 @@ export default function Brand() {
         </div>
       )}
 
-      <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50">
+      <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
         <div className="flex items-center justify-around h-16">
           {tabs.map((tab) => {
             const Icon = tab.icon;

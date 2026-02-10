@@ -682,7 +682,7 @@ export default function Dashboard() {
       </div>
 
       {/* Mobile Layout */}
-      <div className="lg:hidden min-h-screen bg-background flex flex-col pb-16">
+      <div className="lg:hidden min-h-screen bg-background flex flex-col" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom, 0px))' }}>
         <DashboardNav />
         
         {/* Search Bar - only for brands */}
@@ -812,7 +812,7 @@ export default function Dashboard() {
         </div>
 
         {/* Bottom Tab Bar (Mobile) */}
-        <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50">
+        <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
           <div className="flex items-center justify-around h-16">
             {visibleTabs.map((tab) => {
               const Icon = tab.icon;
