@@ -158,6 +158,10 @@ export default function Landing() {
         </div>
       </nav>
 
+      <div className="fixed top-16 left-0 right-0 z-40 bg-black/80 backdrop-blur-md border-b border-white/[0.06]">
+        <ActivityTicker />
+      </div>
+
       <section className="relative min-h-screen flex flex-col">
         <div
           className="absolute inset-0 bg-cover bg-center"
@@ -192,10 +196,6 @@ export default function Landing() {
               BaxPro is not affiliated with, endorsed by, or connected to baxus.co
             </p>
           </div>
-        </div>
-
-        <div className="relative z-10 mt-auto mb-14">
-          <ActivityTicker />
         </div>
 
         <button
