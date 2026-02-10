@@ -914,6 +914,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/resolve-wallets", apiLimiter, async (req, res) => {
+    try {
+      const addressesParam = req.query.addresses as string;
+      if (!addressesParam) return res.json({});
+      const addresses = addressesParam.split(',').filter(Boolean).slice(0, 100);
+      if (addresses.length === 0) return res.json({});
+      const placeholders = addresses.map((_, i) => `$${i + 1}`).join(', ');
+      const { rows } = await pool.query(
+        `SELECT phantom_wallet, display_name FROM users WHERE phantom_wallet IN (${placeholders}) AND display_name IS NOT NULL`,
+        addresses
+      );
+      const result: Record<string, string> = {};
+      for (const row of rows) {
+        result[row.phantom_wallet] = row.display_name;
+      }
+      res.json(result);
+    } catch (error: any) {
+      console.error("Resolve wallets error:", error);
+      res.status(500).json({ error: "Failed to resolve wallets" });
+    }
+  });
+
   app.get("/api/assets-by-mints", apiLimiter, async (req, res) => {
     try {
       const mintsParam = req.query.mints as string;
