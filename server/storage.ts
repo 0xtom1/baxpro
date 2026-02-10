@@ -73,7 +73,7 @@ export interface IStorage {
   matchAlertToAssets(alertId: string): Promise<{ matched: number; matchingAssetsString: string }>;
 
   getBrandNames(): Promise<string[]>;
-  getBrandsList(page?: number, limit?: number): Promise<{ brands: BrandListItem[]; total: number }>;
+  getBrandsList(page?: number, limit?: number, search?: string): Promise<{ brands: BrandListItem[]; total: number }>;
   getBrandAssets(brandName: string, traitFilters?: Record<string, string[]>): Promise<BrandAsset[]>;
   getBrandStats(brandName: string): Promise<BrandStats>;
   getBrandTraits(brandName: string): Promise<BrandTrait[]>;
@@ -618,24 +618,38 @@ export class DbStorage implements IStorage {
     return result.rows.map((r: any) => r.brand_name);
   }
 
-  async getBrandsList(page: number = 1, limit: number = 30): Promise<{ brands: BrandListItem[]; total: number }> {
+  async getBrandsList(page: number = 1, limit: number = 30, search?: string): Promise<{ brands: BrandListItem[]; total: number }> {
     const client = await pool.connect();
     try {
       const offset = (page - 1) * limit;
-      
-      const countResult = await client.query(`
-        SELECT COUNT(*) as total FROM baxus.mv_brands_list
-      `);
+      const searchTerm = search?.trim() || '';
+      const hasSearch = searchTerm.length > 0;
+      const searchPattern = `%${searchTerm}%`;
+
+      const countResult = await client.query(
+        hasSearch
+          ? `SELECT COUNT(*) as total FROM baxus.mv_brands_list WHERE LOWER(brand_name) LIKE LOWER($1) OR LOWER(COALESCE(producer,'')) LIKE LOWER($1)`
+          : `SELECT COUNT(*) as total FROM baxus.mv_brands_list`,
+        hasSearch ? [searchPattern] : []
+      );
       const total = parseInt(countResult.rows[0].total, 10);
+
+      const params: any[] = hasSearch ? [searchPattern, limit, offset] : [limit, offset];
+      const whereClause = hasSearch
+        ? `WHERE LOWER(brand_name) LIKE LOWER($1) OR LOWER(COALESCE(producer,'')) LIKE LOWER($1)`
+        : '';
+      const limitParam = hasSearch ? '$2' : '$1';
+      const offsetParam = hasSearch ? '$3' : '$2';
 
       const result = await client.query(`
         SELECT brand_name, producer, asset_count, listed_count, floor_price, image_url,
                volume_7d, volume_30d, distinct_owners_count, max_activity_date
         FROM baxus.mv_brands_list
+        ${whereClause}
         ORDER BY CASE WHEN COALESCE(listed_count, 0) = 0 THEN 1 ELSE 0 END,
                  max_activity_date DESC NULLS LAST, volume_30d DESC NULLS LAST
-        LIMIT $1 OFFSET $2
-      `, [limit, offset]);
+        LIMIT ${limitParam} OFFSET ${offsetParam}
+      `, params);
 
       return {
         brands: result.rows.map((r: any) => ({

@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Search, ChevronLeft, ChevronRight, Package, Activity, LayoutGrid, ExternalLink, Filter, Landmark } from "lucide-react";
 import { useRequireAuth } from "@/hooks/use-require-auth";
@@ -62,10 +62,22 @@ export default function Dashboard() {
   const [activityPage, setActivityPage] = useState(1);
   const [typeFilter, setTypeFilter] = useState<string>("all");
 
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [search]);
+
   const { data, isLoading, error } = useQuery<BrandsListResponse>({
-    queryKey: ["/api/brands-list", page],
+    queryKey: ["/api/brands-list", page, debouncedSearch],
     queryFn: async () => {
-      const res = await fetch(`/api/brands-list?page=${page}&limit=${ITEMS_PER_PAGE}`);
+      const params = new URLSearchParams({ page: String(page), limit: String(ITEMS_PER_PAGE) });
+      if (debouncedSearch.trim()) params.append("search", debouncedSearch.trim());
+      const res = await fetch(`/api/brands-list?${params.toString()}`);
       if (!res.ok) throw new Error("Failed to fetch brands");
       return res.json();
     },
@@ -94,12 +106,7 @@ export default function Dashboard() {
   const total = data?.total || 0;
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
 
-  const filteredBrands = search.trim()
-    ? brands.filter(
-        b => b.brandName.toLowerCase().includes(search.toLowerCase()) ||
-             (b.producer && b.producer.toLowerCase().includes(search.toLowerCase()))
-      )
-    : brands;
+  const filteredBrands = brands;
 
   const activities = activityData?.data ?? [];
   const activityPagination = activityData?.pagination;

@@ -868,7 +868,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = Math.min(parseInt(req.query.limit as string) || 30, 100);
-      const result = await storage.getBrandsList(page, limit);
+      const search = (req.query.search as string) || '';
+      const result = await storage.getBrandsList(page, limit, search);
       res.json(result);
     } catch (error) {
       console.error("Get brands list error:", error);
