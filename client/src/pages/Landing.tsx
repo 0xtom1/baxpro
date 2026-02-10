@@ -3,10 +3,8 @@ import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { SiGoogle } from "react-icons/si";
 import { BarChart3, Bell, Landmark, ArrowRight, ChevronDown } from "lucide-react";
 import GlencairnLogo from "@/components/GlencairnLogo";
-import PhantomLogo from "@/components/PhantomLogo";
 import heroImage from "@assets/stock_images/bourbon_whiskey_barr_576f6f69.jpg";
 
 interface ActivityItem {
@@ -177,29 +175,20 @@ export default function Landing() {
               Real-time market data, custom alerts, and on-chain lending — all in one place for Baxus collectors.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
-              <Link href="/login">
-                <Button
-                  size="lg"
-                  className="text-base px-8 gap-2"
-                  data-testid="button-get-started"
-                >
-                  Get Started
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
-              </Link>
-              <Link href="/login">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="text-base px-8 bg-white/5 backdrop-blur-sm text-white border-white/20 gap-2"
-                  data-testid="button-phantom-hero"
-                >
-                  <PhantomLogo className="w-5 h-5" />
-                  Connect Wallet
-                </Button>
-              </Link>
-            </div>
+            <Link href="/login">
+              <Button
+                size="lg"
+                className="text-base px-8 gap-2"
+                data-testid="button-get-started"
+              >
+                Get Started
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </Link>
+
+            <p className="text-xs text-white/30 mt-6">
+              BaxPro is not affiliated with, endorsed by, or connected to baxus.co
+            </p>
           </div>
         </div>
 
