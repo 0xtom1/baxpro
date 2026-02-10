@@ -96,7 +96,7 @@ export default function MyVault() {
             );
           })}
           <div className="flex-1" />
-          {activeTab === "bottles" && hasWallet && assets.length > 0 && user?.phantomWallet && (
+          {activeTab === "bottles" && user?.phantomWallet && (
             <Button
               size="sm"
               onClick={() => setLocation('/create-loan')}
