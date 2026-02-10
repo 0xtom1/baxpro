@@ -10,7 +10,7 @@ export type NftLending = {
         { name: "systemProgram"; isMut: false; isSigner: false }
       ];
       args: [
-        { name: "feeWallet"; type: "publicKey" },
+        { name: "feeWallet"; type: "pubkey" },
         { name: "feeBps"; type: "u16" }
       ];
     },
@@ -102,9 +102,9 @@ export type NftLending = {
       type: {
         kind: "struct";
         fields: [
-          { name: "authority"; type: "publicKey" },
-          { name: "nftVault"; type: "publicKey" },
-          { name: "feeWallet"; type: "publicKey" },
+          { name: "authority"; type: "pubkey" },
+          { name: "nftVault"; type: "pubkey" },
+          { name: "feeWallet"; type: "pubkey" },
           { name: "feeBps"; type: "u16" },
           { name: "totalLoansCreated"; type: "u64" },
           { name: "totalLoansFunded"; type: "u64" },
@@ -119,11 +119,11 @@ export type NftLending = {
       type: {
         kind: "struct";
         fields: [
-          { name: "borrower"; type: "publicKey" },
-          { name: "lender"; type: "publicKey" },
+          { name: "borrower"; type: "pubkey" },
+          { name: "lender"; type: "pubkey" },
           { name: "loanId"; type: "u64" },
-          { name: "nftMints"; type: { array: ["publicKey", 5] } },
-          { name: "nftEscrows"; type: { array: ["publicKey", 5] } },
+          { name: "nftMints"; type: { array: ["pubkey", 5] } },
+          { name: "nftEscrows"; type: { array: ["pubkey", 5] } },
           { name: "collateralCount"; type: "u8" },
           { name: "loanAmount"; type: "u64" },
           { name: "interestRateBps"; type: "u16" },
@@ -182,7 +182,7 @@ export const IDL: NftLending = {
         { name: "systemProgram", isMut: false, isSigner: false }
       ],
       args: [
-        { name: "feeWallet", type: "publicKey" },
+        { name: "feeWallet", type: "pubkey" },
         { name: "feeBps", type: "u16" }
       ]
     },
@@ -274,9 +274,9 @@ export const IDL: NftLending = {
       type: {
         kind: "struct",
         fields: [
-          { name: "authority", type: "publicKey" },
-          { name: "nftVault", type: "publicKey" },
-          { name: "feeWallet", type: "publicKey" },
+          { name: "authority", type: "pubkey" },
+          { name: "nftVault", type: "pubkey" },
+          { name: "feeWallet", type: "pubkey" },
           { name: "feeBps", type: "u16" },
           { name: "totalLoansCreated", type: "u64" },
           { name: "totalLoansFunded", type: "u64" },
@@ -291,11 +291,11 @@ export const IDL: NftLending = {
       type: {
         kind: "struct",
         fields: [
-          { name: "borrower", type: "publicKey" },
-          { name: "lender", type: "publicKey" },
+          { name: "borrower", type: "pubkey" },
+          { name: "lender", type: "pubkey" },
           { name: "loanId", type: "u64" },
-          { name: "nftMints", type: { array: ["publicKey", 5] } },
-          { name: "nftEscrows", type: { array: ["publicKey", 5] } },
+          { name: "nftMints", type: { array: ["pubkey", 5] } },
+          { name: "nftEscrows", type: { array: ["pubkey", 5] } },
           { name: "collateralCount", type: "u8" },
           { name: "loanAmount", type: "u64" },
           { name: "interestRateBps", type: "u16" },
