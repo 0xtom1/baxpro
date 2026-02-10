@@ -30,6 +30,10 @@ function getMasterKeypair(): Keypair {
   if (!pk) {
     throw new Error('DEVNET_ADDRESS_PK not configured');
   }
+  if (pk.startsWith('[')) {
+    const bytes = JSON.parse(pk) as number[];
+    return Keypair.fromSecretKey(Uint8Array.from(bytes));
+  }
   return Keypair.fromSecretKey(bs58.decode(pk));
 }
 

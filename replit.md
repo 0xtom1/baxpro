@@ -185,7 +185,7 @@ Users with `isVip: true` can access:
 - `SESSION_SECRET`
 - `CUSTOM_DOMAIN` (optional, for OAuth redirect)
 - `HELIUS_API_KEY` (for wallet NFT data)
-- `DEVNET_ADDRESS_PK` (dev only, base58-encoded private key for devnet bottle airdrop master wallet)
+- `DEVNET_ADDRESS_PK` (dev only, private key for devnet bottle airdrop master wallet; supports base58 string or JSON byte array format)
 
 ### Devnet Bottle Airdrop
 
