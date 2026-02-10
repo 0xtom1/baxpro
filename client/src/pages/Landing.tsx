@@ -194,13 +194,13 @@ export default function Landing() {
           </div>
         </div>
 
-        <div className="relative z-10 mt-auto">
+        <div className="relative z-10 mt-auto mb-14">
           <ActivityTicker />
         </div>
 
         <button
           onClick={scrollToFeatures}
-          className="relative z-10 mx-auto -mb-5 w-10 h-10 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center animate-bounce cursor-pointer"
+          className="relative z-10 mx-auto -mt-10 -mb-5 w-10 h-10 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center animate-bounce cursor-pointer"
           aria-label="Scroll to features"
           data-testid="button-scroll-features"
         >
