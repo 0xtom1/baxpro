@@ -27,12 +27,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const checkAuth = async () => {
     try {
       const response = await fetch("/api/auth/me");
+      const data = await response.json();
+      if (data.environment) {
+        setEnvironment(data.environment);
+      }
       if (response.ok) {
-        const data = await response.json();
         setUser(data.user);
-        if (data.environment) {
-          setEnvironment(data.environment);
-        }
       }
     } catch (error) {
       console.error("Auth check failed:", error);

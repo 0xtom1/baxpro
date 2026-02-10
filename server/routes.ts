@@ -438,7 +438,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/auth/me", authLimiter, async (req, res) => {
     if (!req.session.userId) {
-      return res.status(401).json({ error: "Not authenticated" });
+      return res.status(401).json({ error: "Not authenticated", environment: process.env.NODE_ENV || "development" });
     }
 
     let user = await storage.getUser(req.session.userId);
