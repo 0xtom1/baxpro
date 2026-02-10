@@ -6,9 +6,9 @@ export type NftLending = {
       name: "initializeLendingPool";
       discriminator: [236, 76, 136, 68, 196, 14, 9, 177];
       accounts: [
-        { name: "lendingPool"; isMut: true; isSigner: false },
-        { name: "authority"; isMut: true; isSigner: true },
-        { name: "systemProgram"; isMut: false; isSigner: false }
+        { name: "lendingPool"; writable: true },
+        { name: "authority"; writable: true; signer: true },
+        { name: "systemProgram" }
       ];
       args: [
         { name: "feeWallet"; type: "pubkey" },
@@ -19,9 +19,9 @@ export type NftLending = {
       name: "createLoan";
       discriminator: [166, 131, 118, 219, 138, 218, 206, 140];
       accounts: [
-        { name: "loan"; isMut: true; isSigner: false },
-        { name: "borrower"; isMut: true; isSigner: true },
-        { name: "systemProgram"; isMut: false; isSigner: false }
+        { name: "loan"; writable: true },
+        { name: "borrower"; writable: true; signer: true },
+        { name: "systemProgram" }
       ];
       args: [
         { name: "loanId"; type: "u64" },
@@ -34,13 +34,13 @@ export type NftLending = {
       name: "addCollateral";
       discriminator: [127, 82, 121, 42, 161, 176, 249, 206];
       accounts: [
-        { name: "loan"; isMut: true; isSigner: false },
-        { name: "nftMint"; isMut: false; isSigner: false },
-        { name: "borrowerNftAccount"; isMut: true; isSigner: false },
-        { name: "nftEscrow"; isMut: true; isSigner: false },
-        { name: "borrower"; isMut: true; isSigner: true },
-        { name: "tokenProgram"; isMut: false; isSigner: false },
-        { name: "systemProgram"; isMut: false; isSigner: false }
+        { name: "loan"; writable: true },
+        { name: "nftMint" },
+        { name: "borrowerNftAccount"; writable: true },
+        { name: "nftEscrow"; writable: true },
+        { name: "borrower"; writable: true; signer: true },
+        { name: "tokenProgram" },
+        { name: "systemProgram" }
       ];
       args: [];
     },
@@ -48,9 +48,9 @@ export type NftLending = {
       name: "activateListing";
       discriminator: [186, 120, 180, 124, 2, 197, 186, 231];
       accounts: [
-        { name: "lendingPool"; isMut: true; isSigner: false },
-        { name: "loan"; isMut: true; isSigner: false },
-        { name: "borrower"; isMut: false; isSigner: true }
+        { name: "lendingPool"; writable: true },
+        { name: "loan"; writable: true },
+        { name: "borrower"; signer: true }
       ];
       args: [];
     },
@@ -58,11 +58,11 @@ export type NftLending = {
       name: "fundLoan";
       discriminator: [50, 221, 51, 13, 3, 142, 116, 215];
       accounts: [
-        { name: "lendingPool"; isMut: true; isSigner: false },
-        { name: "loan"; isMut: true; isSigner: false },
-        { name: "borrower"; isMut: true; isSigner: false },
-        { name: "lender"; isMut: true; isSigner: true },
-        { name: "systemProgram"; isMut: false; isSigner: false }
+        { name: "lendingPool"; writable: true },
+        { name: "loan"; writable: true },
+        { name: "borrower"; writable: true },
+        { name: "lender"; writable: true; signer: true },
+        { name: "systemProgram" }
       ];
       args: [];
     },
@@ -70,13 +70,13 @@ export type NftLending = {
       name: "repayLoan";
       discriminator: [224, 93, 144, 77, 61, 17, 137, 54];
       accounts: [
-        { name: "lendingPool"; isMut: true; isSigner: false },
-        { name: "loan"; isMut: true; isSigner: false },
-        { name: "borrower"; isMut: true; isSigner: true },
-        { name: "lender"; isMut: true; isSigner: false },
-        { name: "feeWallet"; isMut: true; isSigner: false },
-        { name: "tokenProgram"; isMut: false; isSigner: false },
-        { name: "systemProgram"; isMut: false; isSigner: false }
+        { name: "lendingPool"; writable: true },
+        { name: "loan"; writable: true },
+        { name: "borrower"; writable: true; signer: true },
+        { name: "lender"; writable: true },
+        { name: "feeWallet"; writable: true },
+        { name: "tokenProgram" },
+        { name: "systemProgram" }
       ];
       args: [];
     },
@@ -84,11 +84,11 @@ export type NftLending = {
       name: "liquidateLoan";
       discriminator: [111, 249, 185, 54, 161, 147, 178, 24];
       accounts: [
-        { name: "lendingPool"; isMut: true; isSigner: false },
-        { name: "loan"; isMut: true; isSigner: false },
-        { name: "lender"; isMut: true; isSigner: true },
-        { name: "tokenProgram"; isMut: false; isSigner: false },
-        { name: "systemProgram"; isMut: false; isSigner: false }
+        { name: "lendingPool"; writable: true },
+        { name: "loan"; writable: true },
+        { name: "lender"; writable: true; signer: true },
+        { name: "tokenProgram" },
+        { name: "systemProgram" }
       ];
       args: [];
     },
@@ -96,10 +96,10 @@ export type NftLending = {
       name: "cancelListing";
       discriminator: [41, 183, 50, 232, 230, 233, 157, 70];
       accounts: [
-        { name: "loan"; isMut: true; isSigner: false },
-        { name: "borrower"; isMut: true; isSigner: true },
-        { name: "tokenProgram"; isMut: false; isSigner: false },
-        { name: "systemProgram"; isMut: false; isSigner: false }
+        { name: "loan"; writable: true },
+        { name: "borrower"; writable: true; signer: true },
+        { name: "tokenProgram" },
+        { name: "systemProgram" }
       ];
       args: [];
     }
@@ -188,9 +188,9 @@ export const IDL: NftLending = {
       name: "initializeLendingPool",
       discriminator: [236, 76, 136, 68, 196, 14, 9, 177],
       accounts: [
-        { name: "lendingPool", isMut: true, isSigner: false },
-        { name: "authority", isMut: true, isSigner: true },
-        { name: "systemProgram", isMut: false, isSigner: false }
+        { name: "lendingPool", writable: true },
+        { name: "authority", writable: true, signer: true },
+        { name: "systemProgram" }
       ],
       args: [
         { name: "feeWallet", type: "pubkey" },
@@ -201,9 +201,9 @@ export const IDL: NftLending = {
       name: "createLoan",
       discriminator: [166, 131, 118, 219, 138, 218, 206, 140],
       accounts: [
-        { name: "loan", isMut: true, isSigner: false },
-        { name: "borrower", isMut: true, isSigner: true },
-        { name: "systemProgram", isMut: false, isSigner: false }
+        { name: "loan", writable: true },
+        { name: "borrower", writable: true, signer: true },
+        { name: "systemProgram" }
       ],
       args: [
         { name: "loanId", type: "u64" },
@@ -216,13 +216,13 @@ export const IDL: NftLending = {
       name: "addCollateral",
       discriminator: [127, 82, 121, 42, 161, 176, 249, 206],
       accounts: [
-        { name: "loan", isMut: true, isSigner: false },
-        { name: "nftMint", isMut: false, isSigner: false },
-        { name: "borrowerNftAccount", isMut: true, isSigner: false },
-        { name: "nftEscrow", isMut: true, isSigner: false },
-        { name: "borrower", isMut: true, isSigner: true },
-        { name: "tokenProgram", isMut: false, isSigner: false },
-        { name: "systemProgram", isMut: false, isSigner: false }
+        { name: "loan", writable: true },
+        { name: "nftMint" },
+        { name: "borrowerNftAccount", writable: true },
+        { name: "nftEscrow", writable: true },
+        { name: "borrower", writable: true, signer: true },
+        { name: "tokenProgram" },
+        { name: "systemProgram" }
       ],
       args: []
     },
@@ -230,9 +230,9 @@ export const IDL: NftLending = {
       name: "activateListing",
       discriminator: [186, 120, 180, 124, 2, 197, 186, 231],
       accounts: [
-        { name: "lendingPool", isMut: true, isSigner: false },
-        { name: "loan", isMut: true, isSigner: false },
-        { name: "borrower", isMut: false, isSigner: true }
+        { name: "lendingPool", writable: true },
+        { name: "loan", writable: true },
+        { name: "borrower", signer: true }
       ],
       args: []
     },
@@ -240,11 +240,11 @@ export const IDL: NftLending = {
       name: "fundLoan",
       discriminator: [50, 221, 51, 13, 3, 142, 116, 215],
       accounts: [
-        { name: "lendingPool", isMut: true, isSigner: false },
-        { name: "loan", isMut: true, isSigner: false },
-        { name: "borrower", isMut: true, isSigner: false },
-        { name: "lender", isMut: true, isSigner: true },
-        { name: "systemProgram", isMut: false, isSigner: false }
+        { name: "lendingPool", writable: true },
+        { name: "loan", writable: true },
+        { name: "borrower", writable: true },
+        { name: "lender", writable: true, signer: true },
+        { name: "systemProgram" }
       ],
       args: []
     },
@@ -252,13 +252,13 @@ export const IDL: NftLending = {
       name: "repayLoan",
       discriminator: [224, 93, 144, 77, 61, 17, 137, 54],
       accounts: [
-        { name: "lendingPool", isMut: true, isSigner: false },
-        { name: "loan", isMut: true, isSigner: false },
-        { name: "borrower", isMut: true, isSigner: true },
-        { name: "lender", isMut: true, isSigner: false },
-        { name: "feeWallet", isMut: true, isSigner: false },
-        { name: "tokenProgram", isMut: false, isSigner: false },
-        { name: "systemProgram", isMut: false, isSigner: false }
+        { name: "lendingPool", writable: true },
+        { name: "loan", writable: true },
+        { name: "borrower", writable: true, signer: true },
+        { name: "lender", writable: true },
+        { name: "feeWallet", writable: true },
+        { name: "tokenProgram" },
+        { name: "systemProgram" }
       ],
       args: []
     },
@@ -266,11 +266,11 @@ export const IDL: NftLending = {
       name: "liquidateLoan",
       discriminator: [111, 249, 185, 54, 161, 147, 178, 24],
       accounts: [
-        { name: "lendingPool", isMut: true, isSigner: false },
-        { name: "loan", isMut: true, isSigner: false },
-        { name: "lender", isMut: true, isSigner: true },
-        { name: "tokenProgram", isMut: false, isSigner: false },
-        { name: "systemProgram", isMut: false, isSigner: false }
+        { name: "lendingPool", writable: true },
+        { name: "loan", writable: true },
+        { name: "lender", writable: true, signer: true },
+        { name: "tokenProgram" },
+        { name: "systemProgram" }
       ],
       args: []
     },
@@ -278,10 +278,10 @@ export const IDL: NftLending = {
       name: "cancelListing",
       discriminator: [41, 183, 50, 232, 230, 233, 157, 70],
       accounts: [
-        { name: "loan", isMut: true, isSigner: false },
-        { name: "borrower", isMut: true, isSigner: true },
-        { name: "tokenProgram", isMut: false, isSigner: false },
-        { name: "systemProgram", isMut: false, isSigner: false }
+        { name: "loan", writable: true },
+        { name: "borrower", writable: true, signer: true },
+        { name: "tokenProgram" },
+        { name: "systemProgram" }
       ],
       args: []
     }
