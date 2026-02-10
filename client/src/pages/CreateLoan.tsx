@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Check, Loader2, Package, Wallet, ShieldCheck, Coins, Clock, Percent, Landmark } from "lucide-react";
+import { ArrowLeft, Check, Loader2, Package, Wallet, ShieldCheck, Coins, Clock, Percent, Landmark, CalendarClock } from "lucide-react";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useToast } from "@/hooks/use-toast";
 import { formatLamports, signAndSendTransaction, MAX_COLLATERAL } from "@/hooks/use-lending";
@@ -66,6 +66,25 @@ export default function CreateLoan() {
     },
     enabled: !!user,
   });
+
+  const { data: solPriceData } = useQuery<{ price: number }>({
+    queryKey: ["/api/sol-price"],
+    queryFn: async () => {
+      const res = await fetch("/api/sol-price");
+      if (!res.ok) throw new Error("Failed to fetch SOL price");
+      return res.json();
+    },
+    staleTime: 60_000,
+    refetchInterval: 60_000,
+  });
+  const solPrice = solPriceData?.price ?? null;
+
+  function solToUsd(lamports: number): string | null {
+    if (!solPrice) return null;
+    const sol = lamports / 1_000_000_000;
+    const usd = sol * solPrice;
+    return `$${usd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
 
   const bottles = data?.assets || [];
   const hasWallet = data?.hasWallet ?? false;
@@ -311,6 +330,11 @@ export default function CreateLoan() {
                   onChange={e => setLoanAmount(e.target.value)}
                   data-testid="input-loan-amount"
                 />
+                {solToUsd(amountLamports) && (
+                  <p className="text-xs text-muted-foreground" data-testid="text-loan-usd">
+                    {solToUsd(amountLamports)} USD
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="interest-rate">Interest Rate (%)</Label>
@@ -341,11 +365,21 @@ export default function CreateLoan() {
               <Card className="p-3 space-y-1">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Interest amount</span>
-                  <span className="tabular-nums">{formatLamports(interestAmount)} SOL</span>
+                  <div className="text-right">
+                    <span className="tabular-nums">{formatLamports(interestAmount)} SOL</span>
+                    {solToUsd(interestAmount) && (
+                      <span className="text-xs text-muted-foreground ml-1.5">({solToUsd(interestAmount)})</span>
+                    )}
+                  </div>
                 </div>
                 <div className="flex justify-between text-sm font-medium">
                   <span className="text-muted-foreground">Total repayment</span>
-                  <span className="text-primary tabular-nums">{formatLamports(totalRepayment)} SOL</span>
+                  <div className="text-right">
+                    <span className="text-primary tabular-nums">{formatLamports(totalRepayment)} SOL</span>
+                    {solToUsd(totalRepayment) && (
+                      <span className="text-xs text-muted-foreground ml-1.5">({solToUsd(totalRepayment)})</span>
+                    )}
+                  </div>
                 </div>
               </Card>
             </div>
@@ -394,7 +428,12 @@ export default function CreateLoan() {
                   <Coins className="w-4 h-4" />
                   <span>Loan amount</span>
                 </div>
-                <span className="font-medium tabular-nums">{loanAmount} SOL</span>
+                <div className="text-right">
+                  <span className="font-medium tabular-nums">{loanAmount} SOL</span>
+                  {solToUsd(amountLamports) && (
+                    <span className="text-xs text-muted-foreground ml-1.5">({solToUsd(amountLamports)})</span>
+                  )}
+                </div>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2 text-muted-foreground">
@@ -410,13 +449,37 @@ export default function CreateLoan() {
                 </div>
                 <span className="tabular-nums">{durationDays} days</span>
               </div>
+              {durationSeconds > 0 && (
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <CalendarClock className="w-4 h-4" />
+                    <span>Expires</span>
+                  </div>
+                  <span className="tabular-nums text-xs">
+                    {new Date(Date.now() + durationSeconds * 1000).toLocaleString('en-US', {
+                      timeZone: 'UTC',
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: false,
+                    })} UTC
+                  </span>
+                </div>
+              )}
               <div className="border-t border-border my-1" />
               <div className="flex items-center justify-between text-sm font-medium">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Landmark className="w-4 h-4" />
                   <span>You repay</span>
                 </div>
-                <span className="text-primary tabular-nums">{formatLamports(totalRepayment)} SOL</span>
+                <div className="text-right">
+                  <span className="text-primary tabular-nums">{formatLamports(totalRepayment)} SOL</span>
+                  {solToUsd(totalRepayment) && (
+                    <span className="text-xs text-muted-foreground ml-1.5">({solToUsd(totalRepayment)})</span>
+                  )}
+                </div>
               </div>
             </Card>
 

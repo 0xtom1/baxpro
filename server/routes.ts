@@ -1231,6 +1231,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ── SOL price endpoint ──
+
+  let cachedSolPrice: { price: number; fetchedAt: number } | null = null;
+  const SOL_PRICE_CACHE_MS = 60_000;
+
+  app.get("/api/sol-price", apiLimiter, async (_req, res) => {
+    try {
+      if (cachedSolPrice && Date.now() - cachedSolPrice.fetchedAt < SOL_PRICE_CACHE_MS) {
+        return res.json({ price: cachedSolPrice.price });
+      }
+
+      const heliusApiKey = process.env.HELIUS_API_KEY;
+      if (!heliusApiKey) {
+        return res.status(500).json({ error: "Price service not configured" });
+      }
+
+      const heliusUrl = `https://mainnet.helius-rpc.com/?api-key=${heliusApiKey}`;
+      const response = await fetch(heliusUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 'sol-price',
+          method: 'getAsset',
+          params: {
+            id: 'So11111111111111111111111111111111111111112',
+            displayOptions: { showFungible: true },
+          },
+        }),
+      });
+
+      const data = await response.json();
+      const price = data?.result?.token_info?.price_info?.price_per_token;
+
+      if (typeof price !== 'number') {
+        return res.status(502).json({ error: "Could not fetch SOL price" });
+      }
+
+      cachedSolPrice = { price, fetchedAt: Date.now() };
+      res.json({ price });
+    } catch (error: any) {
+      console.error("SOL price fetch error:", error);
+      res.status(500).json({ error: "Failed to fetch SOL price" });
+    }
+  });
+
   // ── Loan endpoints ──
 
   app.get("/api/loans", apiLimiter, async (_req, res) => {
