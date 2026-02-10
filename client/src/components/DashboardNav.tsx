@@ -29,11 +29,11 @@ interface DashboardNavProps {
 
 export default function DashboardNav({ onNewAlert, alertCount = 0, search, onSearchChange, searchPlaceholder = "Brands, producers..." }: DashboardNavProps) {
   const isAtLimit = alertCount >= MAX_ALERTS;
-  const { user, logout } = useAuth();
+  const { user, logout, environment } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const isDevMode = import.meta.env.DEV || import.meta.env.MODE === 'development';
+  const isDevMode = environment !== 'production';
   const hasPhantom = !!user?.phantomWallet;
   const [airdropState, setAirdropState] = useState<'idle' | 'loading' | 'done'>('idle');
 

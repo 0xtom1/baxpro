@@ -453,7 +453,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       user = await storage.updateUser(user.id, { lastLoginAt: new Date() }) || user;
     }
 
-    res.json({ user });
+    res.json({ 
+      user,
+      environment: process.env.NODE_ENV || "development",
+    });
   });
 
   // User routes
