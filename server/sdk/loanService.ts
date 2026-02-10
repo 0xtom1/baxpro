@@ -1,6 +1,7 @@
 import { PublicKey, Connection, Transaction, SystemProgram } from '@solana/web3.js';
 import { TOKEN_2022_PROGRAM_ID, getAssociatedTokenAddressSync } from '@solana/spl-token';
 import * as anchor from '@coral-xyz/anchor';
+import BN from 'bn.js';
 import { IDL } from './idl';
 
 const PROGRAM_ID = new PublicKey('DR1NKAAitegi5hzbrTbj2bLD7EueL56girTwdGDCDJxW');
@@ -22,7 +23,7 @@ function getLendingPoolPDA(): [PublicKey, number] {
   return PublicKey.findProgramAddressSync([Buffer.from('lending_pool')], PROGRAM_ID);
 }
 
-function getLoanPDA(borrower: PublicKey, loanId: anchor.BN): [PublicKey, number] {
+function getLoanPDA(borrower: PublicKey, loanId: BN): [PublicKey, number] {
   return PublicKey.findProgramAddressSync(
     [Buffer.from('loan'), borrower.toBuffer(), loanId.toArrayLike(Buffer, 'le', 8)],
     PROGRAM_ID
@@ -121,7 +122,7 @@ export async function buildCreateLoanTx(
   const connection = getConnection();
   const program = getProgram(connection);
   const borrower = new PublicKey(borrowerAddress);
-  const loanId = new anchor.BN(loanIdNum);
+  const loanId = new BN(loanIdNum);
 
   const [loan] = getLoanPDA(borrower, loanId);
   const [lendingPool] = getLendingPoolPDA();
@@ -129,7 +130,7 @@ export async function buildCreateLoanTx(
   const transactions: string[] = [];
 
   const createIx = await program.methods
-    .createLoan(loanId, new anchor.BN(loanAmountLamports), interestRateBps, new anchor.BN(durationSeconds))
+    .createLoan(loanId, new BN(loanAmountLamports), interestRateBps, new BN(durationSeconds))
     .accountsStrict({
       loan,
       borrower,
@@ -195,7 +196,7 @@ export async function buildFundLoanTx(
   const program = getProgram(connection);
   const lender = new PublicKey(lenderAddress);
   const borrower = new PublicKey(borrowerAddress);
-  const loanId = new anchor.BN(loanIdStr);
+  const loanId = new BN(loanIdStr);
 
   const [lendingPool] = getLendingPoolPDA();
   const [loan] = getLoanPDA(borrower, loanId);
@@ -226,7 +227,7 @@ export async function buildRepayLoanTx(
   const connection = getConnection();
   const program = getProgram(connection);
   const borrower = new PublicKey(borrowerAddress);
-  const loanId = new anchor.BN(loanIdStr);
+  const loanId = new BN(loanIdStr);
 
   const [lendingPool] = getLendingPoolPDA();
   const [loan] = getLoanPDA(borrower, loanId);
@@ -275,7 +276,7 @@ export async function buildCancelLoanTx(
   const connection = getConnection();
   const program = getProgram(connection);
   const borrower = new PublicKey(borrowerAddress);
-  const loanId = new anchor.BN(loanIdStr);
+  const loanId = new BN(loanIdStr);
 
   const [loan] = getLoanPDA(borrower, loanId);
 
