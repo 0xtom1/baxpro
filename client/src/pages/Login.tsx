@@ -23,6 +23,7 @@ export default function Login() {
   const { toast } = useToast();
   const [loggingIn, setLoggingIn] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [phantomInitiated, setPhantomInitiated] = useState(false);
 
   // Phantom SDK hooks - safe wrapper that returns no-ops when Phantom is not enabled
   const { isConnected, user: phantomUser, openModal: openPhantomModal, signMessage } = usePhantomSafe();
@@ -97,35 +98,24 @@ export default function Login() {
   };
 
   const handlePhantomLogin = async () => {
-    // If already connected with a user, proceed directly with auth
+    setPhantomInitiated(true);
     if (isConnected && phantomUser && !user) {
       await completePhantomAuth(phantomUser as Record<string, any>);
     } else {
-      // Open the Phantom SDK modal to connect wallet
       openPhantomModal();
     }
   };
 
-  // Effect to handle Phantom SDK connection (for new connections)
-  useEffect(() => {
-    const handleNewConnection = async () => {
-      if (isConnected && phantomUser && !user && !loggingIn) {
-        await completePhantomAuth(phantomUser as Record<string, any>);
-      }
-    };
-    
-    handleNewConnection();
-  }, [isConnected, phantomUser, user]);
-
-  // Tracking ref to detect when connection state actually changes
+  // Only complete Phantom auth after the user clicks the Phantom button
   const prevConnectedRef = useRef(isConnected);
   useEffect(() => {
-    // Only trigger auth when connection state changes from false to true
-    if (!prevConnectedRef.current && isConnected && phantomUser && !user) {
+    if (!phantomInitiated) return;
+    const justConnected = !prevConnectedRef.current && isConnected;
+    if (justConnected && phantomUser && !user && !loggingIn) {
       completePhantomAuth(phantomUser as Record<string, any>);
     }
     prevConnectedRef.current = isConnected;
-  }, [isConnected, phantomUser, user]);
+  }, [isConnected, phantomUser, user, phantomInitiated]);
 
   const handleDemoLogin = async () => {
     setLoggingIn(true);
