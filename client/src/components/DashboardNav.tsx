@@ -123,9 +123,10 @@ export default function DashboardNav({ onNewAlert, alertCount = 0, search, onSea
           </div>
         )}
         
-        <div className="flex items-center gap-3 flex-shrink-0">
+        <div className="flex items-center gap-2 flex-shrink-0">
           {isDevMode && hasPhantom && (
             <Button
+              size="sm"
               onClick={handleAirdrop}
               disabled={airdropState !== 'idle'}
               variant={airdropState === 'done' ? 'secondary' : 'default'}
@@ -133,13 +134,13 @@ export default function DashboardNav({ onNewAlert, alertCount = 0, search, onSea
               data-testid="button-devnet-airdrop"
             >
               {airdropState === 'loading' ? (
-                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
               ) : airdropState === 'done' ? (
-                <CheckCircle2 className="w-4 h-4 mr-1" />
+                <CheckCircle2 className="w-3.5 h-3.5" />
               ) : (
-                <Gift className="w-4 h-4 mr-1" />
+                <Gift className="w-3.5 h-3.5" />
               )}
-              {airdropState === 'done' ? 'Airdrop Sent!' : airdropState === 'loading' ? 'Sending...' : 'Devnet Bottle Airdrop!'}
+              <span className="ml-1">{airdropState === 'done' ? 'Sent!' : airdropState === 'loading' ? 'Sending...' : 'Airdrop'}</span>
             </Button>
           )}
           {onNewAlert && (
