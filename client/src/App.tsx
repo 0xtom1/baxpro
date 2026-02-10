@@ -36,6 +36,7 @@ import Unsubscribe from "@/pages/Unsubscribe";
 import Brand from "@/pages/Brand";
 import MyBottles from "@/pages/MyBottles";
 import BottleDetail from "@/pages/BottleDetail";
+import CreateLoan from "@/pages/CreateLoan";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -62,6 +63,7 @@ function Router() {
       <Route path="/brand" component={Brand} />
       <Route path="/my-bottles" component={MyBottles} />
       <Route path="/my-bottles/:assetId" component={BottleDetail} />
+      <Route path="/create-loan" component={CreateLoan} />
       <Route component={NotFound} />
     </Switch>
   );

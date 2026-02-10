@@ -4,11 +4,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Package, Wallet, ExternalLink, Landmark } from "lucide-react";
-import { useState } from "react";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import DashboardNav from "@/components/DashboardNav";
 import GlencairnLogo from "@/components/GlencairnLogo";
-import CreateLoanModal from "@/components/CreateLoanModal";
 
 interface BottleAsset {
   assetIdx: number;
@@ -32,7 +30,6 @@ interface MyBottlesResponse {
 
 export default function MyBottles() {
   const { user, loading: authLoading } = useRequireAuth();
-  const [createLoanOpen, setCreateLoanOpen] = useState(false);
 
   const { data, isLoading, error } = useQuery<MyBottlesResponse>({
     queryKey: ["/api/my-bottles"],
@@ -55,12 +52,19 @@ export default function MyBottles() {
   const assets = data?.assets || [];
   const hasWallet = data?.hasWallet ?? false;
 
+  const totalPortfolioValue = assets.reduce((sum, a) => {
+    const val = a.price ?? a.marketPrice ?? null;
+    return val ? sum + val : sum;
+  }, 0);
+  const bottlesWithValue = assets.filter(a => a.price || a.marketPrice).length;
+  const listedCount = assets.filter(a => a.isListed).length;
+
   return (
     <div className="min-h-screen bg-background">
       <DashboardNav />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex items-center justify-between gap-4 flex-wrap mb-8">
+        <div className="flex items-center justify-between gap-4 flex-wrap mb-6">
           <div>
             <h1 className="text-2xl font-bold text-foreground">My Bottles</h1>
             <p className="text-muted-foreground mt-1">
@@ -68,12 +72,42 @@ export default function MyBottles() {
             </p>
           </div>
           {hasWallet && assets.length > 0 && user?.phantomWallet && (
-            <Button onClick={() => setCreateLoanOpen(true)} data-testid="button-create-loan">
-              <Landmark className="w-4 h-4 mr-2" />
-              Create Loan
-            </Button>
+            <Link href="/create-loan">
+              <Button data-testid="button-create-loan">
+                <Landmark className="w-4 h-4 mr-2" />
+                Create Loan
+              </Button>
+            </Link>
           )}
         </div>
+
+        {hasWallet && assets.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
+            <Card className="p-4">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Total Portfolio Value</p>
+              <p className="text-2xl font-bold tabular-nums text-foreground" data-testid="text-portfolio-value">
+                {totalPortfolioValue > 0 ? `$${totalPortfolioValue.toLocaleString()}` : '-'}
+              </p>
+              {bottlesWithValue > 0 && bottlesWithValue < assets.length && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Based on {bottlesWithValue} of {assets.length} bottles
+                </p>
+              )}
+            </Card>
+            <Card className="p-4">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Bottles</p>
+              <p className="text-2xl font-bold tabular-nums text-foreground" data-testid="text-bottle-count">
+                {assets.length}
+              </p>
+            </Card>
+            <Card className="p-4">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Listed</p>
+              <p className="text-2xl font-bold tabular-nums text-foreground" data-testid="text-listed-count">
+                {listedCount}
+              </p>
+            </Card>
+          </div>
+        )}
 
         {isLoading ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
@@ -192,12 +226,6 @@ export default function MyBottles() {
           </div>
         )}
       </main>
-
-      <CreateLoanModal
-        open={createLoanOpen}
-        onOpenChange={setCreateLoanOpen}
-        bottles={assets}
-      />
     </div>
   );
 }
