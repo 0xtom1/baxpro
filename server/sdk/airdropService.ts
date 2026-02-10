@@ -26,7 +26,7 @@ function getConnection(): Connection {
 }
 
 function getMasterKeypair(): Keypair {
-  const pk = process.env.DEVNET_ADDRESS_PK;
+  const pk = process.env.DEVNET_ADDRESS_PK?.trim().replace(/^["']|["']$/g, '');
   if (!pk) {
     throw new Error('DEVNET_ADDRESS_PK not configured');
   }
