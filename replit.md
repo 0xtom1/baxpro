@@ -185,3 +185,16 @@ Users with `isVip: true` can access:
 - `SESSION_SECRET`
 - `CUSTOM_DOMAIN` (optional, for OAuth redirect)
 - `HELIUS_API_KEY` (for wallet NFT data)
+- `DEVNET_ADDRESS_PK` (dev only, base58-encoded private key for devnet bottle airdrop master wallet)
+
+### Devnet Bottle Airdrop
+
+**Feature**: In dev environment, Phantom wallet users see a "Devnet Bottle Airdrop!" button in the nav bar. Clicking it sends 2 Token 2022 bottles + 0.5 SOL from a master wallet to the user's Phantom wallet address on Solana devnet.
+
+**Flow**:
+- `POST /api/devnet-airdrop` — authenticated, Phantom wallet required, dev-only
+- Backend (`server/sdk/airdropService.ts`) reads `DEVNET_ADDRESS_PK`, finds 2 Token 2022 mints with balance in the master wallet, transfers them + 0.5 SOL
+- Button grays out after successful airdrop (session-only, no DB tracking)
+- Fails if master wallet has fewer than 2 Token 2022 bottles available
+
+**Terraform/Deploy**: `DEVNET_ADDRESS_PK` stored as GitHub secret, passed via `TF_VAR_devnet_address_pk` to terraform which creates a GCP Secret Manager secret and injects it into Cloud Run (dev environment only).

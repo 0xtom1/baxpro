@@ -1447,6 +1447,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/devnet-airdrop", async (req, res) => {
+    if (!req.session?.userId) return res.status(401).json({ error: "Not authenticated" });
+    if (process.env.NODE_ENV === 'production') return res.status(403).json({ error: "Airdrop only available in dev" });
+    if (!process.env.DEVNET_ADDRESS_PK) return res.status(503).json({ error: "Airdrop not configured" });
+
+    try {
+      const user = await storage.getUser(req.session.userId);
+      if (!user?.phantomWallet) return res.status(400).json({ error: "Phantom wallet required" });
+
+      const { executeDevnetAirdrop } = await import("./sdk/airdropService");
+      const result = await executeDevnetAirdrop(user.phantomWallet);
+
+      if (!result.success) {
+        return res.status(500).json({ error: result.error || "Airdrop failed" });
+      }
+
+      res.json({
+        success: true,
+        solSignature: result.solSignature,
+        tokenSignatures: result.tokenSignatures,
+        bottlesSent: result.bottlesSent,
+      });
+    } catch (error: any) {
+      console.error("Devnet airdrop error:", error);
+      res.status(500).json({ error: error.message || "Airdrop failed" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

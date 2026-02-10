@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Moon, Sun, LogOut, User, Crown, AlertCircle, Search } from "lucide-react";
+import { Plus, Moon, Sun, LogOut, User, Crown, AlertCircle, Search, Gift, Loader2, CheckCircle2 } from "lucide-react";
 import GlencairnLogo from "./GlencairnLogo";
 import {
   DropdownMenu,
@@ -14,6 +14,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 import { useLocation } from "wouter";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 const MAX_ALERTS = 50;
 
@@ -29,6 +31,32 @@ export default function DashboardNav({ onNewAlert, alertCount = 0, search, onSea
   const isAtLimit = alertCount >= MAX_ALERTS;
   const { user, logout } = useAuth();
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
+
+  const isDevMode = import.meta.env.DEV || import.meta.env.MODE === 'development';
+  const hasPhantom = !!user?.phantomWallet;
+  const [airdropState, setAirdropState] = useState<'idle' | 'loading' | 'done'>('idle');
+
+  const handleAirdrop = async () => {
+    if (airdropState !== 'idle') return;
+    setAirdropState('loading');
+    try {
+      const res = await apiRequest('POST', '/api/devnet-airdrop');
+      const data = await res.json();
+      setAirdropState('done');
+      toast({
+        title: "Airdrop sent!",
+        description: `${data.bottlesSent} bottle${data.bottlesSent !== 1 ? 's' : ''} + 0.5 SOL sent to your wallet. Check My Vault!`,
+      });
+    } catch (err: any) {
+      setAirdropState('idle');
+      toast({
+        title: "Airdrop failed",
+        description: err.message || "Something went wrong",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Initialize from localStorage, default to dark mode if no preference saved
   const [isDark, setIsDark] = useState(() => {
@@ -96,6 +124,24 @@ export default function DashboardNav({ onNewAlert, alertCount = 0, search, onSea
         )}
         
         <div className="flex items-center gap-3 flex-shrink-0">
+          {isDevMode && hasPhantom && (
+            <Button
+              onClick={handleAirdrop}
+              disabled={airdropState !== 'idle'}
+              variant={airdropState === 'done' ? 'secondary' : 'default'}
+              className={airdropState === 'done' ? 'opacity-60' : ''}
+              data-testid="button-devnet-airdrop"
+            >
+              {airdropState === 'loading' ? (
+                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+              ) : airdropState === 'done' ? (
+                <CheckCircle2 className="w-4 h-4 mr-1" />
+              ) : (
+                <Gift className="w-4 h-4 mr-1" />
+              )}
+              {airdropState === 'done' ? 'Airdrop Sent!' : airdropState === 'loading' ? 'Sending...' : 'Devnet Bottle Airdrop!'}
+            </Button>
+          )}
           {onNewAlert && (
             <Button 
               onClick={onNewAlert}

@@ -67,14 +67,18 @@ jobs:
             echo "helius_api_key=${{ secrets.HELIUS_API_KEY_DEV }}" >> $GITHUB_OUTPUT
             echo "phantom_app_id=${{ secrets.VITE_PHANTOM_APP_ID_DEV }}" >> $GITHUB_OUTPUT
             echo "authorized_home_ip=${{ secrets.DAN_HOME_IP }}" >> $GITHUB_OUTPUT
+            echo "devnet_address_pk=${{ secrets.DEVNET_ADDRESS_PK }}" >> $GITHUB_OUTPUT
             echo "service_name=baxpro-dev" >> $GITHUB_OUTPUT
             echo "terraform_workspace=dev" >> $GITHUB_OUTPUT
             echo "image_prefix=dev" >> $GITHUB_OUTPUT
           fi
 
-      - name: Mask project ID in logs
+      - name: Mask sensitive values in logs
         run: |
           echo "::add-mask::${{ steps.vars.outputs.project_id }}"
+          if [ -n "${{ steps.vars.outputs.devnet_address_pk }}" ]; then
+            echo "::add-mask::${{ steps.vars.outputs.devnet_address_pk }}"
+          fi
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
@@ -233,6 +237,7 @@ jobs:
           TF_VAR_enable_alert_sender: "true"
           TF_VAR_alert_sender_source_hash: ${{ steps.image.outputs.alert_sender_hash }}
           TF_VAR_authorized_home_ip: ${{ steps.vars.outputs.authorized_home_ip }}
+          TF_VAR_devnet_address_pk: ${{ steps.vars.outputs.devnet_address_pk }}
         run: terraform plan -out=tfplan
 
       - name: Terraform Apply
@@ -255,6 +260,7 @@ jobs:
           TF_VAR_enable_alert_sender: "true"
           TF_VAR_alert_sender_source_hash: ${{ steps.image.outputs.alert_sender_hash }}
           TF_VAR_authorized_home_ip: ${{ steps.vars.outputs.authorized_home_ip }}
+          TF_VAR_devnet_address_pk: ${{ steps.vars.outputs.devnet_address_pk }}
         run: terraform apply -auto-approve tfplan
 
       - name: Verify DB Password Sync and Restart baxus-monitor

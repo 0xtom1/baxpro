@@ -335,6 +335,22 @@ resource "google_secret_manager_secret_version" "helius_api_key" {
   secret_data = var.helius_api_key
 }
 
+# Devnet master wallet private key (dev environment only, for bottle airdrops)
+resource "google_secret_manager_secret" "devnet_address_pk" {
+  count     = var.environment != "production" && var.devnet_address_pk != "" ? 1 : 0
+  secret_id = "baxpro-devnet-address-pk-${var.environment}"
+  replication {
+    auto {}
+  }
+  depends_on = [google_project_service.apis]
+}
+
+resource "google_secret_manager_secret_version" "devnet_address_pk" {
+  count       = var.environment != "production" && var.devnet_address_pk != "" ? 1 : 0
+  secret      = google_secret_manager_secret.devnet_address_pk[0].id
+  secret_data = var.devnet_address_pk
+}
+
 # ============================================================================
 # IAM
 # ============================================================================
@@ -397,7 +413,7 @@ resource "google_pubsub_topic_iam_member" "baxpro_runner_pubsub_publisher" {
 
 # Secret access - use static secret names to allow imports
 locals {
-  secret_names = [
+  secret_names = concat([
     "baxpro-database-url-${var.environment}",
     "baxpro-session-secret-${var.environment}",
     "baxpro-google-client-id-${var.environment}",
@@ -407,7 +423,7 @@ locals {
     "baxpro-db-name-${var.environment}",
     "baxpro-instance-unix-socket-${var.environment}",
     "baxpro-helius-api-key-${var.environment}",
-  ]
+  ], var.environment != "production" && var.devnet_address_pk != "" ? ["baxpro-devnet-address-pk-${var.environment}"] : [])
 
   # Baxus Monitor polling interval: 5 min (300s) for dev, 30s for production
   baxus_poll_interval = var.baxus_poll_interval_sec != null ? var.baxus_poll_interval_sec : (var.environment == "production" ? 30 : 300)
@@ -429,6 +445,7 @@ resource "google_secret_manager_secret_iam_member" "secret_access" {
     google_secret_manager_secret_version.db_pass,
     google_secret_manager_secret_version.db_name,
     google_secret_manager_secret_version.instance_unix_socket,
+    google_secret_manager_secret.devnet_address_pk,
   ]
 }
 
@@ -573,6 +590,19 @@ resource "google_cloud_run_v2_service" "baxpro" {
           secret_key_ref {
             secret  = google_secret_manager_secret.helius_api_key[0].secret_id
             version = "latest"
+          }
+        }
+      }
+      # Devnet master wallet private key (dev only, for bottle airdrops)
+      dynamic "env" {
+        for_each = var.environment != "production" && var.devnet_address_pk != "" ? [1] : []
+        content {
+          name = "DEVNET_ADDRESS_PK"
+          value_source {
+            secret_key_ref {
+              secret  = google_secret_manager_secret.devnet_address_pk[0].secret_id
+              version = "latest"
+            }
           }
         }
       }
