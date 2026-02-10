@@ -15,7 +15,7 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   getAccount,
 } from '@solana/spl-token';
-import bs58 from 'bs58';
+
 
 const SOLANA_RPC = 'https://api.devnet.solana.com';
 const SOL_AIRDROP_AMOUNT = 0.5 * LAMPORTS_PER_SOL;
@@ -30,11 +30,8 @@ function getMasterKeypair(): Keypair {
   if (!pk) {
     throw new Error('DEVNET_ADDRESS_PK not configured');
   }
-  if (pk.startsWith('[')) {
-    const bytes = JSON.parse(pk) as number[];
-    return Keypair.fromSecretKey(Uint8Array.from(bytes));
-  }
-  return Keypair.fromSecretKey(bs58.decode(pk));
+  const bytes = JSON.parse(pk) as number[];
+  return Keypair.fromSecretKey(Uint8Array.from(bytes));
 }
 
 async function getToken2022Mints(connection: Connection, owner: PublicKey): Promise<PublicKey[]> {
