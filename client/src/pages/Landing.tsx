@@ -180,7 +180,7 @@ export default function Landing() {
             <Link href="/login">
               <Button
                 size="lg"
-                className="text-base px-8 gap-2 bg-[hsl(20,50%,42%)] border-[hsl(20,50%,42%)] text-white"
+                className="text-base px-8 gap-2 bg-[hsl(165,60%,35%)] border-[hsl(165,60%,35%)] text-white"
                 data-testid="button-get-started"
               >
                 Get Started
