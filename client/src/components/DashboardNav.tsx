@@ -130,7 +130,7 @@ export default function DashboardNav({ onNewAlert, alertCount = 0, search, onSea
               onClick={handleAirdrop}
               disabled={airdropState !== 'idle'}
               variant={airdropState === 'done' ? 'secondary' : 'default'}
-              className={airdropState === 'done' ? 'opacity-60' : ''}
+              className={airdropState === 'done' ? 'opacity-60' : 'bg-[hsl(20,50%,42%)] border-[hsl(20,50%,42%)] text-white'}
               data-testid="button-devnet-airdrop"
             >
               {airdropState === 'loading' ? (
