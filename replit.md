@@ -12,6 +12,14 @@ The system consists of a main TypeScript/React web application and Python micros
 
 Preferred communication style: Simple, everyday language.
 
+### Design & Color Preferences
+- **Primary/brand color**: Copper/bronze — `hsl(20, 50%, 42%)` (light mode), `hsl(20, 50%, 45%)` (dark mode). Used for buttons, icons, and active UI indicators.
+- **Text colors**: Use `text-foreground` (black in light, white in dark) for all content text. Use `text-muted-foreground` for secondary/tertiary info (floor price, supply, listed counts on cards, etc.). Never use the old burnt orange/amber as a text accent color.
+- **Text emphasis**: Use `font-bold` instead of colored text when something needs to stand out (e.g., repayment values, prices).
+- **Amber/yellow**: Reserved exclusively for semantic warnings and caution messages (testnet warnings, notification alerts). Not for branding or emphasis.
+- **VIP badges/icons**: Use `text-primary` and `bg-primary/15` (copper tones) instead of amber.
+- **Activity type colors on Landing ticker**: Semantic per-type colors are fine (emerald for New Listing, amber for Purchase, sky for Price Change, red for Delisted).
+
 ## System Architecture
 
 ### Main Web Application

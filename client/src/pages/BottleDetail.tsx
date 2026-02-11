@@ -167,7 +167,7 @@ export default function BottleDetail() {
                         <DollarSign className="w-4 h-4" />
                         Listed Price
                       </div>
-                      <p className="text-xl font-bold text-primary mt-1">
+                      <p className="text-xl font-bold mt-1">
                         ${asset.price.toLocaleString()}
                       </p>
                     </CardContent>

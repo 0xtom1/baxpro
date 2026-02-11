@@ -85,7 +85,7 @@ export default function AlertCard({
         </div>
         
         <div className="flex items-center gap-2">
-          <span className="text-xl font-semibold text-primary" data-testid={`text-price-${id}`}>
+          <span className="text-xl font-bold" data-testid={`text-price-${id}`}>
             ≤ ${maxPrice.toLocaleString()}
           </span>
           <Button 

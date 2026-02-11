@@ -245,7 +245,7 @@ export default function CreateLoanModal({ open, onOpenChange, bottles }: CreateL
               </div>
               <div className="flex justify-between text-sm font-medium">
                 <span className="text-muted-foreground">Total repayment</span>
-                <span className="text-primary tabular-nums">{formatLamports(totalRepayment)} SOL</span>
+                <span className="font-bold tabular-nums">{formatLamports(totalRepayment)} SOL</span>
               </div>
             </Card>
 
@@ -294,7 +294,7 @@ export default function CreateLoanModal({ open, onOpenChange, bottles }: CreateL
               <div className="border-t border-border my-1" />
               <div className="flex justify-between text-sm font-medium">
                 <span className="text-muted-foreground">You repay</span>
-                <span className="text-primary tabular-nums">{formatLamports(totalRepayment)} SOL</span>
+                <span className="font-bold tabular-nums">{formatLamports(totalRepayment)} SOL</span>
               </div>
             </Card>
 

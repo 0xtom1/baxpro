@@ -130,7 +130,7 @@ export default function DashboardNav({ onNewAlert, alertCount = 0, search, onSea
               onClick={handleAirdrop}
               disabled={airdropState !== 'idle'}
               variant={airdropState === 'done' ? 'secondary' : 'default'}
-              className={airdropState === 'done' ? 'opacity-60' : 'bg-[hsl(165,60%,35%)] border-[hsl(165,60%,35%)] text-white'}
+              className={airdropState === 'done' ? 'opacity-60' : ''}
               data-testid="button-devnet-airdrop"
             >
               {airdropState === 'loading' ? (
@@ -171,7 +171,7 @@ export default function DashboardNav({ onNewAlert, alertCount = 0, search, onSea
                     {user?.isVip && (
                       <Badge 
                         variant="secondary"
-                        className="text-[10px] px-1.5 py-0 h-4 font-semibold bg-gradient-to-r from-amber-500/20 to-yellow-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30"
+                        className="text-[10px] px-1.5 py-0 h-4 font-semibold bg-primary/15 text-primary border-primary/30"
                         data-testid="badge-vip"
                       >
                         <Crown className="w-3 h-3 mr-0.5" />
@@ -195,7 +195,7 @@ export default function DashboardNav({ onNewAlert, alertCount = 0, search, onSea
               </DropdownMenuItem>
               {user?.isVip && (
                 <DropdownMenuItem onClick={() => setLocation("/vip-tools")} data-testid="button-vip-tools">
-                  <Crown className="w-4 h-4 mr-2 text-amber-500" />
+                  <Crown className="w-4 h-4 mr-2 text-primary" />
                   VIP Tools
                 </DropdownMenuItem>
               )}
