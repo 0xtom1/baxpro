@@ -298,28 +298,22 @@ export default function Dashboard() {
 
   const ActivityTable = () => (
     <div className="flex-1 overflow-hidden">
-      <div className="overflow-x-auto h-full scrollbar-hide">
-        <table className="w-full text-sm min-w-[700px]">
+      <div className="overflow-y-auto h-full scrollbar-hide">
+        <table className="w-full text-sm">
           <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur-sm">
             <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
-              <th className="text-left py-3 px-4 font-medium sticky left-0 bg-muted/80 backdrop-blur-sm z-20 min-w-[200px]">Asset</th>
-              <th className="text-left py-3 px-2 font-medium w-28">Type</th>
-              <th className="text-left py-3 px-2 font-medium min-w-[100px] hidden lg:table-cell">Producer</th>
-              <th className="text-right py-3 px-2 font-medium w-24">Price</th>
-              <th className="text-center py-3 px-2 font-medium w-16">Link</th>
-              <th className="text-right py-3 px-2 font-medium w-32">Date</th>
+              <th className="text-left py-3 px-4 font-medium">Asset</th>
+              <th className="text-left py-3 px-2 font-medium hidden lg:table-cell">Producer</th>
+              <th className="text-right py-3 px-4 font-medium w-32">Date</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {activityLoading ? (
               Array.from({ length: 10 }).map((_, i) => (
                 <tr key={i}>
-                  <td className="py-3 px-4 sticky left-0 bg-background"><Skeleton className="h-8 w-full" /></td>
-                  <td className="py-3 px-2"><Skeleton className="h-5 w-20" /></td>
+                  <td className="py-3 px-4"><Skeleton className="h-10 w-full" /></td>
                   <td className="py-3 px-2 hidden lg:table-cell"><Skeleton className="h-4 w-24" /></td>
-                  <td className="py-3 px-2"><Skeleton className="h-4 w-16 ml-auto" /></td>
-                  <td className="py-3 px-2"><Skeleton className="h-4 w-8 mx-auto" /></td>
-                  <td className="py-3 px-2"><Skeleton className="h-8 w-24 ml-auto" /></td>
+                  <td className="py-3 px-4"><Skeleton className="h-4 w-20 ml-auto" /></td>
                 </tr>
               ))
             ) : (
@@ -331,39 +325,29 @@ export default function Dashboard() {
                     className="hover-elevate"
                     data-testid={`row-activity-${activity.activityIdx}`}
                   >
-                    <td className="py-3 px-4 sticky left-0 bg-background z-10">
+                    <td className="py-3 px-4">
                       <Link 
                         href={`/asset/${activity.assetIdx}`}
-                        className={`text-primary hover:underline font-medium line-clamp-2 ${isDelisted ? 'line-through opacity-60' : ''}`}
+                        className={`text-primary hover:underline font-medium line-clamp-1 ${isDelisted ? 'line-through opacity-60' : ''}`}
                         data-testid={`link-asset-${activity.assetIdx}`}
                       >
                         {activity.assetName}
                       </Link>
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        <Badge variant="secondary" className="text-[10px]">
+                          {activity.activityTypeName || activity.activityTypeCode || 'Unknown'}
+                        </Badge>
+                        {activity.price != null && (
+                          <span className="text-xs font-medium tabular-nums text-muted-foreground">
+                            {formatPrice(activity.price)}
+                          </span>
+                        )}
+                      </div>
                     </td>
-                    <td className="py-3 px-2">
-                      <Badge variant="secondary" className="text-xs">
-                        {activity.activityTypeName || activity.activityTypeCode || 'Unknown'}
-                      </Badge>
-                    </td>
-                    <td className="py-3 px-2 text-muted-foreground hidden lg:table-cell truncate max-w-[100px]">
+                    <td className="py-3 px-2 text-muted-foreground hidden lg:table-cell truncate max-w-[120px]">
                       {activity.producer || '-'}
                     </td>
-                    <td className="py-3 px-2 text-right font-medium tabular-nums">
-                      {formatPrice(activity.price)}
-                    </td>
-                    <td className="py-3 px-2 text-center">
-                      <a
-                        href={`https://baxus.co/asset/${activity.assetId?.trim()}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center"
-                        onClick={(e) => e.stopPropagation()}
-                        data-testid={`link-baxus-${activity.activityIdx}`}
-                      >
-                        <ExternalLink className="w-4 h-4 text-muted-foreground hover:text-primary" />
-                      </a>
-                    </td>
-                    <td className="py-3 px-2 text-right text-sm">
+                    <td className="py-3 px-4 text-right text-xs text-muted-foreground whitespace-nowrap">
                       {formatDate(activity.activityDate)}
                     </td>
                   </tr>
