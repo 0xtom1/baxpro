@@ -58,6 +58,7 @@ Baxus API → baxus-monitor → Pub/Sub → alert-processor → Pub/Sub → aler
 - `/alerts` - User's alert management page
 - `/brand?name=<brand_name>` - Individual brand detail page
 - `/my-vault/:assetId` - Bottle detail page with image, traits, and activity
+- `/loan/:publicKey` - Loan detail page with full terms, participants, collateral bottle cards, market value, and action buttons
 - `/my-vault` - Redirects to `/dashboard` (legacy)
 - `/my-bottles` - Redirects to `/dashboard` (legacy)
 

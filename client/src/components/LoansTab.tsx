@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ interface LoansTabProps {
 export default function LoansTab({ filterByBrand }: LoansTabProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   const [fundingLoanId, setFundingLoanId] = useState<string | null>(null);
 
   const { data: loans, isLoading, error, refetch } = useQuery<SerializedLoan[]>({
@@ -145,8 +147,12 @@ export default function LoansTab({ filterByBrand }: LoansTabProps) {
 
     return (
       <Card
-        className="overflow-visible p-4 flex flex-col gap-3"
+        className="overflow-visible p-4 flex flex-col gap-3 hover-elevate cursor-pointer"
         data-testid={`card-loan-${loan.publicKey}`}
+        onClick={(e) => {
+          if ((e.target as HTMLElement).closest('button, a')) return;
+          navigate(`/loan/${loan.publicKey}`);
+        }}
       >
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">

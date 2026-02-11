@@ -10,7 +10,7 @@ import { formatLamports, formatDuration, formatBps, truncateAddress, signAndSend
 import type { SerializedLoan } from "@/hooks/use-lending";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 
 function isLoanExpired(loan: SerializedLoan): boolean {
   const startTime = parseInt(loan.startTime);
@@ -39,6 +39,7 @@ function getTimeRemaining(loan: SerializedLoan): string {
 export default function MyLoansTab() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   const [cancellingLoanId, setCancellingLoanId] = useState<string | null>(null);
   const [repayingLoanId, setRepayingLoanId] = useState<string | null>(null);
   const [liquidatingLoanId, setLiquidatingLoanId] = useState<string | null>(null);
@@ -258,8 +259,12 @@ export default function MyLoansTab() {
         return (
           <Card
             key={loan.publicKey}
-            className="overflow-visible p-4 flex flex-col gap-3"
+            className="overflow-visible p-4 flex flex-col gap-3 hover-elevate cursor-pointer"
             data-testid={`card-my-loan-${loan.publicKey}`}
+            onClick={(e) => {
+              if ((e.target as HTMLElement).closest('button, a')) return;
+              navigate(`/loan/${loan.publicKey}`);
+            }}
           >
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
