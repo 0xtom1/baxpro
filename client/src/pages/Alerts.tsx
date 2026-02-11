@@ -144,11 +144,23 @@ export default function Dashboard() {
       <DashboardNav alertCount={alerts.length} />
       
       <main className="max-w-6xl mx-auto px-6 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">My Alerts</h1>
-          <p className="text-muted-foreground">
-            Manage your spirit availability alerts
-          </p>
+        <div className="flex items-center justify-between gap-4 flex-wrap mb-8">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">My Alerts</h1>
+            <p className="text-muted-foreground">
+              Manage your spirit availability alerts
+            </p>
+          </div>
+          <Button
+            size="sm"
+            onClick={handleNewAlert}
+            disabled={isAtLimit}
+            title={isAtLimit ? `Maximum of ${MAX_ALERTS} alerts reached` : undefined}
+            data-testid="button-new-alert"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            New Alert
+          </Button>
         </div>
 
         {alerts.length === 0 ? (
@@ -166,18 +178,6 @@ export default function Dashboard() {
             ))}
           </div>
         )}
-
-        <div className="flex justify-center mt-8">
-          <Button
-            onClick={handleNewAlert}
-            disabled={isAtLimit}
-            title={isAtLimit ? `Maximum of ${MAX_ALERTS} alerts reached` : undefined}
-            data-testid="button-new-alert-bottom"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            New Alert
-          </Button>
-        </div>
       </main>
 
       <AlertModal

@@ -231,13 +231,7 @@ export default function MyLoansTab() {
       <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
         <Landmark className="w-12 h-12 mb-4 opacity-30" />
         <p className="font-medium text-foreground mb-1">No loans yet</p>
-        <p className="text-sm mb-4">You haven't created any loans. Use your bottles as collateral to borrow SOL.</p>
-        <Link href="/create-loan">
-          <Button data-testid="button-create-first-loan">
-            <Landmark className="w-4 h-4 mr-2" />
-            Create Loan
-          </Button>
-        </Link>
+        <p className="text-sm">You haven't created any loans. Use your bottles as collateral to borrow SOL.</p>
       </div>
     );
   }
