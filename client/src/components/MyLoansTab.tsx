@@ -263,7 +263,7 @@ export default function MyLoansTab() {
             data-testid={`card-my-loan-${loan.publicKey}`}
             onClick={(e) => {
               if ((e.target as HTMLElement).closest('button, a')) return;
-              navigate(`/loan/${loan.publicKey}`);
+              navigate(`/loan/${loan.publicKey}?from=${encodeURIComponent('/dashboard?tab=my-loans')}`);
             }}
           >
             <div className="flex items-start justify-between gap-2">

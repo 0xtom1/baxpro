@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link, useParams } from "wouter";
+import { Link, useParams, useSearch } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -40,8 +40,27 @@ function getTimeRemaining(loan: SerializedLoan): string {
   return hours > 0 ? `${hours}h ${mins}m remaining` : `${mins}m remaining`;
 }
 
+const DEFAULT_RETURN = '/dashboard?tab=loans';
+
+function sanitizeFromPath(raw: string | null): string {
+  if (!raw) return DEFAULT_RETURN;
+  if (raw.startsWith('/dashboard')) return raw;
+  if (raw.startsWith('/brand?')) return raw;
+  return DEFAULT_RETURN;
+}
+
+function getBackLabel(fromPath: string): string {
+  if (fromPath.startsWith('/brand?')) return 'Back to Brand';
+  if (fromPath.includes('tab=my-loans')) return 'Back to My Loans';
+  return 'Back to Loans';
+}
+
 export default function LoanDetail() {
   const { publicKey } = useParams<{ publicKey: string }>();
+  const searchString = useSearch();
+  const searchParams = new URLSearchParams(searchString);
+  const fromPath = sanitizeFromPath(searchParams.get('from'));
+  const backLabel = getBackLabel(fromPath);
   const { user, loading: authLoading } = useRequireAuth();
   const { toast } = useToast();
   usePageTitle("Loan Detail");
@@ -216,10 +235,10 @@ export default function LoanDetail() {
       <DashboardNav />
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Link href="/dashboard">
+        <Link href={fromPath}>
           <Button variant="ghost" size="sm" className="mb-6" data-testid="button-back-to-dashboard">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Dashboard
+            {backLabel}
           </Button>
         </Link>
 
@@ -240,9 +259,9 @@ export default function LoanDetail() {
             <AlertCircle className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
             <p className="text-foreground font-medium mb-1">Failed to load loan</p>
             <p className="text-sm text-muted-foreground">Could not connect to Solana network. Please try again.</p>
-            <Link href="/dashboard">
+            <Link href={fromPath}>
               <Button variant="outline" className="mt-4" data-testid="button-return-dashboard">
-                Return to Dashboard
+                Go Back
               </Button>
             </Link>
           </Card>
@@ -251,9 +270,9 @@ export default function LoanDetail() {
             <AlertCircle className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
             <p className="text-foreground font-medium mb-1">Loan not found</p>
             <p className="text-sm text-muted-foreground">This loan may have been removed or the address is invalid.</p>
-            <Link href="/dashboard">
+            <Link href={fromPath}>
               <Button variant="outline" className="mt-4" data-testid="button-return-dashboard">
-                Return to Dashboard
+                Go Back
               </Button>
             </Link>
           </Card>

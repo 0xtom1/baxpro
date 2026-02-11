@@ -14,9 +14,10 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 
 interface LoansTabProps {
   filterByBrand?: string;
+  returnPath?: string;
 }
 
-export default function LoansTab({ filterByBrand }: LoansTabProps) {
+export default function LoansTab({ filterByBrand, returnPath }: LoansTabProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [, navigate] = useLocation();
@@ -151,7 +152,7 @@ export default function LoansTab({ filterByBrand }: LoansTabProps) {
         data-testid={`card-loan-${loan.publicKey}`}
         onClick={(e) => {
           if ((e.target as HTMLElement).closest('button, a')) return;
-          navigate(`/loan/${loan.publicKey}`);
+          navigate(`/loan/${loan.publicKey}${returnPath ? `?from=${encodeURIComponent(returnPath)}` : ''}`);
         }}
       >
         <div className="flex items-start justify-between gap-2">

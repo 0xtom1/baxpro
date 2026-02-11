@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link, useLocation, useSearch } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useRequireAuth } from "@/hooks/use-require-auth";
@@ -76,15 +76,26 @@ export default function Brand() {
   const search = useSearch();
   const params = new URLSearchParams(search);
   const brandName = params.get("name") || "";
+  const initialTab = (() => {
+    const t = params.get("tab") as TabType;
+    return (["items", "loans", "charts", "activity", "holders"] as TabType[]).includes(t) ? t : "items";
+  })();
   
   const { user, loading: authLoading } = useRequireAuth();
   usePageTitle("Brand");
-  const [activeTab, setActiveTab] = useState<TabType>("items");
+  const [activeTab, setActiveTab] = useState<TabType>(initialTab);
   const [selectedTraits, setSelectedTraits] = useState<Record<string, string[]>>({});
   const [openTraits, setOpenTraits] = useState<Record<string, boolean>>({});
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
+
+  useEffect(() => {
+    const t = params.get("tab") as TabType;
+    if ((["items", "loans", "charts", "activity", "holders"] as TabType[]).includes(t)) {
+      setActiveTab(t);
+    }
+  }, [search]);
 
   const { data, isLoading, error } = useQuery<BrandData>({
     queryKey: ['/api/brand', brandName, selectedTraits],
@@ -492,7 +503,7 @@ export default function Brand() {
           )}
           {activeTab === "loans" && (
             <div className="flex-1 overflow-y-auto">
-              <LoansTab filterByBrand={brandName} />
+              <LoansTab filterByBrand={brandName} returnPath={`/brand?name=${encodeURIComponent(brandName)}&tab=loans`} />
             </div>
           )}
           {activeTab === "holders" && (
@@ -669,7 +680,7 @@ export default function Brand() {
 
         {activeTab === "loans" && (
           <div className="px-4 py-4">
-            <LoansTab filterByBrand={brandName} />
+            <LoansTab filterByBrand={brandName} returnPath={`/brand?name=${encodeURIComponent(brandName)}&tab=loans`} />
           </div>
         )}
 

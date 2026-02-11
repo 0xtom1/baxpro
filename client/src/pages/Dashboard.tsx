@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, useSearch } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -74,15 +74,31 @@ type TabType = "brands" | "activity" | "loans" | "my-vault" | "my-loans";
 
 const ITEMS_PER_PAGE = 30;
 
+const VALID_TABS: TabType[] = ["brands", "activity", "loans", "my-vault", "my-loans"];
+
 export default function Dashboard() {
   const { user, loading: authLoading } = useRequireAuth();
   usePageTitle("Dashboard");
   const [, setLocation] = useLocation();
+  const searchString = useSearch();
+  const initialTab = (() => {
+    const p = new URLSearchParams(searchString);
+    const t = p.get('tab') as TabType;
+    return VALID_TABS.includes(t) ? t : "brands";
+  })();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [activeTab, setActiveTab] = useState<TabType>("brands");
+  const [activeTab, setActiveTab] = useState<TabType>(initialTab);
   const [activityPage, setActivityPage] = useState(1);
   const [typeFilter, setTypeFilter] = useState<string>("all");
+
+  useEffect(() => {
+    const p = new URLSearchParams(searchString);
+    const t = p.get('tab') as TabType;
+    if (VALID_TABS.includes(t)) {
+      setActiveTab(t);
+    }
+  }, [searchString]);
 
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
@@ -630,7 +646,7 @@ export default function Dashboard() {
           )}
           {activeTab === "loans" && (
             <div className="flex-1 overflow-y-auto">
-              <LoansTab />
+              <LoansTab returnPath="/dashboard?tab=loans" />
             </div>
           )}
           {activeTab === "activity" && (
@@ -801,7 +817,7 @@ export default function Dashboard() {
         {/* Content */}
         <div className="flex-1 overflow-auto px-4 py-4">
           {activeTab === "brands" && <BrandsCards />}
-          {activeTab === "loans" && <LoansTab />}
+          {activeTab === "loans" && <LoansTab returnPath="/dashboard?tab=loans" />}
           {activeTab === "activity" && <ActivityTable />}
           {activeTab === "my-vault" && <MyVaultContent />}
           {activeTab === "my-loans" && <MyLoansTab />}
