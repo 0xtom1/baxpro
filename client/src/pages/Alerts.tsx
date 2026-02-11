@@ -7,6 +7,8 @@ import DashboardNav from "@/components/DashboardNav";
 import AlertCard from "@/components/AlertCard";
 import AlertModal from "@/components/AlertModal";
 import EmptyState from "@/components/EmptyState";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { usePageTitle } from "@/hooks/use-page-title";
 
@@ -134,9 +136,12 @@ export default function Dashboard() {
     return null;
   }
 
+  const MAX_ALERTS = 25;
+  const isAtLimit = alerts.length >= MAX_ALERTS;
+
   return (
     <div className="min-h-screen bg-background">
-      <DashboardNav onNewAlert={handleNewAlert} alertCount={alerts.length} />
+      <DashboardNav alertCount={alerts.length} />
       
       <main className="max-w-6xl mx-auto px-6 py-8">
         <div className="mb-8">
@@ -147,7 +152,7 @@ export default function Dashboard() {
         </div>
 
         {alerts.length === 0 ? (
-          <EmptyState onCreateAlert={handleNewAlert} />
+          <EmptyState />
         ) : (
           <div className="space-y-4">
             {alerts.map(alert => (
@@ -161,6 +166,18 @@ export default function Dashboard() {
             ))}
           </div>
         )}
+
+        <div className="flex justify-center mt-8">
+          <Button
+            onClick={handleNewAlert}
+            disabled={isAtLimit}
+            title={isAtLimit ? `Maximum of ${MAX_ALERTS} alerts reached` : undefined}
+            data-testid="button-new-alert-bottom"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            New Alert
+          </Button>
+        </div>
       </main>
 
       <AlertModal

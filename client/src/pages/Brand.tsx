@@ -11,7 +11,6 @@ import { Input } from "@/components/ui/input";
 import { 
   ArrowLeft, 
   Grid3X3, 
-  BarChart3, 
   Activity as ActivityIcon, 
   Clock,
   ChevronDown,
@@ -19,13 +18,11 @@ import {
   Filter,
   Search,
   X,
-  DollarSign,
-  Users
+  DollarSign
 } from "lucide-react";
 import GlencairnLogo from "@/components/GlencairnLogo";
 import DashboardNav from "@/components/DashboardNav";
 import LoansTab from "@/components/LoansTab";
-import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import type { ActivityFeedWithDetails } from "@shared/schema";
 import { usePageTitle } from "@/hooks/use-page-title";
 
@@ -69,7 +66,7 @@ interface BrandData {
   activity: ActivityFeedWithDetails[];
 }
 
-type TabType = "items" | "bids" | "loans" | "holders" | "charts" | "activity";
+type TabType = "items" | "bids" | "loans" | "activity";
 
 export default function Brand() {
   const [, setLocation] = useLocation();
@@ -78,7 +75,7 @@ export default function Brand() {
   const brandName = params.get("name") || "";
   const initialTab = (() => {
     const t = params.get("tab") as TabType;
-    return (["items", "loans", "charts", "activity", "holders"] as TabType[]).includes(t) ? t : "items";
+    return (["items", "loans", "activity"] as TabType[]).includes(t) ? t : "items";
   })();
   
   const { user, loading: authLoading } = useRequireAuth();
@@ -92,7 +89,7 @@ export default function Brand() {
 
   useEffect(() => {
     const t = params.get("tab") as TabType;
-    if ((["items", "loans", "charts", "activity", "holders"] as TabType[]).includes(t)) {
+    if ((["items", "loans", "activity"] as TabType[]).includes(t)) {
       setActiveTab(t);
     }
   }, [search]);
@@ -172,17 +169,6 @@ export default function Brand() {
     const query = searchQuery.toLowerCase();
     return data.assets.filter(a => a.name.toLowerCase().includes(query));
   }, [data?.assets, searchQuery]);
-
-  const chartData = useMemo(() => {
-    if (!data?.assets) return [];
-    return data.assets
-      .filter(a => a.price !== null && a.marketPrice !== null)
-      .map(a => ({
-        name: a.name,
-        price: a.price,
-        marketPrice: a.marketPrice,
-      }));
-  }, [data?.assets]);
 
   if (authLoading) {
     return (
@@ -264,8 +250,6 @@ export default function Brand() {
     { id: "items", label: "ITEMS", icon: Grid3X3 },
     { id: "bids", label: "BIDS", icon: DollarSign },
     { id: "loans", label: "LOANS", icon: Clock },
-    { id: "holders", label: "HOLDERS", icon: Users },
-    { id: "charts", label: "CHARTS", icon: BarChart3 },
     { id: "activity", label: "ACTIVITY", icon: ActivityIcon },
   ];
 
@@ -383,35 +367,6 @@ export default function Brand() {
     );
   };
 
-  const DesktopChart = () => (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-3 py-2 border-b border-border">
-        <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider">
-          <BarChart3 className="w-3 h-3" />
-          <span>Price Chart</span>
-        </div>
-      </div>
-      <div className="flex-1 p-2">
-        {chartData.length > 0 ? (
-          <ResponsiveContainer width="100%" height="100%">
-            <ScatterChart margin={{ top: 5, right: 5, bottom: 15, left: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-              <XAxis type="number" dataKey="price" tickFormatter={(v) => `$${v}`} className="text-[10px]" />
-              <YAxis type="number" dataKey="marketPrice" tickFormatter={(v) => `$${v}`} className="text-[10px]" />
-              <Tooltip
-                formatter={(value: number) => formatPrice(value)}
-                contentStyle={{ backgroundColor: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: '6px', fontSize: '10px' }}
-              />
-              <Scatter data={chartData} fill="hsl(var(--primary))" />
-            </ScatterChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="h-full flex items-center justify-center text-muted-foreground text-xs">No data</div>
-        )}
-      </div>
-    </div>
-  );
-
   return (
     <>
     {/* Desktop Layout */}
@@ -506,34 +461,15 @@ export default function Brand() {
               <LoansTab filterByBrand={brandName} returnPath={`/brand?name=${encodeURIComponent(brandName)}&tab=loans`} />
             </div>
           )}
-          {activeTab === "holders" && (
-            <div className="flex-1 flex items-center justify-center text-muted-foreground">
-              <div className="text-center"><Users className="w-12 h-12 mx-auto mb-4 opacity-30" /><p>Holders Coming Soon</p></div>
-            </div>
-          )}
         </main>
 
         {/* Right Sidebar - Activity & Chart */}
         <aside className="w-72 border-l border-border flex flex-col flex-shrink-0 overflow-hidden">
-          <div className="h-1/2 border-b border-border overflow-hidden">
+          <div className="flex-1 overflow-hidden">
             <DesktopActivityFeed />
-          </div>
-          <div className="h-1/2 overflow-hidden">
-            <DesktopChart />
           </div>
         </aside>
       </div>
-
-      {/* Desktop Buy Floor Banner */}
-      {data?.stats.floorPrice && activeTab === "items" && (
-        <div className="bg-gradient-to-r from-yellow-500 to-green-500 text-black px-4 py-2 flex items-center justify-between font-medium text-sm">
-          <div className="flex items-center gap-2">
-            <span>BUY FLOOR</span>
-            <span className="font-mono">{formatPrice(data.stats.floorPrice)}</span>
-          </div>
-          <Button size="sm" className="bg-black/20 hover:bg-black/30 text-black border-0">Buy Now</Button>
-        </div>
-      )}
     </div>
 
     {/* Mobile Layout */}
@@ -684,62 +620,6 @@ export default function Brand() {
           </div>
         )}
 
-        {activeTab === "holders" && (
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center text-muted-foreground">
-              <Users className="w-12 h-12 mx-auto mb-4 opacity-30" />
-              <p className="font-medium">Holders Coming Soon</p>
-            </div>
-          </div>
-        )}
-
-        {activeTab === "charts" && (
-          <div className="p-4">
-            <h3 className="font-semibold mb-4 text-sm">Price vs Market Price</h3>
-            {chartData.length === 0 ? (
-              <div className="h-64 flex items-center justify-center text-muted-foreground">
-                No data available for chart
-              </div>
-            ) : (
-              <div className="h-64 sm:h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ScatterChart margin={{ top: 10, right: 10, bottom: 20, left: 10 }}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                    <XAxis 
-                      type="number" 
-                      dataKey="price" 
-                      name="Listed Price" 
-                      tickFormatter={(v) => `$${v}`}
-                      className="text-xs"
-                    />
-                    <YAxis 
-                      type="number" 
-                      dataKey="marketPrice" 
-                      name="Market Price" 
-                      tickFormatter={(v) => `$${v}`}
-                      className="text-xs"
-                    />
-                    <Tooltip
-                      formatter={(value: number) => formatPrice(value)}
-                      labelFormatter={(_, payload) => payload[0]?.payload?.name || ''}
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--popover))', 
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '6px',
-                        fontSize: '12px'
-                      }}
-                    />
-                    <Scatter 
-                      data={chartData} 
-                      fill="hsl(var(--primary))"
-                    />
-                  </ScatterChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </div>
-        )}
-
         {activeTab === "activity" && (
           <div className="flex flex-col">
             <div className="px-4 py-2 border-b border-border">
@@ -839,19 +719,6 @@ export default function Brand() {
               </Button>
             </div>
             <TraitsSidebar />
-          </div>
-        </div>
-      )}
-
-      {data?.stats.floorPrice && activeTab === "items" && (
-        <div className="fixed bottom-16 left-0 right-0 bg-gradient-to-r from-yellow-500 to-green-500 text-black px-4 py-3 flex items-center justify-between font-medium text-sm z-40">
-          <div className="flex items-center gap-2">
-            <span>BUY FLOOR</span>
-            <span className="font-mono">{formatPrice(data.stats.floorPrice)}</span>
-          </div>
-          <span className="text-black/60">OR</span>
-          <div className="flex items-center gap-2">
-            <span className="font-mono">{formatPrice(data.stats.floorPrice)}</span>
           </div>
         </div>
       )}
