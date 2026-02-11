@@ -9,7 +9,8 @@ CREATE TABLE IF NOT EXISTS baxus.brands_image (
 INSERT INTO baxus.brands_image (brand_name, image_url)
 SELECT brand_name, image_url
 FROM baxus.mv_brands_list
-WHERE brand_name IS NOT NULL;
+WHERE brand_name IS NOT NULL
+      AND image_url LIKE '%baxus%';
 
 -- Drop existing indexes
 DROP INDEX IF EXISTS baxus.mv_brands_list_brand_name_idx;
