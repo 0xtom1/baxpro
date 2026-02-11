@@ -302,7 +302,7 @@ export default function Dashboard() {
         <table className="w-full text-sm">
           <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur-sm">
             <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
-              <th className="text-left py-3 px-4 font-medium">Asset</th>
+              <th className="text-left py-3 px-4 font-medium">Bottle</th>
               <th className="text-left py-3 px-2 font-medium hidden md:table-cell w-28">Type</th>
               <th className="text-left py-3 px-2 font-medium hidden md:table-cell">Producer</th>
               <th className="text-right py-3 px-2 font-medium hidden md:table-cell w-24">Price</th>
