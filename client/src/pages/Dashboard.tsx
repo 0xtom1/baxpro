@@ -303,16 +303,20 @@ export default function Dashboard() {
           <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur-sm">
             <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
               <th className="text-left py-3 px-4 font-medium">Asset</th>
-              <th className="text-left py-3 px-2 font-medium hidden lg:table-cell">Producer</th>
-              <th className="text-right py-3 px-4 font-medium w-32">Date</th>
+              <th className="text-left py-3 px-2 font-medium hidden md:table-cell w-28">Type</th>
+              <th className="text-left py-3 px-2 font-medium hidden md:table-cell">Producer</th>
+              <th className="text-right py-3 px-2 font-medium hidden md:table-cell w-24">Price</th>
+              <th className="text-right py-3 px-4 font-medium w-28 md:w-32">Date</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {activityLoading ? (
               Array.from({ length: 10 }).map((_, i) => (
                 <tr key={i}>
-                  <td className="py-3 px-4"><Skeleton className="h-10 w-full" /></td>
-                  <td className="py-3 px-2 hidden lg:table-cell"><Skeleton className="h-4 w-24" /></td>
+                  <td className="py-3 px-4"><Skeleton className="h-10 w-full md:h-5" /></td>
+                  <td className="py-3 px-2 hidden md:table-cell"><Skeleton className="h-5 w-20" /></td>
+                  <td className="py-3 px-2 hidden md:table-cell"><Skeleton className="h-4 w-24" /></td>
+                  <td className="py-3 px-2 hidden md:table-cell"><Skeleton className="h-4 w-16 ml-auto" /></td>
                   <td className="py-3 px-4"><Skeleton className="h-4 w-20 ml-auto" /></td>
                 </tr>
               ))
@@ -333,7 +337,7 @@ export default function Dashboard() {
                       >
                         {activity.assetName}
                       </Link>
-                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      <div className="flex items-center gap-2 mt-1 flex-wrap md:hidden">
                         <Badge variant="secondary" className="text-[10px]">
                           {activity.activityTypeName || activity.activityTypeCode || 'Unknown'}
                         </Badge>
@@ -344,8 +348,16 @@ export default function Dashboard() {
                         )}
                       </div>
                     </td>
-                    <td className="py-3 px-2 text-muted-foreground hidden lg:table-cell truncate max-w-[120px]">
+                    <td className="py-3 px-2 hidden md:table-cell">
+                      <Badge variant="secondary" className="text-xs">
+                        {activity.activityTypeName || activity.activityTypeCode || 'Unknown'}
+                      </Badge>
+                    </td>
+                    <td className="py-3 px-2 text-muted-foreground hidden md:table-cell truncate max-w-[120px]">
                       {activity.producer || '-'}
+                    </td>
+                    <td className="py-3 px-2 text-right font-medium tabular-nums hidden md:table-cell">
+                      {formatPrice(activity.price)}
                     </td>
                     <td className="py-3 px-4 text-right text-xs text-muted-foreground whitespace-nowrap">
                       {formatDate(activity.activityDate)}
