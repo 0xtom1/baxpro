@@ -83,6 +83,15 @@ export default function MyLoansTab() {
   });
 
   const [revealedAddresses, setRevealedAddresses] = useState<Set<string>>(new Set());
+  const [expandedCollateral, setExpandedCollateral] = useState<Set<string>>(new Set());
+  const toggleCollateralExpand = useCallback((loanKey: string) => {
+    setExpandedCollateral(prev => {
+      const next = new Set(prev);
+      if (next.has(loanKey)) next.delete(loanKey);
+      else next.add(loanKey);
+      return next;
+    });
+  }, []);
   const toggleReveal = useCallback((address: string) => {
     setRevealedAddresses(prev => {
       const next = new Set(prev);
@@ -280,7 +289,13 @@ export default function MyLoansTab() {
                     <p className="text-sm font-medium truncate">{loan.collateralCount} bottle{loan.collateralCount > 1 ? 's' : ''}</p>
                   )}
                   {assets.length > 1 && (
-                    <p className="text-xs text-muted-foreground">+{assets.length - 1} more</p>
+                    <button
+                      className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                      onClick={() => toggleCollateralExpand(loan.publicKey)}
+                      data-testid={`button-expand-collateral-${loan.publicKey}`}
+                    >
+                      {expandedCollateral.has(loan.publicKey) ? 'hide' : `+${assets.length - 1} more`}
+                    </button>
                   )}
                 </div>
               </div>
@@ -295,6 +310,16 @@ export default function MyLoansTab() {
                 )}
               </div>
             </div>
+
+            {expandedCollateral.has(loan.publicKey) && assets.length > 1 && (
+              <div className="flex flex-col gap-1 pl-1">
+                {assets.slice(1).map((asset: any, i: number) => (
+                  <p key={i} className="text-xs text-muted-foreground truncate">
+                    {asset.name || 'Unknown bottle'}
+                  </p>
+                ))}
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
               <div className="flex items-center gap-1.5">

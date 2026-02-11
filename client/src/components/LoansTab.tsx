@@ -125,12 +125,23 @@ export default function LoansTab({ filterByBrand }: LoansTabProps) {
     return timeB - timeA;
   });
 
+  const [expandedCollateral, setExpandedCollateral] = useState<Set<string>>(new Set());
+  const toggleCollateralExpand = useCallback((loanKey: string) => {
+    setExpandedCollateral(prev => {
+      const next = new Set(prev);
+      if (next.has(loanKey)) next.delete(loanKey);
+      else next.add(loanKey);
+      return next;
+    });
+  }, []);
+
   const LoanCard = ({ loan }: { loan: SerializedLoan }) => {
     const assets = getCollateralImages(loan.nftMints);
     const listed = isLoanStatus(loan.status, 'listed');
     const active = isLoanStatus(loan.status, 'active');
     const isMine = isMyLoan(loan);
     const totalRepayment = computeRepayment(loan);
+    const isExpanded = expandedCollateral.has(loan.publicKey);
 
     return (
       <Card
@@ -165,7 +176,13 @@ export default function LoansTab({ filterByBrand }: LoansTabProps) {
                 <p className="text-sm font-medium truncate">{loan.collateralCount} bottle{loan.collateralCount > 1 ? 's' : ''}</p>
               )}
               {assets.length > 1 && (
-                <p className="text-xs text-muted-foreground">+{assets.length - 1} more</p>
+                <button
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  onClick={() => toggleCollateralExpand(loan.publicKey)}
+                  data-testid={`button-expand-collateral-${loan.publicKey}`}
+                >
+                  {isExpanded ? 'hide' : `+${assets.length - 1} more`}
+                </button>
               )}
             </div>
           </div>
@@ -173,6 +190,16 @@ export default function LoansTab({ filterByBrand }: LoansTabProps) {
             {getLoanStatusLabel(loan.status)}
           </Badge>
         </div>
+
+        {isExpanded && assets.length > 1 && (
+          <div className="flex flex-col gap-1 pl-1">
+            {assets.slice(1).map((asset: any, i: number) => (
+              <p key={i} className="text-xs text-muted-foreground truncate">
+                {asset.name || 'Unknown bottle'}
+              </p>
+            ))}
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
           <div className="flex items-center gap-1.5">
