@@ -129,7 +129,7 @@ export default function Landing() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-black text-white" style={{ fontFamily: "'Inter', sans-serif" }}>
       <nav
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           scrolled ? 'bg-black/90 backdrop-blur-md border-b border-white/[0.06]' : ''
@@ -174,7 +174,7 @@ export default function Landing() {
             </h1>
 
             <p className="text-lg md:text-xl text-white/60 max-w-xl mx-auto mb-10 leading-relaxed">
-              Real-time market data, custom alerts, and on-chain lending — all in one place for Baxus collectors.
+              Real-time data, custom alerts, and on-chain lending — all in one place for Baxus collectors.
             </p>
 
             <Link href="/login">
