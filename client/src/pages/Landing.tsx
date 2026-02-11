@@ -158,7 +158,7 @@ export default function Landing() {
         </div>
       </nav>
 
-      <section className="relative min-h-screen flex flex-col">
+      <section className="relative min-h-screen flex flex-col overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url(${heroImage})` }}
@@ -166,8 +166,8 @@ export default function Landing() {
           <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/70 to-black" />
         </div>
 
-        <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 pt-16">
-          <div className="max-w-3xl mx-auto text-center">
+        <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 pt-16 overflow-hidden">
+          <div className="w-full max-w-3xl mx-auto text-center">
             <h1 className="font-serif text-5xl sm:text-6xl md:text-7xl font-bold text-white mb-6 leading-tight">
               Track, Trade &amp; Borrow
               <span className="block text-primary mt-1">Your Spirits Collection</span>
@@ -208,7 +208,7 @@ export default function Landing() {
         </button>
       </section>
 
-      <section id="features" className="relative z-10 px-6 py-20 max-w-5xl mx-auto">
+      <section id="features" className="relative z-10 px-6 py-20 max-w-5xl mx-auto overflow-hidden">
         <FeatureRow />
       </section>
 
