@@ -231,7 +231,7 @@ export default function LoansTab({ filterByBrand, returnPath }: LoansTabProps) {
             <Landmark className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
             <span className="text-muted-foreground">Repayment</span>
           </div>
-          <span className="text-right font-medium tabular-nums text-primary">{formatLamports(totalRepayment)} SOL</span>
+          <span className="text-right font-bold tabular-nums">{formatLamports(totalRepayment)} SOL</span>
         </div>
 
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
