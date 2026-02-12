@@ -255,14 +255,21 @@ export default function Brand() {
 
   const DesktopItemsTable = () => (
     <div className="flex-1 overflow-auto scrollbar-hide">
-      <table className="w-full text-sm">
+      <table className="w-full text-sm table-fixed">
+        <colgroup>
+          <col />
+          <col className="w-16" />
+          <col className="w-20" />
+          <col className="w-20" />
+          <col className="w-28" />
+        </colgroup>
         <thead className="sticky top-0 bg-background border-b border-border">
           <tr className="text-xs text-muted-foreground uppercase tracking-wider">
             <th className="text-left py-3 px-4 font-medium">Item</th>
-            <th className="text-right py-3 px-2 font-medium w-20">Age</th>
-            <th className="text-right py-3 px-2 font-medium w-24">Buy Now</th>
-            <th className="text-right py-3 px-2 font-medium w-24">Market</th>
-            <th className="text-left py-3 px-2 font-medium w-32">Producer</th>
+            <th className="text-right py-3 px-2 font-medium">Age</th>
+            <th className="text-right py-3 px-2 font-medium">Buy Now</th>
+            <th className="text-right py-3 px-2 font-medium">Market</th>
+            <th className="text-left py-3 px-2 font-medium">Producer</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
@@ -284,8 +291,8 @@ export default function Brand() {
                 onClick={() => setLocation(`/asset/${asset.assetIdx}`)}
                 data-testid={`desktop-row-asset-${asset.assetIdx}`}
               >
-                <td className="py-2 px-4 max-w-0">
-                  <div className="flex items-center gap-3">
+                <td className="py-2 px-4">
+                  <div className="flex items-center gap-3 min-w-0">
                     <div className="w-10 h-10 rounded bg-muted flex-shrink-0 overflow-hidden">
                       {asset.imageUrl ? (
                         <img src={asset.imageUrl} alt={asset.name} className="w-full h-full object-cover" loading="lazy" />
