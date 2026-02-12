@@ -347,7 +347,7 @@ export default function Dashboard() {
                   >
                     <td className="py-3 px-4">
                       <Link 
-                        href={`/b/${activity.assetId}`}
+                        href={`/b/${activity.assetId}?from=${encodeURIComponent('/dashboard?tab=activity')}`}
                         className={`text-foreground hover:underline font-medium line-clamp-1 ${isDelisted ? 'line-through opacity-60' : ''}`}
                         data-testid={`link-asset-${activity.assetIdx}`}
                       >
