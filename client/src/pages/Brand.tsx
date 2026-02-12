@@ -634,8 +634,8 @@ export default function Brand() {
                 <span className="w-8"></span>
                 <span>ITEM</span>
               </div>
-              <div className="flex items-center gap-4">
-                <span className="w-20 text-right">PRICE</span>
+              <div className="flex items-center gap-3">
+                <span className="w-16 text-right">PRICE</span>
                 <span className="w-16">TYPE</span>
               </div>
             </div>
@@ -645,8 +645,8 @@ export default function Brand() {
                 {[1, 2, 3, 4, 5].map(i => (
                   <div key={i} className="flex items-center gap-3 px-4 py-3">
                     <Skeleton className="w-8 h-4" />
-                    <Skeleton className="w-10 h-10 rounded" />
                     <Skeleton className="h-4 flex-1" />
+                    <Skeleton className="h-4 w-16" />
                     <Skeleton className="h-4 w-16" />
                   </div>
                 ))}
@@ -668,11 +668,6 @@ export default function Brand() {
                       <span className="text-xs text-muted-foreground w-8 flex-shrink-0">
                         {formatTimeAgo(item.activityDate)}
                       </span>
-                      <div className="w-10 h-10 rounded bg-muted flex-shrink-0 overflow-hidden">
-                        <div className="w-full h-full flex items-center justify-center">
-                          <GlencairnLogo className="w-5 h-5 opacity-30" />
-                        </div>
-                      </div>
                       <div className="flex-1 min-w-0">
                         <Link
                           href={`/asset/${item.assetIdx}`}
@@ -683,8 +678,8 @@ export default function Brand() {
                           {item.assetName}
                         </Link>
                       </div>
-                      <div className="flex items-center gap-4 flex-shrink-0">
-                        <div className="w-20 text-right">
+                      <div className="flex items-center gap-3 flex-shrink-0">
+                        <div className="w-16 text-right">
                           {item.price && (
                             <Badge variant="outline" className="font-mono text-xs">
                               {formatPrice(item.price)}
