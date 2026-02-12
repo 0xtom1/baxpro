@@ -255,21 +255,13 @@ export default function Brand() {
 
   const DesktopItemsTable = () => (
     <div className="flex-1 overflow-auto scrollbar-hide">
-      <table className="w-full text-sm table-fixed">
-        <colgroup>
-          <col />
-          <col className="w-16" />
-          <col className="w-20" />
-          <col className="w-20" />
-          <col className="w-28" />
-        </colgroup>
+      <table className="w-full text-sm">
         <thead className="sticky top-0 bg-background border-b border-border">
           <tr className="text-xs text-muted-foreground uppercase tracking-wider">
             <th className="text-left py-3 px-4 font-medium">Item</th>
-            <th className="text-right py-3 px-2 font-medium">Age</th>
-            <th className="text-right py-3 px-2 font-medium">Buy Now</th>
-            <th className="text-right py-3 px-2 font-medium">Market</th>
-            <th className="text-left py-3 px-2 font-medium">Producer</th>
+            <th className="text-right py-3 px-2 font-medium w-16">Age</th>
+            <th className="text-right py-3 px-2 font-medium w-20">Buy Now</th>
+            <th className="text-right py-3 px-2 font-medium w-20">Market</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
@@ -280,7 +272,6 @@ export default function Brand() {
                 <td className="py-2 px-2"><Skeleton className="h-4 w-12 ml-auto" /></td>
                 <td className="py-2 px-2"><Skeleton className="h-4 w-16 ml-auto" /></td>
                 <td className="py-2 px-2"><Skeleton className="h-4 w-16 ml-auto" /></td>
-                <td className="py-2 px-2"><Skeleton className="h-4 w-20" /></td>
               </tr>
             ))
           ) : (
@@ -315,9 +306,6 @@ export default function Brand() {
                 </td>
                 <td className="py-2 px-2 text-right text-muted-foreground">
                   {asset.marketPrice ? formatPrice(asset.marketPrice) : '-'}
-                </td>
-                <td className="py-2 px-2 text-muted-foreground truncate max-w-[120px]">
-                  {asset.producer || '-'}
                 </td>
               </tr>
             ))
