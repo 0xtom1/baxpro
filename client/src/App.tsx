@@ -45,7 +45,7 @@ import BrandSubBrands from "@/pages/ProductHierarchy-BrandSubBrands";
 import SubBrandAssets from "@/pages/ProductHierarchy-SubBrandAssets";
 import Unsubscribe from "@/pages/Unsubscribe";
 import Brand from "@/pages/Brand";
-import BottleDetail from "@/pages/BottleDetail";
+
 import CreateLoan from "@/pages/CreateLoan";
 import LoanDetail from "@/pages/LoanDetail";
 import NotFound from "@/pages/not-found";
@@ -72,9 +72,7 @@ function Router() {
       <Route path="/unsubscribe" component={Unsubscribe} />
       <Route path="/brand" component={Brand} />
       <Route path="/my-vault">{() => <Redirect to="/dashboard" />}</Route>
-      <Route path="/my-vault/:assetId" component={BottleDetail} />
       <Route path="/my-bottles">{() => <Redirect to="/dashboard" />}</Route>
-      <Route path="/my-bottles/:assetId" component={BottleDetail} />
       <Route path="/create-loan" component={CreateLoan} />
       <Route path="/loan/:publicKey" component={LoanDetail} />
       <Route component={NotFound} />

@@ -481,7 +481,7 @@ export default function Dashboard() {
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {bottleAssets.map((asset) => (
-            <Link key={asset.assetId} href={`/my-vault/${encodeURIComponent(asset.assetId)}`}>
+            <Link key={asset.assetId} href={`/b/${asset.assetId}?from=${encodeURIComponent('/dashboard?tab=my-vault')}`}>
               <Card
                 className="overflow-hidden hover-elevate cursor-pointer transition-all"
                 data-testid={`card-bottle-${asset.assetIdx}`}
