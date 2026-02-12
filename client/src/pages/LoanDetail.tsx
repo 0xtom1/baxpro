@@ -201,6 +201,7 @@ export default function LoanDetail() {
       queryClient.invalidateQueries({ queryKey: ['solana-all-loans-detail'] });
       queryClient.invalidateQueries({ queryKey: ['solana-loans'] });
       queryClient.invalidateQueries({ queryKey: ['solana-my-loans'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/my-bottles'] });
     } catch (err: any) {
       toast({ title: "Transaction failed", description: err.message || "Failed to complete transaction", variant: "destructive" });
     } finally {

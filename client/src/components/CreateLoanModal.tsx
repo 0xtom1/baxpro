@@ -95,6 +95,7 @@ export default function CreateLoanModal({ open, onOpenChange, bottles }: CreateL
 
       queryClient.invalidateQueries({ queryKey: ['solana-loans'] });
       queryClient.invalidateQueries({ queryKey: ['solana-my-loans'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/my-bottles'] });
 
       resetAndClose();
     } catch (err: any) {

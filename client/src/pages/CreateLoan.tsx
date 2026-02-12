@@ -141,6 +141,7 @@ export default function CreateLoan() {
       toast({ title: "Loan listed", description: `Your loan for ${loanAmount} SOL has been listed on the marketplace` });
       queryClient.invalidateQueries({ queryKey: ['solana-loans'] });
       queryClient.invalidateQueries({ queryKey: ['solana-my-loans'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/my-bottles'] });
       setLocation('/dashboard');
     } catch (err: any) {
       console.error('Create loan error:', err);

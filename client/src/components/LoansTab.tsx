@@ -93,6 +93,7 @@ export default function LoansTab({ filterByBrand, returnPath }: LoansTabProps) {
       toast({ title: "Loan funded", description: `You funded ${formatLamports(loan.loanAmount)} SOL` });
       refetch();
       queryClient.invalidateQueries({ queryKey: ['solana-my-loans'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/my-bottles'] });
     } catch (err: any) {
       toast({ title: "Transaction failed", description: err.message || "Failed to fund loan", variant: "destructive" });
     } finally {

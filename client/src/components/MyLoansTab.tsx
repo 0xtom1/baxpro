@@ -104,6 +104,8 @@ export default function MyLoansTab() {
       toast({ title: "Listing cancelled", description: "Your loan listing has been cancelled and collateral returned" });
       refetch();
       queryClient.invalidateQueries({ queryKey: ['solana-loans'] });
+      queryClient.invalidateQueries({ queryKey: ['solana-my-loans'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/my-bottles'] });
     } catch (err: any) {
       toast({ title: "Transaction failed", description: err.message || "Failed to cancel listing", variant: "destructive" });
     } finally {
@@ -121,6 +123,8 @@ export default function MyLoansTab() {
       toast({ title: "Loan repaid", description: "Your loan has been repaid and collateral returned" });
       refetch();
       queryClient.invalidateQueries({ queryKey: ['solana-loans'] });
+      queryClient.invalidateQueries({ queryKey: ['solana-my-loans'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/my-bottles'] });
     } catch (err: any) {
       toast({ title: "Transaction failed", description: err.message || "Failed to repay loan", variant: "destructive" });
     } finally {
@@ -138,6 +142,8 @@ export default function MyLoansTab() {
       toast({ title: "Loan liquidated", description: "The collateral has been transferred to your wallet" });
       refetch();
       queryClient.invalidateQueries({ queryKey: ['solana-loans'] });
+      queryClient.invalidateQueries({ queryKey: ['solana-my-loans'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/my-bottles'] });
     } catch (err: any) {
       toast({ title: "Transaction failed", description: err.message || "Failed to liquidate loan", variant: "destructive" });
     } finally {
