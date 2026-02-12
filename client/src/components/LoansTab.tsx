@@ -156,21 +156,42 @@ export default function LoansTab({ filterByBrand, returnPath }: LoansTabProps) {
         }}
       >
         <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            {assets.length > 0 ? (
-              <p className="text-sm font-medium truncate">{assets[0].name}</p>
-            ) : (
-              <p className="text-sm font-medium truncate">{loan.collateralCount} bottle{loan.collateralCount > 1 ? 's' : ''}</p>
-            )}
-            {assets.length > 1 && (
-              <button
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                onClick={() => toggleCollateralExpand(loan.publicKey)}
-                data-testid={`button-expand-collateral-${loan.publicKey}`}
-              >
-                {isExpanded ? 'hide' : `+${assets.length - 1} more`}
-              </button>
-            )}
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="flex -space-x-2">
+              {assets.length > 0 ? (
+                assets.slice(0, 3).map((asset: any, i: number) => (
+                  <div key={i} className="w-10 h-10 rounded-md border-2 border-background overflow-hidden bg-muted flex-shrink-0">
+                    {asset.imageUrl ? (
+                      <img src={asset.imageUrl} alt={asset.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
+                        {loan.collateralCount}
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center text-muted-foreground text-xs flex-shrink-0">
+                  {loan.collateralCount}
+                </div>
+              )}
+            </div>
+            <div className="min-w-0">
+              {assets.length > 0 ? (
+                <p className="text-sm font-medium truncate">{assets[0].name}</p>
+              ) : (
+                <p className="text-sm font-medium truncate">{loan.collateralCount} bottle{loan.collateralCount > 1 ? 's' : ''}</p>
+              )}
+              {assets.length > 1 && (
+                <button
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  onClick={() => toggleCollateralExpand(loan.publicKey)}
+                  data-testid={`button-expand-collateral-${loan.publicKey}`}
+                >
+                  {isExpanded ? 'hide' : `+${assets.length - 1} more`}
+                </button>
+              )}
+            </div>
           </div>
           <Badge variant={listed ? "secondary" : active ? "default" : "outline"}>
             {getLoanStatusLabel(loan.status)}
