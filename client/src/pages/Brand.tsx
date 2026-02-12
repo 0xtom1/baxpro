@@ -624,7 +624,6 @@ export default function Brand() {
           <div className="flex flex-col">
             <div className="px-4 py-2 border-b border-border">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <ActivityIcon className="w-4 h-4" />
                 <span>ALL ACTIVITY</span>
                 <ChevronDown className="w-4 h-4" />
               </div>
@@ -637,7 +636,7 @@ export default function Brand() {
               </div>
               <div className="flex items-center gap-4">
                 <span className="w-20 text-right">PRICE</span>
-                <span className="w-16 hidden sm:block">TYPE</span>
+                <span className="w-16">TYPE</span>
               </div>
             </div>
             
@@ -692,7 +691,7 @@ export default function Brand() {
                             </Badge>
                           )}
                         </div>
-                        <span className="text-xs text-muted-foreground w-16 hidden sm:block truncate">
+                        <span className="text-xs text-muted-foreground w-16 truncate">
                           {item.activityTypeName || item.activityTypeCode}
                         </span>
                       </div>
