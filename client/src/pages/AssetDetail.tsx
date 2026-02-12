@@ -71,6 +71,7 @@ export default function AssetDetail() {
     : null;
 
   const imageUrl = metadata?.image || null;
+  const animationUrl = metadata?.animation_url || null;
   const description = metadata?.description || null;
   const externalUrl = metadata?.external_url || `https://baxus.co/asset/${asset?.assetId?.trim()}`;
   const attributes = (metadata?.attributes || []).filter(
@@ -175,7 +176,18 @@ export default function AssetDetail() {
         <div className="grid grid-cols-1 md:grid-cols-[340px_1fr] gap-6 lg:gap-8">
           <div className="space-y-3">
             <div className="rounded-lg overflow-hidden bg-muted/30 border border-border">
-              {imageUrl ? (
+              {animationUrl ? (
+                <video
+                  src={animationUrl}
+                  poster={imageUrl || undefined}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="w-full object-contain max-h-[500px]"
+                  data-testid="video-bottle"
+                />
+              ) : imageUrl ? (
                 <img
                   src={imageUrl}
                   alt={asset.name}
