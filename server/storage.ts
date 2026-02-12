@@ -158,10 +158,32 @@ export class DbStorage implements IStorage {
   }
 
   async getAssetByAssetId(assetId: string): Promise<Asset | undefined> {
-    // asset_id is char(44) so we need to pad the input to match
     const paddedAssetId = assetId.padEnd(44, ' ');
-    const [asset] = await db.select().from(assets).where(eq(assets.assetId, paddedAssetId));
-    return asset;
+    const result = await db.execute<any>(
+      `SELECT * FROM baxus.v_assets WHERE asset_id = '${paddedAssetId.replace(/'/g, "''")}'`
+    );
+    if (result.rows.length === 0) return undefined;
+    const row = result.rows[0];
+    return {
+      assetIdx: row.asset_idx,
+      assetId: row.asset_id,
+      baxusIdx: row.baxus_idx,
+      name: row.name,
+      price: row.price,
+      bottledYear: row.bottled_year,
+      age: row.age,
+      isListed: row.is_listed,
+      listedDate: row.listed_date,
+      assetJson: row.asset_json,
+      metadataJson: row.metadata_json,
+      addedDate: row.added_date,
+      lastUpdated: row.last_updated,
+      countUpdated: row.count_updated,
+      producer: row.producer,
+      imageUrl: row.image_url,
+      marketPrice: row.market_price,
+      brandName: row.brand_name,
+    };
   }
 
   async getAssetByAssetIdx(assetIdx: number): Promise<Asset | undefined> {
@@ -186,6 +208,9 @@ export class DbStorage implements IStorage {
       addedDate: row.added_date,
       lastUpdated: row.last_updated,
       countUpdated: row.count_updated,
+      imageUrl: row.image_url,
+      marketPrice: row.market_price,
+      brandName: row.brand_name,
     };
   }
 
