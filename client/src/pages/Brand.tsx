@@ -284,7 +284,7 @@ export default function Brand() {
                 onClick={() => setLocation(`/asset/${asset.assetIdx}`)}
                 data-testid={`desktop-row-asset-${asset.assetIdx}`}
               >
-                <td className="py-2 px-4">
+                <td className="py-2 px-4 max-w-0">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded bg-muted flex-shrink-0 overflow-hidden">
                       {asset.imageUrl ? (
@@ -295,7 +295,7 @@ export default function Brand() {
                         </div>
                       )}
                     </div>
-                    <span className="font-medium truncate max-w-[200px]">{asset.name}</span>
+                    <span className="font-medium truncate">{asset.name}</span>
                   </div>
                 </td>
                 <td className="py-2 px-2 text-right text-muted-foreground">
