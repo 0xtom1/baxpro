@@ -14,7 +14,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 import { useLocation } from "wouter";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 const MAX_ALERTS = 50;
@@ -44,6 +44,7 @@ export default function DashboardNav({ onNewAlert, alertCount = 0, search, onSea
       const res = await apiRequest('POST', '/api/devnet-airdrop');
       const data = await res.json();
       setAirdropState('done');
+      queryClient.invalidateQueries({ queryKey: ['/api/my-bottles'] });
       toast({
         title: "Airdrop sent!",
         description: `${data.bottlesSent} bottle${data.bottlesSent !== 1 ? 's' : ''} + 0.5 SOL sent to your wallet. Check My Vault!`,
