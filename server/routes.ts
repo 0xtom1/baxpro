@@ -819,26 +819,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Asset details by index route (requires authentication) - must come before :assetId route
-  app.get("/api/assets/idx/:assetIdx", requireAuth, apiLimiter, async (req, res) => {
-    try {
-      const assetIdx = parseInt(req.params.assetIdx, 10);
-      if (isNaN(assetIdx)) {
-        return res.status(400).json({ error: "Invalid asset index" });
-      }
-      const asset = await storage.getAssetByAssetIdx(assetIdx);
-      
-      if (!asset) {
-        return res.status(404).json({ error: "Asset not found" });
-      }
-
-      res.json(asset);
-    } catch (error) {
-      console.error("Get asset by idx error:", error);
-      res.status(500).json({ error: "Failed to fetch asset" });
-    }
-  });
-
   // Asset details route (requires authentication)
   app.get("/api/assets/:assetId", requireAuth, apiLimiter, async (req, res) => {
     try {
@@ -1021,78 +1001,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get my NFTs error:", error);
       res.status(500).json({ error: "Failed to fetch your NFTs" });
-    }
-  });
-
-  app.get("/api/my-bottles/:assetId", requireAuth, apiLimiter, async (req, res) => {
-    try {
-      const { assetId } = req.params;
-      const userId = req.session.userId!;
-      const user = await storage.getUser(userId);
-
-      // Use phantomWallet first, then baxusWallet as fallback
-      const walletAddress = user?.phantomWallet || user?.baxusWallet;
-
-      if (!walletAddress) {
-        return res.status(403).json({ error: "No wallet connected" });
-      }
-
-      // Verify ownership: check that this asset is in the user's wallet
-      const heliusApiKey = process.env.HELIUS_API_KEY;
-      if (!heliusApiKey) {
-        return res.status(500).json({ error: "NFT service not configured" });
-      }
-
-      // Use devnet for dev, mainnet for production
-      const heliusNetwork = process.env.NODE_ENV === 'production' ? 'mainnet' : 'devnet';
-      const heliusUrl = `https://${heliusNetwork}.helius-rpc.com/?api-key=${heliusApiKey}`;
-      const heliusResponse = await fetch(heliusUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: 'verify-ownership',
-          method: 'getAssetsByOwner',
-          params: {
-            ownerAddress: walletAddress,
-            page: 1,
-            limit: 1000,
-            options: { showFungible: true, showNativeBalance: false }
-          }
-        })
-      });
-
-      if (!heliusResponse.ok) {
-        return res.status(500).json({ error: "Failed to verify ownership" });
-      }
-
-      const heliusData = await heliusResponse.json();
-      const walletAssetIds = (heliusData.result?.items || []).map((item: any) => item.id);
-
-      if (!walletAssetIds.includes(assetId)) {
-        return res.status(404).json({ error: "Asset not found in your wallet" });
-      }
-      
-      const asset = await storage.getAssetSummaryByAssetId(assetId);
-      if (!asset) {
-        return res.status(404).json({ error: "Asset not found in Baxus" });
-      }
-
-      // Get full asset data including metadata
-      const fullAsset = await storage.getAssetByAssetId(assetId);
-      const activity = await storage.getAssetActivityByAssetIdx(asset.assetIdx, 50);
-
-      res.json({ 
-        asset: {
-          ...asset,
-          metadataJson: fullAsset?.metadataJson,
-          assetJson: fullAsset?.assetJson,
-        }, 
-        activity 
-      });
-    } catch (error) {
-      console.error("Get NFT detail error:", error);
-      res.status(500).json({ error: "Failed to fetch NFT details" });
     }
   });
 
