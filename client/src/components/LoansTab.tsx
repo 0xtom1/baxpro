@@ -4,13 +4,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Landmark, Clock, Percent, Coins, User, AlertCircle, Loader2 } from "lucide-react";
+import { Landmark, AlertCircle, Loader2 } from "lucide-react";
 import { useState, useCallback } from "react";
 import { useAuth } from "@/lib/auth";
-import { formatLamports, formatDuration, formatBps, truncateAddress, isLoanStatus, getLoanStatusLabel, signAndSendTransaction } from "@/hooks/use-lending";
+import { formatLamports, formatDuration, isLoanStatus, getLoanStatusLabel, signAndSendTransaction } from "@/hooks/use-lending";
 import type { SerializedLoan } from "@/hooks/use-lending";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import LoanCard, { renderWalletAddress } from "@/components/LoanCard";
+import { truncateAddress } from "@/hooks/use-lending";
 
 interface LoansTabProps {
   filterByBrand?: string;
@@ -128,211 +130,6 @@ export default function LoansTab({ filterByBrand, returnPath }: LoansTabProps) {
     return timeB - timeA;
   });
 
-  const [expandedCollateral, setExpandedCollateral] = useState<Set<string>>(new Set());
-  const toggleCollateralExpand = useCallback((loanKey: string) => {
-    setExpandedCollateral(prev => {
-      const next = new Set(prev);
-      if (next.has(loanKey)) next.delete(loanKey);
-      else next.add(loanKey);
-      return next;
-    });
-  }, []);
-
-  const LoanCard = ({ loan }: { loan: SerializedLoan }) => {
-    const assets = getCollateralImages(loan.nftMints);
-    const listed = isLoanStatus(loan.status, 'listed');
-    const active = isLoanStatus(loan.status, 'active');
-    const isMine = isMyLoan(loan);
-    const totalRepayment = computeRepayment(loan);
-    const isExpanded = expandedCollateral.has(loan.publicKey);
-
-    return (
-      <Card
-        className="overflow-visible p-4 flex flex-col gap-3 hover-elevate cursor-pointer"
-        data-testid={`card-loan-${loan.publicKey}`}
-        onClick={(e) => {
-          if ((e.target as HTMLElement).closest('button, a')) return;
-          navigate(`/loan/${loan.publicKey}${returnPath ? `?from=${encodeURIComponent(returnPath)}` : ''}`);
-        }}
-      >
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="flex -space-x-2">
-              {assets.length > 0 ? (
-                assets.slice(0, 3).map((asset: any, i: number) => (
-                  <div key={i} className="w-10 h-10 rounded-md border-2 border-background overflow-hidden bg-muted flex-shrink-0">
-                    {asset.imageUrl ? (
-                      <img src={asset.imageUrl} alt={asset.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
-                        {loan.collateralCount}
-                      </div>
-                    )}
-                  </div>
-                ))
-              ) : (
-                <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center text-muted-foreground text-xs flex-shrink-0">
-                  {loan.collateralCount}
-                </div>
-              )}
-            </div>
-            <div className="min-w-0">
-              {assets.length > 0 ? (
-                <p className="text-sm font-medium truncate">{assets[0].name}</p>
-              ) : (
-                <p className="text-sm font-medium truncate">{loan.collateralCount} bottle{loan.collateralCount > 1 ? 's' : ''}</p>
-              )}
-              {assets.length > 1 && (
-                <button
-                  className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                  onClick={() => toggleCollateralExpand(loan.publicKey)}
-                  data-testid={`button-expand-collateral-${loan.publicKey}`}
-                >
-                  {isExpanded ? 'hide' : `+${assets.length - 1} more`}
-                </button>
-              )}
-            </div>
-          </div>
-          <Badge variant={listed ? "secondary" : active ? "default" : "outline"}>
-            {getLoanStatusLabel(loan.status)}
-          </Badge>
-        </div>
-
-        {isExpanded && assets.length > 1 && (
-          <div className="flex flex-col gap-1 pl-1">
-            {assets.slice(1).map((asset: any, i: number) => (
-              <p key={i} className="text-xs text-muted-foreground truncate">
-                {asset.name || 'Unknown bottle'}
-              </p>
-            ))}
-          </div>
-        )}
-
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-          <div className="flex items-center gap-1.5">
-            <Coins className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-            <span className="text-muted-foreground">Amount</span>
-          </div>
-          <span className="text-right font-medium tabular-nums">{formatLamports(loan.loanAmount)} SOL</span>
-
-          <div className="flex items-center gap-1.5">
-            <Percent className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-            <span className="text-muted-foreground">Interest</span>
-          </div>
-          <span className="text-right font-medium tabular-nums">{formatBps(loan.interestRateBps)}</span>
-
-          <div className="flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-            <span className="text-muted-foreground">Duration</span>
-          </div>
-          <span className="text-right font-medium tabular-nums">{formatDuration(loan.durationSeconds)}</span>
-
-          <div className="flex items-center gap-1.5">
-            <Landmark className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-            <span className="text-muted-foreground">Repayment</span>
-          </div>
-          <span className="text-right font-bold tabular-nums">{formatLamports(totalRepayment)} SOL</span>
-        </div>
-
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <User className="w-3 h-3 flex-shrink-0" />
-          <span>Borrower: </span>
-          {isMine ? (
-            <span>You</span>
-          ) : (() => {
-            const displayName = walletNames?.[loan.borrower];
-            const isRevealed = revealedAddresses.has(loan.borrower);
-            if (displayName && !isRevealed) {
-              return (
-                <button
-                  className="hover:text-foreground transition-colors cursor-pointer underline decoration-dotted underline-offset-2"
-                  onClick={() => toggleReveal(loan.borrower)}
-                  title="Click to show wallet address"
-                  data-testid={`button-reveal-borrower-${loan.publicKey}`}
-                >
-                  {displayName}
-                </button>
-              );
-            }
-            if (displayName && isRevealed) {
-              return (
-                <button
-                  className="hover:text-foreground transition-colors cursor-pointer font-mono"
-                  onClick={() => toggleReveal(loan.borrower)}
-                  title="Click to show display name"
-                  data-testid={`button-reveal-borrower-${loan.publicKey}`}
-                >
-                  {truncateAddress(loan.borrower)}
-                </button>
-              );
-            }
-            return <span className="font-mono">{truncateAddress(loan.borrower)}</span>;
-          })()}
-        </div>
-
-        <div className="flex gap-2 mt-1">
-          {listed && !isMine && (
-            <Button
-              className="flex-1"
-              onClick={() => handleFundLoan(loan)}
-              disabled={!user?.phantomWallet || fundingLoanId === loan.publicKey}
-              data-testid={`button-fund-loan-${loan.publicKey}`}
-            >
-              {fundingLoanId === loan.publicKey ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Funding...</>
-              ) : (
-                `Fund ${formatLamports(loan.loanAmount)} SOL`
-              )}
-            </Button>
-          )}
-          {listed && isMine && (
-            <p className="text-xs text-muted-foreground text-center w-full py-1">
-              Your listing &middot; Manage in My Loans tab
-            </p>
-          )}
-          {active && (
-            <p className="text-xs text-muted-foreground text-center w-full py-1">
-              Active loan &middot; {isMine ? 'Manage in My Loans tab' : (
-                <>
-                  Funded by{' '}
-                  {(() => {
-                    const lenderName = walletNames?.[loan.lender];
-                    const isRevealed = revealedAddresses.has(loan.lender);
-                    if (lenderName && !isRevealed) {
-                      return (
-                        <button
-                          className="hover:text-foreground transition-colors cursor-pointer underline decoration-dotted underline-offset-2"
-                          onClick={() => toggleReveal(loan.lender)}
-                          title="Click to show wallet address"
-                          data-testid={`button-reveal-lender-${loan.publicKey}`}
-                        >
-                          {lenderName}
-                        </button>
-                      );
-                    }
-                    if (lenderName && isRevealed) {
-                      return (
-                        <button
-                          className="hover:text-foreground transition-colors cursor-pointer font-mono"
-                          onClick={() => toggleReveal(loan.lender)}
-                          title="Click to show display name"
-                          data-testid={`button-reveal-lender-${loan.publicKey}`}
-                        >
-                          {truncateAddress(loan.lender)}
-                        </button>
-                      );
-                    }
-                    return <span className="font-mono">{truncateAddress(loan.lender)}</span>;
-                  })()}
-                </>
-              )}
-            </p>
-          )}
-        </div>
-      </Card>
-    );
-  };
-
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -382,9 +179,74 @@ export default function LoansTab({ filterByBrand, returnPath }: LoansTabProps) {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-      {sortedLoans.map(loan => (
-        <LoanCard key={loan.publicKey} loan={loan} />
-      ))}
+      {sortedLoans.map(loan => {
+        const assets = getCollateralImages(loan.nftMints);
+        const listed = isLoanStatus(loan.status, 'listed');
+        const active = isLoanStatus(loan.status, 'active');
+        const isMine = isMyLoan(loan);
+
+        return (
+          <LoanCard
+            key={loan.publicKey}
+            loan={loan}
+            assets={assets}
+            walletNames={walletNames}
+            revealedAddresses={revealedAddresses}
+            onToggleReveal={toggleReveal}
+            onClick={() => navigate(`/loan/${loan.publicKey}${returnPath ? `?from=${encodeURIComponent(returnPath)}` : ''}`)}
+            totalRepayment={computeRepayment(loan)}
+            testIdPrefix="loan"
+            statusBadge={
+              <Badge variant={listed ? "secondary" : active ? "default" : "outline"}>
+                {getLoanStatusLabel(loan.status)}
+              </Badge>
+            }
+            durationDisplay={{
+              label: "Duration",
+              value: formatDuration(loan.durationSeconds),
+            }}
+            actions={
+              <>
+                {listed && !isMine && (
+                  <Button
+                    className="flex-1"
+                    onClick={() => handleFundLoan(loan)}
+                    disabled={!user?.phantomWallet || fundingLoanId === loan.publicKey}
+                    data-testid={`button-fund-loan-${loan.publicKey}`}
+                  >
+                    {fundingLoanId === loan.publicKey ? (
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Funding...</>
+                    ) : (
+                      `Fund ${formatLamports(loan.loanAmount)} SOL`
+                    )}
+                  </Button>
+                )}
+                {listed && isMine && (
+                  <p className="text-xs text-muted-foreground text-center w-full py-1">
+                    Your listing &middot; Manage in My Loans tab
+                  </p>
+                )}
+                {active && (
+                  <p className="text-xs text-muted-foreground text-center w-full py-1">
+                    Active loan &middot; {isMine ? 'Manage in My Loans tab' : (
+                      <>
+                        Funded by{' '}
+                        {renderWalletAddress(
+                          loan.lender,
+                          walletNames,
+                          revealedAddresses,
+                          toggleReveal,
+                          `button-reveal-lender-${loan.publicKey}`
+                        )}
+                      </>
+                    )}
+                  </p>
+                )}
+              </>
+            }
+          />
+        );
+      })}
     </div>
   );
 }
