@@ -279,7 +279,7 @@ export default function Brand() {
               <tr 
                 key={asset.assetIdx} 
                 className="hover-elevate cursor-pointer"
-                onClick={() => setLocation(`/asset/${asset.assetIdx}`)}
+                onClick={() => setLocation(`/b/${asset.assetId}`)}
                 data-testid={`desktop-row-asset-${asset.assetIdx}`}
               >
                 <td className="py-2 px-4">
@@ -559,7 +559,7 @@ export default function Brand() {
                 {filteredAssets.map((asset) => (
                   <Link
                     key={asset.assetIdx}
-                    href={`/asset/${asset.assetIdx}`}
+                    href={`/b/${asset.assetId}`}
                     data-testid={`row-asset-${asset.assetIdx}`}
                   >
                     <div className="flex items-center gap-3 px-4 py-2 hover-elevate">
@@ -665,7 +665,7 @@ export default function Brand() {
                       </span>
                       <div className="flex-1 min-w-0">
                         <Link
-                          href={`/asset/${item.assetIdx}`}
+                          href={`/b/${item.assetId}`}
                           className={`text-sm font-medium truncate block hover:underline ${
                             isDelisted ? 'line-through opacity-60' : ''
                           }`}

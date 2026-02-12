@@ -433,7 +433,7 @@ export default function LoanDetail() {
               {assets.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                   {assets.map((asset: any) => (
-                    <Link key={asset.assetIdx} href={`/asset/${asset.assetIdx}`}>
+                    <Link key={asset.assetIdx} href={`/b/${asset.assetId}`}>
                       <Card
                         className="overflow-hidden hover-elevate cursor-pointer transition-all"
                         data-testid={`card-collateral-${asset.assetIdx}`}

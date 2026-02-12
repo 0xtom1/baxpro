@@ -39,7 +39,6 @@ import TermsOfService from "@/pages/TermsOfService";
 import OptInProof from "@/pages/OptInProof";
 import ReadMe from "@/pages/ReadMe";
 import AssetDetail from "@/pages/AssetDetail";
-import AssetDetailByIdx from "@/pages/AssetDetailByIdx";
 import ProductHierarchy from "@/pages/ProductHierarchy";
 import VipTools from "@/pages/VipTools";
 import BrandSubBrands from "@/pages/ProductHierarchy-BrandSubBrands";
@@ -66,7 +65,6 @@ function Router() {
       <Route path="/opt-in-proof" component={OptInProof} />
       <Route path="/read-me" component={ReadMe} />
       <Route path="/b/:assetId" component={AssetDetail} />
-      <Route path="/asset/:assetIdx" component={AssetDetailByIdx} />
       <Route path="/vip-tools" component={VipTools} />
       <Route path="/product-hierarchy-editor" component={ProductHierarchy} />
       <Route path="/product-hierarchy-editor/brand/:brandIdx" component={BrandSubBrands} />
