@@ -80,7 +80,7 @@ def monitor_activity():
                 logger.error(f"Error in processing incomplete assets: {e}", exc_info=True)
                 time.sleep(60)  # Wait before retrying on error
 
-        if loop_counter % 4 == 0:
+        if loop_counter % 2 == 0:
             # Get blockchain activities
             try:
                 start_time = datetime.now(UTC)
