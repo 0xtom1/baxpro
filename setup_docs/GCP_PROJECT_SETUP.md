@@ -57,6 +57,7 @@ gcloud services enable \
   dns.googleapis.com \
   certificatemanager.googleapis.com \
   storage.googleapis.com \
+  cloudscheduler.googleapis.com \
   --project=$PROJECT_ID
 ```
 
@@ -107,12 +108,17 @@ gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
   --member="serviceAccount:github-actions-sa@${PROJECT_ID}.iam.gserviceaccount.com" \
   --role="roles/iam.serviceAccountUser"
 
-# 4b. Grant Cloud Functions deployment permissions (required for alert-processor)
+# 4b. Grant Cloud Scheduler permissions (required for baxus-monitor scheduled job)
+gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
+  --member="serviceAccount:github-actions-sa@${PROJECT_ID}.iam.gserviceaccount.com" \
+  --role="roles/cloudscheduler.admin"
+
+# 4c. Grant Cloud Functions deployment permissions (required for alert-processor)
 gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
   --member="serviceAccount:github-actions-sa@${PROJECT_ID}.iam.gserviceaccount.com" \
   --role="roles/cloudfunctions.developer"
 
-# 4c. Grant Cloud Build service account permissions (required for Cloud Functions 2nd Gen)
+# 4d. Grant Cloud Build service account permissions (required for Cloud Functions 2nd Gen)
 gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
   --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
   --role="roles/artifactregistry.reader"
