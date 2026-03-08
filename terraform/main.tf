@@ -809,7 +809,7 @@ resource "google_cloud_run_v2_job" "baxus_monitor" {
         resources {
           limits = {
             cpu    = "1"
-            memory = var.environment == "dev" ? "256Mi" : "512Mi"
+            memory = "512Mi"
           }
         }
 
