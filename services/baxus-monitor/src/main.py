@@ -1,6 +1,5 @@
 """Main entry point for the Baxus Monitor service."""
 
-import time
 from datetime import UTC, datetime
 
 from .activity_repository import ActivityRepository
@@ -16,11 +15,10 @@ logger = get_logger()
 def monitor_activity():
     """Monitor Baxus listings by polling the API and processing new/updated assets.
 
-    This function runs an infinite loop that:
-    1. Performs an initial import of all assets
-    2. Continuously polls for new listings
-    3. Processes and persists discovered assets
-    4. Publishes notifications for new listings
+    Runs once per invocation (triggered by Cloud Scheduler every 5 minutes):
+    1. Processes incomplete assets (daily at 4am UTC)
+    2. Processes blockchain transactions (mints, burns, purchases)
+    3. Polls for new listings and persists discovered assets
     """
     logger.info("Starting Baxus Monitor service...")
     logger.info(config)
@@ -33,7 +31,29 @@ def monitor_activity():
     session.close()
     db.close()
 
-    
+    listing_processor = ListingProcessor(config, listing_activity_idx=activity_types_map["NEW_LISTING"])
+
+    loop_time = datetime.now(UTC)
+    if loop_time.hour == 9 and loop_time.minute < 5:
+        # Process incomplete assets
+        try:
+            start_time = datetime.now(UTC)
+            logger.info("Starting process of incomplete assets...")
+            stats = listing_processor.process_incomplete_assets()
+            elapsed_secs = (datetime.now(UTC) - start_time).total_seconds()
+            logger.info(
+                f"Processed incomplete assets in {elapsed_secs:.2f}s - "
+                f"Processed: {stats['total_processed']}, "
+                f"Updated Assets: {stats['updated_assets']}, "
+                f"Errors: {stats['errors']}, "
+            )
+            if stats["updated_assets"] > 0:
+                listing_processor.refresh_materialized_views()
+
+        except Exception as e:
+            logger.error(f"Error in processing incomplete assets: {e}", exc_info=True)
+            raise
+
     # Get blockchain activities
     try:
         start_time = datetime.now(UTC)
@@ -54,7 +74,6 @@ def monitor_activity():
         logger.error(f"Error in blockchain poll cycle: {e}", exc_info=True)
         raise
 
-    listing_processor = ListingProcessor(config, listing_activity_idx=activity_types_map["NEW_LISTING"])
     # Get new listings, Loop until new listings != query size
     stats = {
         "total_processed": 0,
@@ -81,21 +100,19 @@ def monitor_activity():
                     f"New Assets: {stats['new_assets']}, "
                     f"Errors: {stats['errors']}, "
                 )
-                time.sleep(10)
-
-        sleep_time = config.poll_interval_sec - elapsed_secs
         logger.info(
             f"Poll cycle complete in {elapsed_secs:.2f}s - "
             f"Processed: {stats['total_processed']}, "
             f"New Listings: {stats['new_listings']}, "
             f"New Assets: {stats['new_assets']}, "
             f"Errors: {stats['errors']}, "
-            f"Sleep Time {sleep_time:.2f}s"
         )
 
     except Exception as e:
         logger.error(f"Error in poll cycle: {e}", exc_info=True)
         raise
+    finally:
+        listing_processor.close()
 
 
 def run():
