@@ -1,317 +1,88 @@
-# BaxPro - Product Availability Alert Platform
+# BaxPro
 
-Never miss products on Baxus.co. Get instant email alerts when items matching your criteria become available at the right price.
+### Track, Trade & Borrow Your Spirits Collection
 
-## Features
+BaxPro gives [Baxus.co](https://baxus.co) collectors superpowers. Monitor the marketplace in real time, get alerted the moment bottles you care about hit the market, and unlock liquidity from your collection through on-chain lending — all in one place.
 
-- **Custom Alerts** - Set multiple search criteria per alert
-- **Price Filtering** - Only get notified for products within your budget
-- **Year & Age Filters** - Filter by bottled year and product age
-- **Email Notifications** - Receive email alerts via SendGrid
-- **Secure Authentication** - Sign in with Google
-- **On-Chain Activity Tracking** - View mints, burns, and purchases from the Solana blockchain
+**[dev.baxpro.xyz](https://dev.baxpro.xyz)**
 
-### Brand Browsing
+---
 
-- **Brands List** (`/brands`) - Searchable, sortable table of all brands with producer, asset counts, and floor prices
-- **Brand Detail Page** (`/brand?name=X`) - Mobile-first design with:
-  - **Fixed Bottom Navigation** - ITEMS, BIDS, LOANS, HOLDERS, CHARTS, ACTIVITY tabs
-  - **Items Tab** - Compact list view with thumbnails, item names, age, and price badges
-  - **Activity Tab** - Real-time feed showing time ago, item, price, and activity type
-  - **Charts Tab** - Scatter plot of listed price vs market price
-  - **Trait Filtering** - Slide-out filter drawer with collapsible trait sections
-  - **Search** - Filter items by name within a brand
-  - **Buy Floor Banner** - Shows floor price with purchase CTA
+## See It In Action
 
-### VIP Features (Experimental)
+<p align="center"><img src="docs/screenshots/landing.jpg" width="300" alt="Landing Page" /></p>
 
-- **Product Hierarchy Editor** - Browse and manage the product hierarchy (Producers, Brands, Sub-Brands) for better alert matching
-- **Refresh All Alert Matches** - System-wide background processing to re-match all user alerts against current listings. Used when importing historical listings.
+Your starting point. Sign in with Google or connect your Phantom wallet to get started.
 
-## Live
+---
 
-**Production**: [baxpro.xyz](https://baxpro.xyz)
-**Development**: [dev.baxpro.xyz](https://dev.baxpro.xyz)
+<p align="center"><img src="docs/screenshots/dashboard.jpg" width="300" alt="Browse Brands" /></p>
 
-## Tech Stack
+**Browse 450+ brands** with floor prices, 30-day volume, supply counts, and more. Search by brand or producer to find exactly what you're looking for.
 
-### Main Web Application
+---
 
-**Frontend**
-- React 18 + TypeScript
-- Wouter for routing
-- shadcn/ui + Tailwind CSS
-- TanStack Query for state management
-- Framer Motion for animations
+<p align="center"><img src="docs/screenshots/activity.jpg" width="300" alt="Activity Feed" /></p>
 
-**Backend**
-- Express.js + Node.js
-- PostgreSQL (Cloud SQL on GCP, Neon on Replit)
-- Drizzle ORM
-- Session-based authentication with Google OAuth
+**Real-time activity feed** across the entire Baxus marketplace. See new listings, purchases, burns, and mints as they happen. Filter by activity type to zero in on what matters.
 
-### Microservices (Python)
+---
 
-| Service | Type | Purpose |
-|---------|------|---------|
-| **baxus-monitor** | Cloud Run | Polls Baxus API for listings + tracks on-chain activity via Helius |
-| **alert-processor** | Cloud Function | Matches listings to user alerts |
-| **alert-sender** | Cloud Function | Sends email notifications via SendGrid |
+<p align="center"><img src="docs/screenshots/brand.jpg" width="300" alt="Brand Detail" /></p>
 
-**Shared Stack:**
-- Python 3.11
-- SQLAlchemy for database access
-- Google Cloud Pub/Sub for messaging
-- functions-framework (Cloud Functions)
+**Drill into any brand** to see every listed bottle with prices. Filter by traits, view price charts, and track brand-specific activity.
 
-### Infrastructure
-- Google Cloud Platform
-- Cloud Run (web app + baxus-monitor)
-- Cloud Functions (alert-processor, alert-sender)
-- Cloud SQL (PostgreSQL 15)
-- Pub/Sub for event-driven messaging
-- Terraform for IaC
-- GitHub Actions for CI/CD
+---
 
-## Architecture
+<p align="center"><img src="docs/screenshots/alerts.jpg" width="300" alt="Create Alert" /></p>
 
-```
-[Baxus API]     [Helius API]
-     │               │
-     │               │ (Solana blockchain)
-     ▼               ▼
-┌─────────────────────────┐    ┌────────────┐    ┌─────────────────┐
-│     baxus-monitor       │◄──►│ Cloud SQL  │◄──►│    Web App      │
-│     (Cloud Run)         │    │(PostgreSQL)│    │  (Cloud Run)    │
-│ - Find new listings     │    │            │    │                 │
-│ - Track on-chain mints, │    │            │    │                 │
-│   burns, and purchases  │    │            │    │                 │
-└───────────┬─────────────┘    └────────────┘    └─────────────────┘
-            │
-            │ Pub/Sub: new_listing
-            ▼
-┌─────────────────┐
-│ alert-processor │
-│ (Cloud Function)│
-│ Match listings  │
-│   to alerts     │
-└────────┬────────┘
-         │
-         │ Pub/Sub: alert_match
-         ▼
-┌─────────────────┐
-│  alert-sender   │
-│ (Cloud Function)│
-│   Send email    │
-└────────┬────────┘
-         │
-         ▼
-   [Email to User]
-```
+**Never miss a bottle.** Create custom alerts with search terms, price caps, year ranges, and flexible match logic. Get an email the instant a matching bottle hits the market.
 
-All services connect to Cloud SQL for reads/writes.
+---
 
-## API Endpoints
+<p align="center"><img src="docs/screenshots/loans.jpg" width="300" alt="Loan Marketplace" /></p>
 
-### Authentication
+**Put your collection to work.** Browse active and listed loans on the marketplace. See loan terms, collateral bottles, interest rates, and repayment details at a glance.
 
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET | `/api/auth/google` | Initiate Google OAuth flow | None |
-| GET | `/api/auth/google/callback` | Handle OAuth callback | None |
-| POST | `/api/auth/demo-login` | Demo login (dev only) | None |
-| POST | `/api/auth/logout` | Destroy session | Session |
-| GET | `/api/auth/me` | Get current user | Session |
+---
 
-### User Settings
+<p align="center"><img src="docs/screenshots/create-loan.jpg" width="300" alt="Create Loan" /></p>
 
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| POST | `/api/user/complete-notification-setup` | Mark notification setup seen | Session |
-| PATCH | `/api/user/notifications` | Update email preferences | Session |
-| PATCH | `/api/user/account` | Update display name / wallet | Session |
-| DELETE | `/api/user/account` | Delete user account | Session |
+**Create a loan in seconds.** Select bottles from your vault as collateral, set your terms — amount, interest rate, duration — and list it for funding. All on-chain via Solana.
 
-### Alerts
+---
 
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET | `/api/alerts` | Get user's alerts | Session |
-| POST | `/api/alerts` | Create new alert | Session |
-| PATCH | `/api/alerts/:id` | Update alert | Session |
-| DELETE | `/api/alerts/:id` | Delete alert | Session |
-| POST | `/api/alerts/refresh-all-matches` | Refresh all matches | VIP |
+## Built With
 
-### Activity & Assets
+React, Express, PostgreSQL, Solana, and a set of Python microservices — all running on Google Cloud.
 
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET | `/api/activity-types` | Get activity type list | Session |
-| GET | `/api/activity` | Get activity feed (paginated) | Session |
-| GET | `/api/assets/idx/:assetIdx` | Get asset by index | Session |
-| GET | `/api/assets/:assetId` | Get asset by ID | Session |
+Sign in with **Google OAuth** or **Phantom Wallet**.
 
-### Brand Browsing
+---
 
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET | `/api/brand-names` | Get list of distinct brand names | Session |
-| GET | `/api/brands-list` | Get all brands with stats (count, floor price) | Session |
-| GET | `/api/brand?name=X&trait_*=Y` | Get brand assets, stats, traits, and activity | Session |
+## Links
 
-### Product Hierarchy
-
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET | `/api/producers` | List producers | VIP |
-| GET | `/api/brands/:producerIdx` | Get brands for producer | VIP |
-| GET | `/api/sub-brands/:brandIdx` | Get sub-brands for brand | VIP |
-| GET | `/api/brand-hierarchy` | Get hierarchy with filters | VIP |
-| PATCH | `/api/brands/:brandIdx` | Update brand name | VIP |
-| PATCH | `/api/sub-brands/:subBrandIdx` | Update sub-brand name | VIP |
-| PATCH | `/api/brands/:brandIdx/review` | Update brand review status | VIP |
-| GET | `/api/brand-details/:brandIdx` | Get brand details | VIP |
-| POST | `/api/move-bottles` | Move bottles between sub-brands | VIP |
-| GET | `/api/sub-brand-assets/:subBrandIdx` | Get assets for sub-brand | VIP |
-
-### Notifications
-
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| POST | `/api/unsubscribe` | Unsubscribe from emails | None* |
-| POST | `/api/notifications/test-email` | Send test email | Session |
-
-*Uses UUID in request body for security
-
-### System
-
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET | `/api/health` | Health check | None |
-| GET | `/api/system/version` | Get version info | None |
-| GET | `/read-me` | Redirect to GitHub README | None |
-
-## Multi-Environment Deployment
-
-BaxPro uses completely separate GCP projects for production and development.
-
-| Environment | GCP Project | Domain | Branch | Polling |
-|-------------|-------------|--------|--------|---------|
-| Production | `GCP_PROJECT_ID` | baxpro.xyz | main | 30s |
-| Development | `GCP_PROJECT_ID_DEV` | dev.baxpro.xyz | dev | 300s |
-
-Each environment has its own:
-- VPC Connector & Cloud SQL instance
-- Cloud Run services & Cloud Functions
-- Pub/Sub topics & subscriptions
-- Secrets (OAuth, SendGrid, DB)
-- Load Balancer with SSL certificate
-
-## Repository Structure
-
-```
-baxpro/
-├── client/                  # React frontend
-│   ├── src/
-│   │   ├── components/      # Reusable UI components
-│   │   ├── pages/           # Page components
-│   │   ├── hooks/           # Custom React hooks
-│   │   └── lib/             # Utilities & API client
-├── server/                  # Express backend
-│   ├── routes.ts            # API endpoints
-│   ├── storage.ts           # Database operations
-│   └── auth.ts              # Google OAuth
-├── shared/                  # Shared types & schema
-│   └── schema.ts            # Drizzle ORM models
-├── services/
-│   ├── baxus-monitor/       # Listing scraper (Cloud Run)
-│   │   └── src/             # Python source
-│   ├── alert-processor/     # Alert matching (Cloud Function)
-│   │   └── src/             # Python source
-│   └── alert-sender/        # Notifications (Cloud Function)
-│       └── src/             # Python source
-├── terraform/               # Infrastructure as Code
-│   ├── main.tf              # Core resources
-│   ├── variables.tf         # Input variables
-│   └── cloud-functions.tf   # Function definitions
-├── migrations/              # Database migrations
-└── .github/workflows/       # CI/CD pipelines
-    └── deploy.yml           # Unified deployment (auto: main→prod, manual: dev/prod)
-```
-
-See [REPO_STRUCTURE.md](setup_docs/REPO_STRUCTURE.md) for detailed documentation.
-
-## Quick Start
-
-### Prerequisites
-
-- Node.js 20+
-- Python 3.11+
-- GCP account with billing enabled
-- Terraform 1.0+
-- gcloud CLI
-
-### Local Development
-
-See [.devcontainer/README.md](.devcontainer/README.md) for local development setup instructions.
-
-## Environment Variables
-
-### Web App
-```bash
-DATABASE_URL=postgresql://user:pass@host/db
-SESSION_SECRET=your-secret-key
-GOOGLE_CLIENT_ID=xxx
-GOOGLE_CLIENT_SECRET=xxx
-```
-
-### Baxus Monitor
-```bash
-HELIUS_API_KEY=your-helius-api-key
-```
-
-### Alert Sender
-```bash
-SENDGRID_API_KEY=SG.xxxxx
-```
-
-All secrets managed via GCP Secret Manager.
+- [Live App](https://dev.baxpro.xyz)
 
 ## Documentation
 
-- **[GCP_PROJECT_SETUP.md](setup_docs/GCP_PROJECT_SETUP.md)** - GCP project setup
-- **[GITHUB_ACTIONS_SETUP.md](setup_docs/GITHUB_ACTIONS_SETUP.md)** - CI/CD setup
-- **[CUSTOM_DOMAIN_SETUP.md](setup_docs/CUSTOM_DOMAIN_SETUP.md)** - Custom domain configuration
+- [Local Development Setup](.devcontainer/README.md)
+- [API Reference](setup_docs/API_REFERENCE.md)
+- [Repo Structure & Architecture](setup_docs/REPO_STRUCTURE.md)
+- [GCP Project Setup](setup_docs/GCP_PROJECT_SETUP.md)
+- [CI/CD & GitHub Actions](setup_docs/GITHUB_ACTIONS_SETUP.md)
+- [Custom Domain Setup](setup_docs/CUSTOM_DOMAIN_SETUP.md)
+- [Integration SDK](setup_docs/INTEGRATION.md)
 
-## CI/CD
-
-Deployment via GitHub Actions:
-
-- Push to `main` → Auto-deploy to production (baxpro.xyz)
-- Manual trigger → Choose dev or production environment
-
-## Cost Estimate
-
-**Monthly (approximate):**
-- Cloud Run: $0-10
-- Cloud Functions: $0-5
-- Cloud SQL: $10-30
-- Pub/Sub: $0-1
-- SendGrid: Free tier (100 emails/day)
-
-**Total**: $10-45/month depending on usage
+---
 
 ## License
 
 MIT
 
-## Support
-
-For issues: support@baxpro.xyz
-
 ## Disclaimer
 
-BaxPro is not affiliated with Baxus.co. This is an independent monitoring tool.
+BaxPro is not affiliated with Baxus.co. Built independently for the collector community.
 
 ---
 
