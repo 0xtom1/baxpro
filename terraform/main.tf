@@ -426,8 +426,8 @@ locals {
     "baxpro-helius-api-key-${var.environment}",
   ], var.environment != "production" && var.devnet_address_pk != "" ? ["baxpro-devnet-address-pk-${var.environment}"] : [])
 
-  # Baxus Monitor polling interval: 5 min (300s) for dev, 30s for production
-  baxus_poll_interval = var.baxus_poll_interval_sec != null ? var.baxus_poll_interval_sec : (var.environment == "production" ? 30 : 300)
+  # Baxus Monitor polling interval: 5 min (300s) for dev, 90s for production
+  baxus_poll_interval = var.baxus_poll_interval_sec != null ? var.baxus_poll_interval_sec : (var.environment == "production" ? 90 : 300)
 }
 
 resource "google_secret_manager_secret_iam_member" "secret_access" {
