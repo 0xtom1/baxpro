@@ -32,6 +32,7 @@ resource "google_project_service" "apis" {
     "cloudbuild.googleapis.com",
     "eventarc.googleapis.com",
     "pubsub.googleapis.com",
+    "cloudscheduler.googleapis.com",
   ])
   service            = each.value
   disable_on_destroy = false
@@ -335,6 +336,22 @@ resource "google_secret_manager_secret_version" "helius_api_key" {
   secret_data = var.helius_api_key
 }
 
+# Devnet master wallet private key (dev environment only, for bottle airdrops)
+resource "google_secret_manager_secret" "devnet_address_pk" {
+  count     = var.environment != "production" && var.devnet_address_pk != "" ? 1 : 0
+  secret_id = "baxpro-devnet-address-pk-${var.environment}"
+  replication {
+    auto {}
+  }
+  depends_on = [google_project_service.apis]
+}
+
+resource "google_secret_manager_secret_version" "devnet_address_pk" {
+  count       = var.environment != "production" && var.devnet_address_pk != "" ? 1 : 0
+  secret      = google_secret_manager_secret.devnet_address_pk[0].id
+  secret_data = var.devnet_address_pk
+}
+
 # ============================================================================
 # IAM
 # ============================================================================
@@ -397,7 +414,7 @@ resource "google_pubsub_topic_iam_member" "baxpro_runner_pubsub_publisher" {
 
 # Secret access - use static secret names to allow imports
 locals {
-  secret_names = [
+  secret_names = concat([
     "baxpro-database-url-${var.environment}",
     "baxpro-session-secret-${var.environment}",
     "baxpro-google-client-id-${var.environment}",
@@ -406,7 +423,8 @@ locals {
     "baxpro-db-pass-${var.environment}",
     "baxpro-db-name-${var.environment}",
     "baxpro-instance-unix-socket-${var.environment}",
-  ]
+    "baxpro-helius-api-key-${var.environment}",
+  ], var.environment != "production" && var.devnet_address_pk != "" ? ["baxpro-devnet-address-pk-${var.environment}"] : [])
 
   # Baxus Monitor polling interval: 5 min (300s) for dev, 90s for production
   baxus_poll_interval = var.baxus_poll_interval_sec != null ? var.baxus_poll_interval_sec : (var.environment == "production" ? 90 : 300)
@@ -423,10 +441,12 @@ resource "google_secret_manager_secret_iam_member" "secret_access" {
     google_secret_manager_secret.session_secret,
     google_secret_manager_secret.google_client_id,
     google_secret_manager_secret.google_client_secret,
+    google_secret_manager_secret.helius_api_key,
     google_secret_manager_secret_version.db_user,
     google_secret_manager_secret_version.db_pass,
     google_secret_manager_secret_version.db_name,
     google_secret_manager_secret_version.instance_unix_socket,
+    google_secret_manager_secret.devnet_address_pk,
   ]
 }
 
@@ -519,7 +539,7 @@ resource "google_cloud_run_v2_service" "baxpro" {
       }
       env {
         name  = "NODE_ENV"
-        value = "production"
+        value = var.environment
       }
       env {
         name  = "DEPLOY_VERSION"
@@ -565,7 +585,28 @@ resource "google_cloud_run_v2_service" "baxpro" {
         name  = "CUSTOM_DOMAIN"
         value = var.custom_domain
       }
-
+      env {
+        name = "HELIUS_API_KEY"
+        value_source {
+          secret_key_ref {
+            secret  = google_secret_manager_secret.helius_api_key[0].secret_id
+            version = "latest"
+          }
+        }
+      }
+      # Devnet master wallet private key (dev only, for bottle airdrops)
+      dynamic "env" {
+        for_each = var.environment != "production" && var.devnet_address_pk != "" ? [1] : []
+        content {
+          name = "DEVNET_ADDRESS_PK"
+          value_source {
+            secret_key_ref {
+              secret  = google_secret_manager_secret.devnet_address_pk[0].secret_id
+              version = "latest"
+            }
+          }
+        }
+      }
       # Pub/Sub topic for test email functionality (only set if alert processor is enabled)
       dynamic "env" {
         for_each = var.enable_alert_processor ? [1] : []
@@ -745,137 +786,118 @@ resource "google_project_iam_member" "baxus_monitor_pubsub" {
   member  = "serviceAccount:${google_service_account.baxus_monitor[0].email}"
 }
 
-resource "google_cloud_run_v2_service" "baxus_monitor" {
+resource "google_cloud_run_v2_job" "baxus_monitor" {
   count    = var.enable_baxus_monitor ? 1 : 0
   name     = "baxus-monitor-${var.environment}"
   location = var.region
-  ingress  = "INGRESS_TRAFFIC_INTERNAL_ONLY"
 
   template {
-    service_account = google_service_account.baxus_monitor[0].email
+    task_count = 1
 
-    annotations = {
-      "source-hash" = var.baxus_monitor_source_hash
-    }
+    template {
+      service_account = google_service_account.baxus_monitor[0].email
+      max_retries     = 1
+      timeout         = "300s"
 
-    scaling {
-      min_instance_count = 1
-      max_instance_count = 1
-    }
-
-    vpc_access {
-      connector = google_vpc_access_connector.baxpro.id
-      egress    = "PRIVATE_RANGES_ONLY"
-    }
-
-    containers {
-      image = "${var.region}-docker.pkg.dev/${var.project_id}/baxpro/baxus-monitor:${var.baxus_monitor_image_tag}"
-
-      resources {
-        limits = {
-          cpu    = "1"
-          memory = "512Mi"
-        }
+      vpc_access {
+        connector = google_vpc_access_connector.baxpro.id
+        egress    = "PRIVATE_RANGES_ONLY"
       }
 
-      startup_probe {
-        http_get {
-          path = "/"
-          port = 8080
-        }
-        initial_delay_seconds = 5
-        timeout_seconds       = 5
-        period_seconds        = 10
-        failure_threshold     = 12
-      }
+      containers {
+        image = "${var.region}-docker.pkg.dev/${var.project_id}/baxpro/baxus-monitor:${var.baxus_monitor_image_tag}"
 
-      env {
-        name = "DB_USER"
-        value_source {
-          secret_key_ref {
-            secret  = google_secret_manager_secret.db_user.secret_id
-            version = "latest"
+        resources {
+          limits = {
+            cpu    = "1"
+            memory = "512Mi"
           }
         }
-      }
-      env {
-        name = "DB_PASS"
-        value_source {
-          secret_key_ref {
-            secret  = google_secret_manager_secret.db_pass.secret_id
-            version = "latest"
+
+        env {
+          name = "DB_USER"
+          value_source {
+            secret_key_ref {
+              secret  = google_secret_manager_secret.db_user.secret_id
+              version = "latest"
+            }
           }
         }
-      }
-      env {
-        name = "DB_NAME"
-        value_source {
-          secret_key_ref {
-            secret  = google_secret_manager_secret.db_name.secret_id
-            version = "latest"
+        env {
+          name = "DB_PASS"
+          value_source {
+            secret_key_ref {
+              secret  = google_secret_manager_secret.db_pass.secret_id
+              version = "latest"
+            }
           }
         }
-      }
-      env {
-        name = "INSTANCE_UNIX_SOCKET"
-        value_source {
-          secret_key_ref {
-            secret  = google_secret_manager_secret.instance_unix_socket.secret_id
-            version = "latest"
+        env {
+          name = "DB_NAME"
+          value_source {
+            secret_key_ref {
+              secret  = google_secret_manager_secret.db_name.secret_id
+              version = "latest"
+            }
           }
         }
-      }
-      env {
-        name  = "GCP_PROJECT_ID"
-        value = var.project_id
-      }
-      env {
-        name  = "PUBSUB_TOPIC"
-        value = google_pubsub_topic.baxus_listings[0].name
-      }
-      env {
-        name  = "POLL_INTERVAL_SEC"
-        value = tostring(local.baxus_poll_interval)
-      }
-      env {
-        name  = "BAXUS_API_BASE"
-        value = var.baxus_api_base
-      }
-      env {
-        name  = "ENVIRONMENT"
-        value = var.environment
+        env {
+          name = "INSTANCE_UNIX_SOCKET"
+          value_source {
+            secret_key_ref {
+              secret  = google_secret_manager_secret.instance_unix_socket.secret_id
+              version = "latest"
+            }
+          }
+        }
+        env {
+          name  = "GCP_PROJECT_ID"
+          value = var.project_id
+        }
+        env {
+          name  = "PUBSUB_TOPIC"
+          value = google_pubsub_topic.baxus_listings[0].name
+        }
+        env {
+          name  = "BAXUS_API_BASE"
+          value = var.baxus_api_base
+        }
+        env {
+          name  = "ENVIRONMENT"
+          value = var.environment
+        }
+
+        env {
+          name = "GEMINI_API_KEY"
+          value_source {
+            secret_key_ref {
+              secret  = google_secret_manager_secret.gemini_api_key[0].secret_id
+              version = "latest"
+            }
+          }
+        }
+
+        env {
+          name = "HELIUS_API_KEY"
+          value_source {
+            secret_key_ref {
+              secret  = google_secret_manager_secret.helius_api_key[0].secret_id
+              version = "latest"
+            }
+          }
+        }
+
+        volume_mounts {
+          name       = "cloudsql"
+          mount_path = "/cloudsql"
+        }
       }
 
-      env {
-        name = "GEMINI_API_KEY"
-        value_source {
-          secret_key_ref {
-            secret  = google_secret_manager_secret.gemini_api_key[0].secret_id
-            version = "latest"
-          }
+      volumes {
+        name = "cloudsql"
+        cloud_sql_instance {
+          instances = [google_sql_database_instance.baxpro_db.connection_name]
         }
-      }
-
-      env {
-        name = "HELIUS_API_KEY"
-        value_source {
-          secret_key_ref {
-            secret  = google_secret_manager_secret.helius_api_key[0].secret_id
-            version = "latest"
-          }
-        }
-      }
-
-      volume_mounts {
-        name       = "cloudsql"
-        mount_path = "/cloudsql"
-      }
-    }
-
-    volumes {
-      name = "cloudsql"
-      cloud_sql_instance {
-        instances = [google_sql_database_instance.baxpro_db.connection_name]
       }
     }
   }
@@ -889,6 +911,39 @@ resource "google_cloud_run_v2_service" "baxus_monitor" {
     google_secret_manager_secret_version.instance_unix_socket,
     google_pubsub_topic.baxus_listings,
   ]
+}
+
+# Service account for Cloud Scheduler to invoke the job
+resource "google_service_account" "baxus_monitor_scheduler" {
+  count        = var.enable_baxus_monitor ? 1 : 0
+  account_id   = "monitor-scheduler-${var.environment}"
+  display_name = "Baxus Monitor Scheduler SA (${var.environment})"
+}
+
+resource "google_project_iam_member" "baxus_monitor_scheduler_run" {
+  count   = var.enable_baxus_monitor ? 1 : 0
+  project = var.project_id
+  role    = "roles/run.invoker"
+  member  = "serviceAccount:${google_service_account.baxus_monitor_scheduler[0].email}"
+}
+
+resource "google_cloud_scheduler_job" "baxus_monitor" {
+  count     = var.enable_baxus_monitor ? 1 : 0
+  name      = "baxus-monitor-${var.environment}"
+  region    = var.region
+  schedule  = "*/5 * * * *"
+  time_zone = "UTC"
+
+  http_target {
+    http_method = "POST"
+    uri         = "https://${var.region}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${var.project_id}/jobs/${google_cloud_run_v2_job.baxus_monitor[0].name}:run"
+
+    oauth_token {
+      service_account_email = google_service_account.baxus_monitor_scheduler[0].email
+    }
+  }
+
+  depends_on = [google_cloud_run_v2_job.baxus_monitor]
 }
 
 # ============================================================================

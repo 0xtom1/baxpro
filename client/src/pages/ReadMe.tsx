@@ -3,6 +3,7 @@ import remarkGfm from "remark-gfm";
 import { Link } from "wouter";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 const readmeContent = `# BaxPro - Product Availability Alert Platform
 
@@ -259,6 +260,7 @@ BaxPro is not affiliated with Baxus.co. This is an independent monitoring tool.
 `;
 
 export default function ReadMe() {
+  usePageTitle("Read Me");
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 py-8">

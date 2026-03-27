@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Moon, Sun, LogOut, User, Crown, AlertCircle, Search, Wallet } from "lucide-react";
+import { Plus, Moon, Sun, LogOut, User, Crown, AlertCircle, Search, Gift, Loader2, CheckCircle2 } from "lucide-react";
 import GlencairnLogo from "./GlencairnLogo";
 import {
   DropdownMenu,
@@ -14,6 +14,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 import { useLocation } from "wouter";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 const MAX_ALERTS = 50;
 
@@ -27,8 +29,35 @@ interface DashboardNavProps {
 
 export default function DashboardNav({ onNewAlert, alertCount = 0, search, onSearchChange, searchPlaceholder = "Brands, producers..." }: DashboardNavProps) {
   const isAtLimit = alertCount >= MAX_ALERTS;
-  const { user, logout } = useAuth();
+  const { user, logout, environment } = useAuth();
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
+
+  const isDevMode = environment !== 'production';
+  const hasPhantom = !!user?.phantomWallet;
+  const [airdropState, setAirdropState] = useState<'idle' | 'loading' | 'done'>('idle');
+
+  const handleAirdrop = async () => {
+    if (airdropState !== 'idle') return;
+    setAirdropState('loading');
+    try {
+      const res = await apiRequest('POST', '/api/devnet-airdrop');
+      const data = await res.json();
+      setAirdropState('done');
+      queryClient.invalidateQueries({ queryKey: ['/api/my-bottles'] });
+      toast({
+        title: "Airdrop sent!",
+        description: `${data.bottlesSent} bottle${data.bottlesSent !== 1 ? 's' : ''} + 0.5 SOL sent to your wallet. Check My Vault!`,
+      });
+    } catch (err: any) {
+      setAirdropState('idle');
+      toast({
+        title: "Airdrop failed",
+        description: err.message || "Something went wrong",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Initialize from localStorage, default to dark mode if no preference saved
   const [isDark, setIsDark] = useState(() => {
@@ -95,18 +124,26 @@ export default function DashboardNav({ onNewAlert, alertCount = 0, search, onSea
           </div>
         )}
         
-        <div className="flex items-center gap-3 flex-shrink-0">
-          {(user?.phantomWallet || user?.baxusWallet) && (
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {isDevMode && hasPhantom && (
             <Button
-              variant="ghost"
-              onClick={() => setLocation("/my-bottles")}
-              data-testid="button-my-bottles"
+              size="sm"
+              onClick={handleAirdrop}
+              disabled={airdropState !== 'idle'}
+              variant={airdropState === 'done' ? 'secondary' : 'default'}
+              className={airdropState === 'done' ? 'opacity-60' : ''}
+              data-testid="button-devnet-airdrop"
             >
-              <Wallet className="w-4 h-4 mr-1" />
-              <span className="hidden sm:inline">My Bottles</span>
+              {airdropState === 'loading' ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : airdropState === 'done' ? (
+                <CheckCircle2 className="w-3.5 h-3.5" />
+              ) : (
+                <Gift className="w-3.5 h-3.5" />
+              )}
+              <span className="ml-1">{airdropState === 'done' ? 'Sent!' : airdropState === 'loading' ? 'Sending...' : 'Airdrop'}</span>
             </Button>
           )}
-          
           {onNewAlert && (
             <Button 
               onClick={onNewAlert}
@@ -118,15 +155,6 @@ export default function DashboardNav({ onNewAlert, alertCount = 0, search, onSea
               New Alert
             </Button>
           )}
-          
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={toggleTheme}
-            data-testid="button-toggle-theme"
-          >
-            {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </Button>
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -144,7 +172,7 @@ export default function DashboardNav({ onNewAlert, alertCount = 0, search, onSea
                     {user?.isVip && (
                       <Badge 
                         variant="secondary"
-                        className="text-[10px] px-1.5 py-0 h-4 font-semibold bg-gradient-to-r from-amber-500/20 to-yellow-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30"
+                        className="text-[10px] px-1.5 py-0 h-4 font-semibold bg-primary/15 text-primary border-primary/30"
                         data-testid="badge-vip"
                       >
                         <Crown className="w-3 h-3 mr-0.5" />
@@ -168,7 +196,7 @@ export default function DashboardNav({ onNewAlert, alertCount = 0, search, onSea
               </DropdownMenuItem>
               {user?.isVip && (
                 <DropdownMenuItem onClick={() => setLocation("/vip-tools")} data-testid="button-vip-tools">
-                  <Crown className="w-4 h-4 mr-2 text-amber-500" />
+                  <Crown className="w-4 h-4 mr-2 text-primary" />
                   VIP Tools
                 </DropdownMenuItem>
               )}
@@ -176,6 +204,11 @@ export default function DashboardNav({ onNewAlert, alertCount = 0, search, onSea
                 <User className="w-4 h-4 mr-2" />
                 Account Settings
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={toggleTheme} data-testid="button-toggle-theme">
+                {isDark ? <Sun className="w-4 h-4 mr-2" /> : <Moon className="w-4 h-4 mr-2" />}
+                {isDark ? "Light Mode" : "Dark Mode"}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout} data-testid="button-logout">
                 <LogOut className="w-4 h-4 mr-2" />
                 Logout

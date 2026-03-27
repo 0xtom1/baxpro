@@ -66,21 +66,18 @@ export interface IStorage {
   deleteAlert(id: string): Promise<boolean>;
 
   getAssetByAssetId(assetId: string): Promise<Asset | undefined>;
-  getAssetByAssetIdx(assetIdx: number): Promise<Asset | undefined>;
   getActivityFeed(limit?: number, offset?: number): Promise<ActivityFeedWithDetails[]>;
   getActivityFeedCount(): Promise<number>;
   
   matchAlertToAssets(alertId: string): Promise<{ matched: number; matchingAssetsString: string }>;
 
   getBrandNames(): Promise<string[]>;
-  getBrandsList(page?: number, limit?: number): Promise<{ brands: BrandListItem[]; total: number }>;
+  getBrandsList(page?: number, limit?: number, search?: string): Promise<{ brands: BrandListItem[]; total: number }>;
   getBrandAssets(brandName: string, traitFilters?: Record<string, string[]>): Promise<BrandAsset[]>;
   getBrandStats(brandName: string): Promise<BrandStats>;
   getBrandTraits(brandName: string): Promise<BrandTrait[]>;
   getBrandActivity(brandName: string, limit?: number): Promise<ActivityFeedWithDetails[]>;
   getAssetsByAssetIds(assetIds: string[]): Promise<BrandAsset[]>;
-  getAssetSummaryByAssetId(assetId: string): Promise<BrandAsset | null>;
-  getAssetActivityByAssetIdx(assetIdx: number, limit?: number): Promise<ActivityFeedWithDetails[]>;
 }
 
 export class DbStorage implements IStorage {
@@ -158,15 +155,9 @@ export class DbStorage implements IStorage {
   }
 
   async getAssetByAssetId(assetId: string): Promise<Asset | undefined> {
-    // asset_id is char(44) so we need to pad the input to match
     const paddedAssetId = assetId.padEnd(44, ' ');
-    const [asset] = await db.select().from(assets).where(eq(assets.assetId, paddedAssetId));
-    return asset;
-  }
-
-  async getAssetByAssetIdx(assetIdx: number): Promise<Asset | undefined> {
     const result = await db.execute<any>(
-      `SELECT * FROM baxus.v_assets WHERE asset_idx = ${assetIdx}`
+      `SELECT * FROM baxus.v_assets WHERE asset_id = '${paddedAssetId.replace(/'/g, "''")}'`
     );
     if (result.rows.length === 0) return undefined;
     const row = result.rows[0];
@@ -178,7 +169,6 @@ export class DbStorage implements IStorage {
       price: row.price,
       bottledYear: row.bottled_year,
       age: row.age,
-      producer: row.producer,
       isListed: row.is_listed,
       listedDate: row.listed_date,
       assetJson: row.asset_json,
@@ -186,6 +176,10 @@ export class DbStorage implements IStorage {
       addedDate: row.added_date,
       lastUpdated: row.last_updated,
       countUpdated: row.count_updated,
+      producer: row.producer,
+      imageUrl: row.image_url,
+      marketPrice: row.market_price,
+      brandName: row.brand_name,
     };
   }
 
@@ -618,24 +612,41 @@ export class DbStorage implements IStorage {
     return result.rows.map((r: any) => r.brand_name);
   }
 
-  async getBrandsList(page: number = 1, limit: number = 30): Promise<{ brands: BrandListItem[]; total: number }> {
+  async getBrandsList(page: number = 1, limit: number = 30, search?: string): Promise<{ brands: BrandListItem[]; total: number }> {
     const client = await pool.connect();
     try {
       const offset = (page - 1) * limit;
-      
-      const countResult = await client.query(`
-        SELECT COUNT(*) as total FROM baxus.mv_brands_list
-      `);
+      const searchTerm = search?.trim() || '';
+      const hasSearch = searchTerm.length > 0;
+      const normalizedSearch = searchTerm.replace(/[^a-zA-Z0-9 ]/g, '').toLowerCase();
+      const searchPattern = `%${normalizedSearch}%`;
+
+      const norm = (col: string) => `LOWER(REGEXP_REPLACE(${col}, '[^a-zA-Z0-9 ]', '', 'g'))`;
+
+      const countResult = await client.query(
+        hasSearch
+          ? `SELECT COUNT(*) as total FROM baxus.mv_brands_list WHERE ${norm('brand_name')} LIKE $1 OR ${norm("COALESCE(producer,'')")} LIKE $1`
+          : `SELECT COUNT(*) as total FROM baxus.mv_brands_list`,
+        hasSearch ? [searchPattern] : []
+      );
       const total = parseInt(countResult.rows[0].total, 10);
+
+      const params: any[] = hasSearch ? [searchPattern, limit, offset] : [limit, offset];
+      const whereClause = hasSearch
+        ? `WHERE ${norm('brand_name')} LIKE $1 OR ${norm("COALESCE(producer,'')")} LIKE $1`
+        : '';
+      const limitParam = hasSearch ? '$2' : '$1';
+      const offsetParam = hasSearch ? '$3' : '$2';
 
       const result = await client.query(`
         SELECT brand_name, producer, asset_count, listed_count, floor_price, image_url,
                volume_7d, volume_30d, distinct_owners_count, max_activity_date
         FROM baxus.mv_brands_list
+        ${whereClause}
         ORDER BY CASE WHEN COALESCE(listed_count, 0) = 0 THEN 1 ELSE 0 END,
                  max_activity_date DESC NULLS LAST, volume_30d DESC NULLS LAST
-        LIMIT $1 OFFSET $2
-      `, [limit, offset]);
+        LIMIT ${limitParam} OFFSET ${offsetParam}
+      `, params);
 
       return {
         brands: result.rows.map((r: any) => ({
@@ -673,7 +684,7 @@ export class DbStorage implements IStorage {
           v.asset_idx, v.asset_id, v.name, v.brand_name,
           v.is_listed, v.listed_date, v.price, v.age, v.bottled_year,
           v.market_price, v.producer,
-          a.asset_json -> 'bottle_release' ->> 'image_url' as image_url,
+          v.image_url,
           a.metadata_json
         FROM baxus.v_asset_summary v
         JOIN baxus.assets a ON v.asset_idx = a.asset_idx
@@ -861,83 +872,6 @@ export class DbStorage implements IStorage {
     }
   }
 
-  async getAssetSummaryByAssetId(assetId: string): Promise<BrandAsset | null> {
-    const client = await pool.connect();
-    try {
-      const result = await client.query(`
-        SELECT 
-          asset_idx, asset_id, name, brand_name, is_listed, listed_date, 
-          price, age, bottled_year, market_price, producer, image_url
-        FROM baxus.v_asset_summary
-        WHERE TRIM(asset_id) = $1
-      `, [assetId]);
-
-      if (result.rows.length === 0) return null;
-
-      const r = result.rows[0];
-      return {
-        assetIdx: r.asset_idx,
-        assetId: r.asset_id?.trim() ?? '',
-        name: r.name,
-        brandName: r.brand_name,
-        isListed: r.is_listed,
-        listedDate: r.listed_date,
-        price: r.price ? parseFloat(r.price) : null,
-        age: r.age,
-        bottledYear: r.bottled_year,
-        marketPrice: r.market_price ? parseFloat(r.market_price) : null,
-        producer: r.producer,
-        imageUrl: r.image_url,
-      };
-    } finally {
-      client.release();
-    }
-  }
-
-  async getAssetActivityByAssetIdx(assetIdx: number, limit: number = 50): Promise<ActivityFeedWithDetails[]> {
-    const client = await pool.connect();
-    try {
-      const result = await client.query(`
-        SELECT 
-          af.activity_idx,
-          af.activity_type_idx,
-          af.asset_idx,
-          af.price,
-          af.activity_date,
-          af.signature,
-          dat.activity_type_code,
-          dat.activity_type_name,
-          a.asset_id,
-          a.name AS asset_name,
-          v.producer,
-          a.is_listed
-        FROM baxus.activity_feed af
-        INNER JOIN baxus.dim_activity_types dat ON af.activity_type_idx = dat.activity_type_idx
-        INNER JOIN baxus.assets a ON af.asset_idx = a.asset_idx
-        INNER JOIN baxus.v_asset_summary v ON v.asset_idx = a.asset_idx
-        WHERE af.asset_idx = $1
-        ORDER BY af.activity_date DESC
-        LIMIT $2
-      `, [assetIdx, limit]);
-
-      return result.rows.map((r: any) => ({
-        activityIdx: r.activity_idx,
-        activityTypeIdx: r.activity_type_idx,
-        assetIdx: r.asset_idx,
-        price: r.price,
-        activityDate: r.activity_date,
-        signature: r.signature,
-        activityTypeCode: r.activity_type_code,
-        activityTypeName: r.activity_type_name,
-        assetId: r.asset_id?.trim() ?? '',
-        assetName: r.asset_name ?? 'Unknown',
-        producer: r.producer,
-        isListed: r.is_listed,
-      }));
-    } finally {
-      client.release();
-    }
-  }
 }
 
 export const storage = new DbStorage();

@@ -162,3 +162,10 @@ variable "authorized_home_ip" {
   sensitive   = true
   default     = ""
 }
+
+variable "devnet_address_pk" {
+  description = "Private key for devnet master wallet (dev environment only, for bottle airdrops)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}

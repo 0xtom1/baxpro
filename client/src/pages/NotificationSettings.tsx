@@ -10,10 +10,12 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Mail, Bell, Heart, AlertCircle, Check } from "lucide-react";
 import GlencairnLogo from "@/components/GlencairnLogo";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 export default function NotificationSettings() {
   const [, setLocation] = useLocation();
   const { user, loading: authLoading } = useRequireAuth();
+  usePageTitle("Notification Settings");
   const { refreshUser } = useAuth();
   const { toast } = useToast();
   

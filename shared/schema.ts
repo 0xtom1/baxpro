@@ -54,7 +54,6 @@ export const assets = baxusSchema.table("assets", {
   price: doublePrecision("price"),
   bottledYear: integer("bottled_year"),
   age: integer("age"),
-  producer: text("producer"),
   isListed: boolean("is_listed"),
   listedDate: timestamp("listed_date"),
   assetJson: jsonb("asset_json").notNull(),
@@ -136,7 +135,12 @@ export type InsertAlert = z.infer<typeof insertAlertSchema>;
 export type Alert = typeof alerts.$inferSelect;
 export type InsertListingsFeed = z.infer<typeof insertListingsFeedSchema>;
 export type ListingsFeed = typeof listingsFeed.$inferSelect;
-export type Asset = typeof assets.$inferSelect;
+export type Asset = typeof assets.$inferSelect & {
+  producer?: string | null;
+  imageUrl?: string | null;
+  marketPrice?: number | null;
+  brandName?: string | null;
+};
 export type InsertAlertMatch = z.infer<typeof insertAlertMatchSchema>;
 export type AlertMatch = typeof alertMatches.$inferSelect;
 export type ActivityFeed = typeof activityFeed.$inferSelect;

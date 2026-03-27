@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft } from "lucide-react";
 import GlencairnLogo from "@/components/GlencairnLogo";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 export default function TermsOfService() {
+  usePageTitle("Terms of Service");
   const [, setLocation] = useLocation();
 
   useEffect(() => {

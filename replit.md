@@ -2,13 +2,23 @@
 
 ## Overview
 
-BaxPro is a product availability alert platform for Baxus.co. Users create custom alerts with search criteria (name matches, price limits, age/year filters) and receive email notifications when matching products become available.
+BaxPro is a spirits collection platform for Baxus.co collectors. Core features: real-time marketplace data and brand analytics (Track), custom alerts for new listings (Trade), and on-chain bottle-backed lending via Solana (Borrow).
+
+Tagline: "Track, Trade & Borrow Your Spirits Collection"
 
 The system consists of a main TypeScript/React web application and Python microservices that poll the Baxus API, match listings to alerts, and send notifications.
 
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+
+### Design & Color Preferences
+- **Primary/brand color**: Copper/bronze — `hsl(20, 50%, 42%)` (light mode), `hsl(20, 50%, 45%)` (dark mode). Used for buttons, icons, and active UI indicators.
+- **Text colors**: Use `text-foreground` (black in light, white in dark) for all content text. Use `text-muted-foreground` for secondary/tertiary info (floor price, supply, listed counts on cards, etc.). Never use the old burnt orange/amber as a text accent color.
+- **Text emphasis**: Use `font-bold` instead of colored text when something needs to stand out (e.g., repayment values, prices).
+- **Amber/yellow**: Reserved exclusively for semantic warnings and caution messages (testnet warnings, notification alerts). Not for branding or emphasis.
+- **VIP badges/icons**: Use `text-primary` and `bg-primary/15` (copper tones) instead of amber.
+- **Activity type colors on Landing ticker**: Semantic per-type colors are fine (emerald for New Listing, amber for Purchase, sky for Price Change, red for Delisted).
 
 ## System Architecture
 
@@ -52,20 +62,21 @@ Baxus API → baxus-monitor → Pub/Sub → alert-processor → Pub/Sub → aler
 
 ### Route Structure
 
-- `/dashboard` - Main landing page after sign-in with tabbed interface (Brands/Activity)
+- `/dashboard` - Main landing page after sign-in with tabbed interface (Brands, Activity, Loans, My Vault, My Loans)
 - `/alerts` - User's alert management page
 - `/brand?name=<brand_name>` - Individual brand detail page
-- `/my-bottles` - User's wallet bottles matched to Baxus assets
-- `/my-bottles/:assetId` - Bottle detail page with image, traits, and activity
+- `/my-vault/:assetId` - Bottle detail page with image, traits, and activity
+- `/loan/:publicKey` - Loan detail page with full terms, participants, collateral bottle cards, market value, and action buttons
+- `/my-vault` - Redirects to `/dashboard` (legacy)
+- `/my-bottles` - Redirects to `/dashboard` (legacy)
 
 ### Dashboard Page
 
-The Dashboard page (`/dashboard`) is a Blur NFT marketplace-inspired interface with two tabs:
+The Dashboard page (`/dashboard`) is a Blur NFT marketplace-inspired interface with five tabs:
 
 **Brands Tab**:
-- Horizontal scrollable table with sticky first column on mobile
-- Columns: Brand (with image), Producer, Floor Price, 7D Volume, 30D Volume, Owners, Supply, Listed
-- Search filter for brands and producers
+- Card grid display of brands with images and metrics
+- Search filter for brands and producers (300ms debounce, server-side, punctuation-agnostic)
 - Click to navigate to individual brand page
 - Pagination controls
 
@@ -75,14 +86,35 @@ The Dashboard page (`/dashboard`) is a Blur NFT marketplace-inspired interface w
 - Columns: Asset name, Type badge, Producer, Price, External link, Date
 - Delisted items shown with strikethrough styling
 
+**Loans Tab**:
+- Marketplace of listed loans available for funding
+- Fund, cancel, and repay actions
+
+**My Vault Tab** (formerly My Bottles):
+- Card grid display of Baxus bottles owned by the user's wallet
+- Portfolio value summary, bottle count, listed count stats
+- Empty state when no wallet connected or no matching Baxus bottles
+- Click card to view detailed bottle information at `/my-vault/:assetId`
+- "Create Loan" button when wallet and bottles are available
+
+**My Loans Tab** (Phantom wallet users only):
+- Shows all loans created by or funded by the user (all statuses)
+- Role-based actions: borrower can cancel/repay, lender can liquidate expired loans
+- Borrower/Lender badge on active loans, expiry countdown
+- Collateral images from matched Baxus assets
+- Empty state with link to create first loan
+
 **API Endpoints**:
 - `GET /api/brands-list` - Returns brands with producer, asset count, listed count, floor price, volume_7d, volume_30d, distinct_owners_count
 - `GET /api/activity` - Paginated activity feed with optional type filter
 - `GET /api/activity-types` - List of activity type options for filtering
+- `GET /api/my-bottles` - Fetches user's wallet bottles from Helius API and matches to baxus.assets
+- `GET /api/loans/my` - Returns user's loans from Solana devnet
 
 **Design Features**:
-- Desktop: Top tabs, horizontal scroll table
-- Mobile: Bottom tab bar navigation, sticky first column
+- Desktop: Top tabs, horizontal scroll content
+- Mobile: Bottom tab bar navigation
+- My Loans tab hidden for non-Phantom wallet users
 
 ### Brand Page
 
@@ -104,27 +136,19 @@ The Brand page (`/brand?name=<brand_name>`) displays detailed information about 
 - Trait filters normalized from ParsedQs objects to plain strings to prevent SQL injection
 - Mobile-responsive with slide-out filters drawer
 
-### My Bottles Page
+### Bottle Detail Page
 
-The My Bottles page (`/my-bottles`) displays Baxus bottles owned by the user's wallet:
+The Bottle Detail page (`/my-vault/:assetId`) displays detailed information about a specific bottle:
 
 **API Endpoints**:
-- `GET /api/my-bottles` - Fetches user's wallet bottles from Helius API and matches to baxus.assets
 - `GET /api/my-bottles/:assetId` - Returns asset details with metadata and activity (ownership verified)
 
 **Wallet Resolution**:
 - Uses `phantomWallet` first (for Phantom-authenticated users)
 - Falls back to `baxusWallet` (for Gmail users who added wallet in Account Settings)
-- Navigation button visible when either wallet field is populated
-
-**Features**:
-- Card grid display of matched bottles with images, prices, and age
-- Empty state when no wallet connected or no matching Baxus bottles
-- Click card to view detailed bottle information
-- Activity history for each bottle
 
 **Security**:
-- Both endpoints verify user authentication
+- All endpoints verify user authentication
 - Detail endpoint verifies the asset is in the user's wallet before returning data
 
 **Dependencies**:
@@ -170,3 +194,16 @@ Users with `isVip: true` can access:
 - `SESSION_SECRET`
 - `CUSTOM_DOMAIN` (optional, for OAuth redirect)
 - `HELIUS_API_KEY` (for wallet NFT data)
+- `DEVNET_ADDRESS_PK` (dev only, private key for devnet bottle airdrop master wallet; JSON byte array format e.g. `[152,143,31,...]`)
+
+### Devnet Bottle Airdrop
+
+**Feature**: In dev environment, Phantom wallet users see a "Devnet Bottle Airdrop!" button in the nav bar. Clicking it sends 2 Token 2022 bottles + 0.5 SOL from a master wallet to the user's Phantom wallet address on Solana devnet.
+
+**Flow**:
+- `POST /api/devnet-airdrop` — authenticated, Phantom wallet required, dev-only
+- Backend (`server/sdk/airdropService.ts`) reads `DEVNET_ADDRESS_PK`, finds 2 Token 2022 mints with balance in the master wallet, transfers them + 0.5 SOL
+- Button grays out after successful airdrop (session-only, no DB tracking)
+- Fails if master wallet has fewer than 2 Token 2022 bottles available
+
+**Terraform/Deploy**: `DEVNET_ADDRESS_PK` stored as GitHub secret, passed via `TF_VAR_devnet_address_pk` to terraform which creates a GCP Secret Manager secret and injects it into Cloud Run (dev environment only).

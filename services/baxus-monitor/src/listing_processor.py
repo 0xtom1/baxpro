@@ -40,7 +40,7 @@ class ListingProcessor:
                 updated_assets, activity_inserted, and errors counts.
         """
         if self.config.environment == "dev":
-            sleep_time_seconds = 10
+            sleep_time_seconds = 2
         else:
             sleep_time_seconds = 2
 
@@ -53,7 +53,7 @@ class ListingProcessor:
         session = self.db.get_session()
         records = (
             session.query(AssetDetails)
-            .where(AssetDetails.metadata_json.is_(None) | AssetDetails.is_listed.is_(True))
+            .where(AssetDetails.metadata_json.is_(None))
             .all()
         )
         asset_records = [x.asset_id for x in records]

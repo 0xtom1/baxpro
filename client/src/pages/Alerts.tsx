@@ -7,10 +7,14 @@ import DashboardNav from "@/components/DashboardNav";
 import AlertCard from "@/components/AlertCard";
 import AlertModal from "@/components/AlertModal";
 import EmptyState from "@/components/EmptyState";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 export default function Dashboard() {
   const { user, loading: authLoading } = useRequireAuth();
+  usePageTitle("Alerts");
   const { toast } = useToast();
   
   const [modalOpen, setModalOpen] = useState(false);
@@ -132,20 +136,35 @@ export default function Dashboard() {
     return null;
   }
 
+  const MAX_ALERTS = 25;
+  const isAtLimit = alerts.length >= MAX_ALERTS;
+
   return (
     <div className="min-h-screen bg-background">
-      <DashboardNav onNewAlert={handleNewAlert} alertCount={alerts.length} />
+      <DashboardNav alertCount={alerts.length} />
       
       <main className="max-w-6xl mx-auto px-6 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">My Alerts</h1>
-          <p className="text-muted-foreground">
-            Manage your spirit availability alerts
-          </p>
+        <div className="flex items-center justify-between gap-4 flex-wrap mb-8">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">My Alerts</h1>
+            <p className="text-muted-foreground">
+              Manage your spirit availability alerts
+            </p>
+          </div>
+          <Button
+            size="sm"
+            onClick={handleNewAlert}
+            disabled={isAtLimit}
+            title={isAtLimit ? `Maximum of ${MAX_ALERTS} alerts reached` : undefined}
+            data-testid="button-new-alert"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            New Alert
+          </Button>
         </div>
 
         {alerts.length === 0 ? (
-          <EmptyState onCreateAlert={handleNewAlert} />
+          <EmptyState />
         ) : (
           <div className="space-y-4">
             {alerts.map(alert => (

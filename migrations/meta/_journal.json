@@ -85,6 +85,34 @@
       "when": 1738554000000,
       "tag": "0011_mv_brands_list_no_producer_group",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1738600800000,
+      "tag": "0012_add_is_dummy",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1739181600000,
+      "tag": "0013_image_url_fallback",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1739268000000,
+      "tag": "0014_brands_image_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1739354400000,
+      "tag": "0015_mv_brands_list_image_logic",
+      "breakpoints": true
     }
   ]
 }

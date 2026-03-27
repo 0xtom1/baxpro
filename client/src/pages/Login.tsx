@@ -4,23 +4,27 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SiGoogle } from "react-icons/si";
-import { User } from "lucide-react";
+import { User, AlertTriangle } from "lucide-react";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import GlencairnLogo from "@/components/GlencairnLogo";
 import PhantomLogo from "@/components/PhantomLogo";
 import { usePhantomSafe } from "@/hooks/use-phantom-safe";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 const isDev = import.meta.env.DEV;
 const phantomEnabled = !!import.meta.env.VITE_PHANTOM_APP_ID;
 
 export default function Login() {
+  usePageTitle("Sign In");
   const [, setLocation] = useLocation();
   const search = useSearch();
-  const { user, loading, loginWithGoogle, loginWithPhantomSDK, refreshUser } = useAuth();
+  const { user, loading, environment, loginWithGoogle, loginWithPhantomSDK, refreshUser } = useAuth();
   const { toast } = useToast();
   const [loggingIn, setLoggingIn] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const isDevEnvironment = environment !== 'production';
+  const [phantomInitiated, setPhantomInitiated] = useState(false);
 
   // Phantom SDK hooks - safe wrapper that returns no-ops when Phantom is not enabled
   const { isConnected, user: phantomUser, openModal: openPhantomModal, signMessage } = usePhantomSafe();
@@ -95,35 +99,24 @@ export default function Login() {
   };
 
   const handlePhantomLogin = async () => {
-    // If already connected with a user, proceed directly with auth
+    setPhantomInitiated(true);
     if (isConnected && phantomUser && !user) {
       await completePhantomAuth(phantomUser as Record<string, any>);
     } else {
-      // Open the Phantom SDK modal to connect wallet
       openPhantomModal();
     }
   };
 
-  // Effect to handle Phantom SDK connection (for new connections)
-  useEffect(() => {
-    const handleNewConnection = async () => {
-      if (isConnected && phantomUser && !user && !loggingIn) {
-        await completePhantomAuth(phantomUser as Record<string, any>);
-      }
-    };
-    
-    handleNewConnection();
-  }, [isConnected, phantomUser, user]);
-
-  // Tracking ref to detect when connection state actually changes
+  // Only complete Phantom auth after the user clicks the Phantom button
   const prevConnectedRef = useRef(isConnected);
   useEffect(() => {
-    // Only trigger auth when connection state changes from false to true
-    if (!prevConnectedRef.current && isConnected && phantomUser && !user) {
+    if (!phantomInitiated) return;
+    const justConnected = !prevConnectedRef.current && isConnected;
+    if (justConnected && phantomUser && !user && !loggingIn) {
       completePhantomAuth(phantomUser as Record<string, any>);
     }
     prevConnectedRef.current = isConnected;
-  }, [isConnected, phantomUser, user]);
+  }, [isConnected, phantomUser, user, phantomInitiated]);
 
   const handleDemoLogin = async () => {
     setLoggingIn(true);
@@ -236,18 +229,31 @@ export default function Login() {
             </label>
           </div>
 
+          {isDevEnvironment && (
+            <div className="flex items-start gap-2.5 mb-6 p-3 rounded-md bg-amber-500/10 border border-amber-500/30" data-testid="note-testnet-mode">
+              <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-amber-500 leading-relaxed">
+                <span className="font-semibold">Phantom Testnet Mode required.</span>{' '}
+                To use Phantom on this dev environment, enable Testnet Mode in your Phantom wallet:{' '}
+                <span className="font-medium">Settings &rarr; Developer Settings &rarr; Testnet Mode</span> (select Solana Devnet).
+              </p>
+            </div>
+          )}
+
           <div className="flex flex-col gap-3 w-full">
-            <Button 
-              variant="default"
-              size="lg"
-              className="w-full"
-              onClick={handleGoogleLogin}
-              disabled={loggingIn || !agreedToTerms}
-              data-testid="button-google-login"
-            >
-              <SiGoogle className="w-5 h-5 mr-2" />
-              Continue with Google
-            </Button>
+            {!isDevEnvironment && (
+              <Button 
+                variant="default"
+                size="lg"
+                className="w-full"
+                onClick={handleGoogleLogin}
+                disabled={loggingIn || !agreedToTerms}
+                data-testid="button-google-login"
+              >
+                <SiGoogle className="w-5 h-5 mr-2" />
+                Continue with Google
+              </Button>
+            )}
 
             {phantomEnabled && (
               <Button 

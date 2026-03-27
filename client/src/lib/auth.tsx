@@ -4,6 +4,7 @@ import { type User } from "@shared/schema";
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  environment: string;
   loginWithGoogle: (returnTo?: string) => Promise<void>;
   loginWithPhantom: () => Promise<{ user: User; needsSetup: boolean }>;
   loginWithPhantomSDK: (publicKey: string, signMessage: (message: Uint8Array) => Promise<{ signature: Uint8Array }>) => Promise<{ user: User; needsSetup: boolean }>;
@@ -17,6 +18,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [environment, setEnvironment] = useState("production");
 
   useEffect(() => {
     checkAuth();
@@ -25,8 +27,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const checkAuth = async () => {
     try {
       const response = await fetch("/api/auth/me");
+      const data = await response.json();
+      if (data.environment) {
+        setEnvironment(data.environment);
+      }
       if (response.ok) {
-        const data = await response.json();
         setUser(data.user);
       }
     } catch (error) {
@@ -204,7 +209,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, loginWithGoogle, loginWithPhantom, loginWithPhantomSDK, loginDemo, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, environment, loginWithGoogle, loginWithPhantom, loginWithPhantomSDK, loginDemo, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

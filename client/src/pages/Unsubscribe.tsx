@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MailX, CheckCircle, AlertCircle, Settings } from "lucide-react";
 import GlencairnLogo from "@/components/GlencairnLogo";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 export default function Unsubscribe() {
+  usePageTitle("Unsubscribe");
   const [, setLocation] = useLocation();
   const searchString = useSearch();
   const params = new URLSearchParams(searchString);

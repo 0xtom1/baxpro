@@ -52,7 +52,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   // Session middleware - use PostgreSQL store for persistence
-  const isProduction = process.env.NODE_ENV === "production";
+  // Require secure cookies for both production and dev deployments (both use HTTPS)
+  const isProduction = process.env.NODE_ENV === "production" || process.env.NODE_ENV === "dev";
   const PgSession = connectPgSimple(session);
   
   app.use(
@@ -437,7 +438,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/auth/me", authLimiter, async (req, res) => {
     if (!req.session.userId) {
-      return res.status(401).json({ error: "Not authenticated" });
+      return res.status(401).json({ error: "Not authenticated", environment: process.env.NODE_ENV || "development" });
     }
 
     let user = await storage.getUser(req.session.userId);
@@ -452,7 +453,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       user = await storage.updateUser(user.id, { lastLoginAt: new Date() }) || user;
     }
 
-    res.json({ user });
+    res.json({ 
+      user,
+      environment: process.env.NODE_ENV || "development",
+    });
   });
 
   // User routes
@@ -798,23 +802,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Asset details by index route (requires authentication) - must come before :assetId route
-  app.get("/api/assets/idx/:assetIdx", requireAuth, apiLimiter, async (req, res) => {
+  app.get("/api/public/activity", apiLimiter, async (req, res) => {
     try {
-      const assetIdx = parseInt(req.params.assetIdx, 10);
-      if (isNaN(assetIdx)) {
-        return res.status(400).json({ error: "Invalid asset index" });
-      }
-      const asset = await storage.getAssetByAssetIdx(assetIdx);
-      
-      if (!asset) {
-        return res.status(404).json({ error: "Asset not found" });
-      }
-
-      res.json(asset);
+      const activities = await storage.getActivityFeed(15, 0);
+      res.json(activities.map(a => ({
+        assetName: a.assetName,
+        activityTypeName: a.activityTypeName,
+        activityTypeCode: a.activityTypeCode,
+        price: a.price,
+        producer: a.producer,
+        activityDate: a.activityDate,
+      })));
     } catch (error) {
-      console.error("Get asset by idx error:", error);
-      res.status(500).json({ error: "Failed to fetch asset" });
+      console.error("Public activity error:", error);
+      res.json([]);
     }
   });
 
@@ -850,7 +851,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = Math.min(parseInt(req.query.limit as string) || 30, 100);
-      const result = await storage.getBrandsList(page, limit);
+      const search = (req.query.search as string) || '';
+      const result = await storage.getBrandsList(page, limit, search);
       res.json(result);
     } catch (error) {
       console.error("Get brands list error:", error);
@@ -895,6 +897,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/resolve-wallets", apiLimiter, async (req, res) => {
+    try {
+      const addressesParam = req.query.addresses as string;
+      if (!addressesParam) return res.json({});
+      const addresses = addressesParam.split(',').filter(Boolean).slice(0, 100);
+      if (addresses.length === 0) return res.json({});
+      const placeholders = addresses.map((_, i) => `$${i + 1}`).join(', ');
+      const { rows } = await pool.query(
+        `SELECT phantom_wallet, display_name FROM users WHERE phantom_wallet IN (${placeholders}) AND display_name IS NOT NULL`,
+        addresses
+      );
+      const result: Record<string, string> = {};
+      for (const row of rows) {
+        result[row.phantom_wallet] = row.display_name;
+      }
+      res.json(result);
+    } catch (error: any) {
+      console.error("Resolve wallets error:", error);
+      res.status(500).json({ error: "Failed to resolve wallets" });
+    }
+  });
+
+  app.get("/api/assets-by-mints", apiLimiter, async (req, res) => {
+    try {
+      const mintsParam = req.query.mints as string;
+      if (!mintsParam) {
+        return res.json({});
+      }
+      const mints = mintsParam.split(',').filter(m => m.trim().length > 0).slice(0, 25);
+      if (mints.length === 0) {
+        return res.json({});
+      }
+      const assets = await storage.getAssetsByAssetIds(mints);
+      const result: Record<string, any> = {};
+      for (const asset of assets) {
+        result[asset.assetId] = asset;
+      }
+      res.json(result);
+    } catch (error) {
+      console.error("Get assets by mints error:", error);
+      res.status(500).json({ error: "Failed to fetch assets" });
+    }
+  });
+
   // My Bottles endpoints - fetch user's wallet NFTs matched to Baxus assets
   app.get("/api/my-bottles", requireAuth, apiLimiter, async (req, res) => {
     try {
@@ -914,8 +960,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "NFT service not configured" });
       }
 
-      // Fetch NFTs from Helius API
-      const heliusUrl = `https://mainnet.helius-rpc.com/?api-key=${heliusApiKey}`;
+      // Fetch NFTs from Helius API (devnet for dev, mainnet for production)
+      const heliusNetwork = process.env.NODE_ENV === 'production' ? 'mainnet' : 'devnet';
+      const heliusUrl = `https://${heliusNetwork}.helius-rpc.com/?api-key=${heliusApiKey}`;
       const heliusResponse = await fetch(heliusUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -927,7 +974,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ownerAddress: walletAddress,
             page: 1,
             limit: 1000,
-            displayOptions: {
+            options: {
               showFungible: true,
               showNativeBalance: false,
             }
@@ -954,76 +1001,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get my NFTs error:", error);
       res.status(500).json({ error: "Failed to fetch your NFTs" });
-    }
-  });
-
-  app.get("/api/my-bottles/:assetId", requireAuth, apiLimiter, async (req, res) => {
-    try {
-      const { assetId } = req.params;
-      const userId = req.session.userId!;
-      const user = await storage.getUser(userId);
-
-      // Use phantomWallet first, then baxusWallet as fallback
-      const walletAddress = user?.phantomWallet || user?.baxusWallet;
-
-      if (!walletAddress) {
-        return res.status(403).json({ error: "No wallet connected" });
-      }
-
-      // Verify ownership: check that this asset is in the user's wallet
-      const heliusApiKey = process.env.HELIUS_API_KEY;
-      if (!heliusApiKey) {
-        return res.status(500).json({ error: "NFT service not configured" });
-      }
-
-      const heliusUrl = `https://mainnet.helius-rpc.com/?api-key=${heliusApiKey}`;
-      const heliusResponse = await fetch(heliusUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: 'verify-ownership',
-          method: 'getAssetsByOwner',
-          params: {
-            ownerAddress: walletAddress,
-            page: 1,
-            limit: 1000,
-            displayOptions: { showFungible: true, showNativeBalance: false }
-          }
-        })
-      });
-
-      if (!heliusResponse.ok) {
-        return res.status(500).json({ error: "Failed to verify ownership" });
-      }
-
-      const heliusData = await heliusResponse.json();
-      const walletAssetIds = (heliusData.result?.items || []).map((item: any) => item.id);
-
-      if (!walletAssetIds.includes(assetId)) {
-        return res.status(404).json({ error: "Asset not found in your wallet" });
-      }
-      
-      const asset = await storage.getAssetSummaryByAssetId(assetId);
-      if (!asset) {
-        return res.status(404).json({ error: "Asset not found in Baxus" });
-      }
-
-      // Get full asset data including metadata
-      const fullAsset = await storage.getAssetByAssetId(assetId);
-      const activity = await storage.getAssetActivityByAssetIdx(asset.assetIdx, 50);
-
-      res.json({ 
-        asset: {
-          ...asset,
-          metadataJson: fullAsset?.metadataJson,
-          assetJson: fullAsset?.assetJson,
-        }, 
-        activity 
-      });
-    } catch (error) {
-      console.error("Get NFT detail error:", error);
-      res.status(500).json({ error: "Failed to fetch NFT details" });
     }
   });
 
@@ -1185,6 +1162,227 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get sub-brand assets error:", error);
       res.status(500).json({ error: "Failed to fetch sub-brand assets" });
+    }
+  });
+
+  // ── SOL price endpoint ──
+
+  let cachedSolPrice: { price: number; fetchedAt: number } | null = null;
+  const SOL_PRICE_CACHE_MS = 60_000;
+
+  app.get("/api/sol-price", apiLimiter, async (_req, res) => {
+    try {
+      if (cachedSolPrice && Date.now() - cachedSolPrice.fetchedAt < SOL_PRICE_CACHE_MS) {
+        return res.json({ price: cachedSolPrice.price });
+      }
+
+      const heliusApiKey = process.env.HELIUS_API_KEY;
+      if (!heliusApiKey) {
+        return res.status(500).json({ error: "Price service not configured" });
+      }
+
+      const heliusUrl = `https://mainnet.helius-rpc.com/?api-key=${heliusApiKey}`;
+      const response = await fetch(heliusUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 'sol-price',
+          method: 'getAsset',
+          params: {
+            id: 'So11111111111111111111111111111111111111112',
+            displayOptions: { showFungible: true },
+          },
+        }),
+      });
+
+      const data = await response.json();
+      const price = data?.result?.token_info?.price_info?.price_per_token;
+
+      if (typeof price !== 'number') {
+        return res.status(502).json({ error: "Could not fetch SOL price" });
+      }
+
+      cachedSolPrice = { price, fetchedAt: Date.now() };
+      res.json({ price });
+    } catch (error: any) {
+      console.error("SOL price fetch error:", error);
+      res.status(500).json({ error: "Failed to fetch SOL price" });
+    }
+  });
+
+  // ── Loan endpoints ──
+
+  app.get("/api/loans", apiLimiter, async (_req, res) => {
+    try {
+      const { fetchLoans } = await import("./sdk/loanService");
+      const status = typeof _req.query.status === 'string' ? _req.query.status : undefined;
+      const loans = await fetchLoans(status);
+      res.json(loans);
+    } catch (error: any) {
+      console.error("Fetch loans error:", error);
+      res.status(500).json({ error: "Failed to fetch loans" });
+    }
+  });
+
+  app.get("/api/loans/my", async (req, res) => {
+    if (!req.session?.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const user = await storage.getUser(req.session.userId);
+      if (!user?.phantomWallet) return res.json([]);
+      const { fetchLoansByWallet } = await import("./sdk/loanService");
+      const loans = await fetchLoansByWallet(user.phantomWallet);
+      res.json(loans);
+    } catch (error: any) {
+      console.error("Fetch my loans error:", error);
+      res.status(500).json({ error: "Failed to fetch user loans" });
+    }
+  });
+
+  app.get("/api/loans/pool", apiLimiter, async (_req, res) => {
+    try {
+      const { fetchLendingPool } = await import("./sdk/loanService");
+      const pool = await fetchLendingPool();
+      res.json(pool);
+    } catch (error: any) {
+      console.error("Fetch lending pool error:", error);
+      res.status(500).json({ error: "Failed to fetch lending pool" });
+    }
+  });
+
+  app.post("/api/loans/build-create", async (req, res) => {
+    if (!req.session?.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const user = await storage.getUser(req.session.userId);
+      if (!user?.phantomWallet) return res.status(400).json({ error: "Phantom wallet required" });
+
+      const schema = z.object({
+        nftMints: z.array(z.string()).min(1),
+        loanAmountLamports: z.number().positive(),
+        interestRateBps: z.number().min(0).max(10000),
+        durationSeconds: z.number().positive(),
+      });
+      const data = schema.parse(req.body);
+
+      const { buildCreateLoanTx, fetchLendingPool } = await import("./sdk/loanService");
+      const pool = await fetchLendingPool();
+      const loanIdNum = pool ? parseInt(pool.totalLoansCreated) + 1 : 1;
+
+      const txs = await buildCreateLoanTx(
+        user.phantomWallet,
+        loanIdNum,
+        data.nftMints,
+        data.loanAmountLamports,
+        data.interestRateBps,
+        data.durationSeconds
+      );
+      res.json({ transactions: txs });
+    } catch (error: any) {
+      console.error("Build create loan tx error:", error);
+      res.status(500).json({ error: error.message || "Failed to build transaction" });
+    }
+  });
+
+  app.post("/api/loans/build-fund", async (req, res) => {
+    if (!req.session?.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const user = await storage.getUser(req.session.userId);
+      if (!user?.phantomWallet) return res.status(400).json({ error: "Phantom wallet required" });
+
+      const schema = z.object({
+        borrower: z.string(),
+        loanId: z.string(),
+      });
+      const data = schema.parse(req.body);
+
+      const { buildFundLoanTx } = await import("./sdk/loanService");
+      const tx = await buildFundLoanTx(user.phantomWallet, data.borrower, data.loanId);
+      res.json({ transaction: tx });
+    } catch (error: any) {
+      console.error("Build fund loan tx error:", error);
+      res.status(500).json({ error: error.message || "Failed to build transaction" });
+    }
+  });
+
+  app.post("/api/loans/build-repay", async (req, res) => {
+    if (!req.session?.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const user = await storage.getUser(req.session.userId);
+      if (!user?.phantomWallet) return res.status(400).json({ error: "Phantom wallet required" });
+
+      const schema = z.object({ loanId: z.string() });
+      const data = schema.parse(req.body);
+
+      const { buildRepayLoanTx } = await import("./sdk/loanService");
+      const tx = await buildRepayLoanTx(user.phantomWallet, data.loanId);
+      res.json({ transaction: tx });
+    } catch (error: any) {
+      console.error("Build repay loan tx error:", error);
+      res.status(500).json({ error: error.message || "Failed to build transaction" });
+    }
+  });
+
+  app.post("/api/loans/build-liquidate", async (req, res) => {
+    if (!req.session?.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const user = await storage.getUser(req.session.userId);
+      if (!user?.phantomWallet) return res.status(400).json({ error: "Phantom wallet required" });
+
+      const schema = z.object({ loanId: z.string(), borrower: z.string() });
+      const data = schema.parse(req.body);
+
+      const { buildLiquidateLoanTx } = await import("./sdk/loanService");
+      const tx = await buildLiquidateLoanTx(user.phantomWallet, data.borrower, data.loanId);
+      res.json({ transaction: tx });
+    } catch (error: any) {
+      console.error("Build liquidate loan tx error:", error);
+      res.status(500).json({ error: error.message || "Failed to build transaction" });
+    }
+  });
+
+  app.post("/api/loans/build-cancel", async (req, res) => {
+    if (!req.session?.userId) return res.status(401).json({ error: "Not authenticated" });
+    try {
+      const user = await storage.getUser(req.session.userId);
+      if (!user?.phantomWallet) return res.status(400).json({ error: "Phantom wallet required" });
+
+      const schema = z.object({ loanId: z.string() });
+      const data = schema.parse(req.body);
+
+      const { buildCancelLoanTx } = await import("./sdk/loanService");
+      const tx = await buildCancelLoanTx(user.phantomWallet, data.loanId);
+      res.json({ transaction: tx });
+    } catch (error: any) {
+      console.error("Build cancel loan tx error:", error);
+      res.status(500).json({ error: error.message || "Failed to build transaction" });
+    }
+  });
+
+  app.post("/api/devnet-airdrop", async (req, res) => {
+    if (!req.session?.userId) return res.status(401).json({ error: "Not authenticated" });
+    if (process.env.NODE_ENV === 'production') return res.status(403).json({ error: "Airdrop only available in dev" });
+    if (!process.env.DEVNET_ADDRESS_PK) return res.status(503).json({ error: "Airdrop not configured" });
+
+    try {
+      const user = await storage.getUser(req.session.userId);
+      if (!user?.phantomWallet) return res.status(400).json({ error: "Phantom wallet required" });
+
+      const { executeDevnetAirdrop } = await import("./sdk/airdropService");
+      const result = await executeDevnetAirdrop(user.phantomWallet);
+
+      if (!result.success) {
+        return res.status(500).json({ error: result.error || "Airdrop failed" });
+      }
+
+      res.json({
+        success: true,
+        solSignature: result.solSignature,
+        tokenSignatures: result.tokenSignatures,
+        bottlesSent: result.bottlesSent,
+      });
+    } catch (error: any) {
+      console.error("Devnet airdrop error:", error);
+      res.status(500).json({ error: error.message || "Airdrop failed" });
     }
   });
 

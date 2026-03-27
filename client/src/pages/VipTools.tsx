@@ -7,10 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Crown, RefreshCw, Layers, ExternalLink, Github } from "lucide-react";
 import GlencairnLogo from "@/components/GlencairnLogo";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 export default function VipTools() {
   const [, setLocation] = useLocation();
   const { user, loading: authLoading } = useRequireVip();
+  usePageTitle("VIP Tools");
   const { toast } = useToast();
   
   const [refreshingMatches, setRefreshingMatches] = useState(false);
@@ -84,11 +86,11 @@ export default function VipTools() {
       <main className="max-w-2xl mx-auto px-6 py-8">
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
-            <Crown className="w-8 h-8 text-amber-500" />
+            <Crown className="w-8 h-8 text-primary" />
             <h1 className="text-3xl font-bold">VIP Tools</h1>
             <Badge 
               variant="outline" 
-              className="text-amber-500 border-amber-500/50"
+              className="text-primary border-primary/50"
             >
               VIP
             </Badge>
@@ -99,10 +101,10 @@ export default function VipTools() {
         </div>
 
         <div className="space-y-6">
-          <Card className="border-amber-500/30 bg-amber-500/5">
+          <Card className="border-primary/30 bg-primary/5">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Layers className="w-5 h-5 text-amber-500" />
+                <Layers className="w-5 h-5 text-primary" />
                 Product Hierarchy Editor
               </CardTitle>
               <CardDescription>
@@ -129,10 +131,10 @@ export default function VipTools() {
             </CardContent>
           </Card>
 
-          <Card className="border-amber-500/30 bg-amber-500/5">
+          <Card className="border-primary/30 bg-primary/5">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <RefreshCw className="w-5 h-5 text-amber-500" />
+                <RefreshCw className="w-5 h-5 text-primary" />
                 Refresh All Alert Matches
               </CardTitle>
               <CardDescription>

@@ -67,14 +67,18 @@ jobs:
             echo "helius_api_key=${{ secrets.HELIUS_API_KEY_DEV }}" >> $GITHUB_OUTPUT
             echo "phantom_app_id=${{ secrets.VITE_PHANTOM_APP_ID_DEV }}" >> $GITHUB_OUTPUT
             echo "authorized_home_ip=${{ secrets.DAN_HOME_IP }}" >> $GITHUB_OUTPUT
+            echo "devnet_address_pk=${{ secrets.DEVNET_ADDRESS_PK }}" >> $GITHUB_OUTPUT
             echo "service_name=baxpro-dev" >> $GITHUB_OUTPUT
             echo "terraform_workspace=dev" >> $GITHUB_OUTPUT
             echo "image_prefix=dev" >> $GITHUB_OUTPUT
           fi
 
-      - name: Mask project ID in logs
+      - name: Mask sensitive values in logs
         run: |
           echo "::add-mask::${{ steps.vars.outputs.project_id }}"
+          if [ -n "${{ steps.vars.outputs.devnet_address_pk }}" ]; then
+            echo "::add-mask::${{ steps.vars.outputs.devnet_address_pk }}"
+          fi
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
@@ -204,15 +208,6 @@ jobs:
           terraform init -backend-config="bucket=${{ steps.vars.outputs.project_id }}-terraform-state"
           terraform workspace select ${{ steps.vars.outputs.terraform_workspace }} || terraform workspace new ${{ steps.vars.outputs.terraform_workspace }}
 
-      - name: Stop baxus-monitor before deployment
-        run: |
-          echo "Stopping baxus-monitor before deployment (migrations may have breaking changes)..."
-          gcloud run services update baxus-monitor-${{ env.ENVIRONMENT }} \
-            --region=${{ env.REGION }} \
-            --project=${{ steps.vars.outputs.project_id }} \
-            --min-instances=0 --max-instances=0 2>/dev/null || echo "baxus-monitor not found or already stopped"
-          echo "baxus-monitor stopped"
-
       - name: Terraform Plan
         working-directory: ./terraform
         env:
@@ -233,6 +228,7 @@ jobs:
           TF_VAR_enable_alert_sender: "true"
           TF_VAR_alert_sender_source_hash: ${{ steps.image.outputs.alert_sender_hash }}
           TF_VAR_authorized_home_ip: ${{ steps.vars.outputs.authorized_home_ip }}
+          TF_VAR_devnet_address_pk: ${{ steps.vars.outputs.devnet_address_pk }}
         run: terraform plan -out=tfplan
 
       - name: Terraform Apply
@@ -255,6 +251,7 @@ jobs:
           TF_VAR_enable_alert_sender: "true"
           TF_VAR_alert_sender_source_hash: ${{ steps.image.outputs.alert_sender_hash }}
           TF_VAR_authorized_home_ip: ${{ steps.vars.outputs.authorized_home_ip }}
+          TF_VAR_devnet_address_pk: ${{ steps.vars.outputs.devnet_address_pk }}
         run: terraform apply -auto-approve tfplan
 
       - name: Verify DB Password Sync and Restart baxus-monitor
@@ -277,15 +274,6 @@ jobs:
           
           echo "Main Cloud Run service updated with latest secret versions"
           
-          echo "Restarting baxus-monitor with min=1 and latest secrets..."
-          gcloud run services update baxus-monitor-${{ env.ENVIRONMENT }} \
-            --region=${{ env.REGION }} \
-            --project=${{ steps.vars.outputs.project_id }} \
-            --min-instances=1 \
-            --max-instances=1 \
-            --update-secrets=DB_USER=baxpro-db-user-${{ env.ENVIRONMENT }}:latest,DB_PASS=baxpro-db-pass-${{ env.ENVIRONMENT }}:latest,DB_NAME=baxpro-db-name-${{ env.ENVIRONMENT }}:latest,INSTANCE_UNIX_SOCKET=baxpro-instance-unix-socket-${{ env.ENVIRONMENT }}:latest
-          
-          echo "baxus-monitor restarted with min=1, max=1 instances"
           echo "All services synced with latest secrets"
 
       - name: Get deployment URL

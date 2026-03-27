@@ -11,6 +11,7 @@ import { ChevronLeft, Crown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 interface Producer {
   producerIdx: number;
@@ -41,6 +42,7 @@ interface HierarchyRow {
 export default function ProductHierarchy() {
   const [, setLocation] = useLocation();
   const { user, loading: authLoading } = useRequireVip();
+  usePageTitle("Product Hierarchy");
   const [selectedProducerIdx, setSelectedProducerIdx] = useState<string>("");
   const [selectedBrandIdx, setSelectedBrandIdx] = useState<string>("");
   const [selectedSubBrandIdx, setSelectedSubBrandIdx] = useState<string>("");
@@ -127,7 +129,7 @@ export default function ProductHierarchy() {
           <h1 className="text-2xl font-bold">Product Hierarchy Editor</h1>
           <Badge 
             variant="secondary"
-            className="text-xs px-2 py-0.5 font-semibold bg-gradient-to-r from-amber-500/20 to-yellow-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30"
+            className="text-xs px-2 py-0.5 font-semibold bg-primary/15 text-primary border-primary/30"
             data-testid="badge-vip-only"
           >
             <Crown className="w-3.5 h-3.5 mr-1" />
